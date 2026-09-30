@@ -1,0 +1,136 @@
+{
+  "slug": "reverse-string",
+  "title": "Reverse String",
+  "leetcodeUrl": "https://leetcode.com/problems/reverse-string/",
+  "difficulty": "easy",
+  "patternId": "two_pointers_opposite",
+  "order": 108,
+  "drillOnly": true,
+  "summary": "You get a string stored as a list of single characters, `s`. Reverse it in place: rearrange the characters inside `s` itself so its first character ends up last, its second ends up second to last, and so on. Return nothing, and use only O(1) extra space, so don't build a second list.",
+  "examples": [
+    {
+      "input": "s = [\"p\", \"l\", \"a\", \"n\", \"e\", \"t\"]",
+      "output": "[\"t\", \"e\", \"n\", \"a\", \"l\", \"p\"]",
+      "explanation": "Nothing is returned: s itself now holds the characters in reverse order."
+    },
+    {
+      "input": "s = [\"s\", \"t\", \"r\", \"a\", \"w\"]",
+      "output": "[\"w\", \"a\", \"r\", \"t\", \"s\"]",
+      "explanation": "With an odd length, the middle \"r\" stays where it is."
+    }
+  ],
+  "constraints": ["1 ≤ len(s) ≤ 10⁵", "every s[i] is a printable ASCII character"],
+  "targets": {"time": "O(n)", "space": "O(1)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "two_pointers_opposite",
+      "structures": ["array"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Swap the characters at both ends, then move both pointers inward until they meet.",
+      "twistKeywords": [
+        [
+          "swap",
+          "exchang",
+          "switch",
+          "trade",
+          "interchange",
+          "s[l], s[r] =",
+          "s[l],s[r]=",
+          "s[i], s[j] =",
+          "s[i],s[j]="
+        ],
+        [
+          "both ends",
+          "each end",
+          "two ends",
+          "opposite",
+          "first and last",
+          "first with the last",
+          "first with last",
+          "inward",
+          "toward",
+          "meet",
+          "middle",
+          "center",
+          "centre",
+          "cross",
+          "half",
+          "mirror",
+          "n - 1 - i",
+          "n-1-i",
+          "~i",
+          "l += 1",
+          "l+=1",
+          "r -= 1",
+          "r-=1",
+          "l < r",
+          "l<r"
+        ]
+      ]
+    },
+    {
+      "id": "reversed_copy",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n)",
+      "space": "O(n)",
+      "twist": "Build a reversed copy with s[::-1] and write it back into s.",
+      "twistKeywords": [
+        [
+          "copy",
+          "new list",
+          "new array",
+          "new string",
+          "second list",
+          "another list",
+          "extra list",
+          "build",
+          "[::-1]",
+          "reversed(",
+          "slice",
+          "temp"
+        ],
+        ["revers", "[::-1]", "backward", "back to front", "end to start"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works in O(n) time, but the reversed copy takes O(n) extra space. The target is O(1)."
+    },
+    {
+      "id": "stack",
+      "patternId": "stack",
+      "structures": ["stack"],
+      "time": "O(n)",
+      "space": "O(n)",
+      "twist": "Push every character onto a stack, then pop them back into s from the front.",
+      "twistKeywords": [["stack", "push", "append"], ["pop", "lifo", "last in", "last-in"]],
+      "acceptedAs": "suboptimal",
+      "note": "Works in O(n) time, but the stack holds a copy of every character: O(n) extra space. The target is O(1)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "in place",
+      "meaning": "You change s itself instead of returning a new list, so characters can only trade places inside s: the two ends first, then the next pair in.",
+      "pointsTo": "two_pointers_opposite"
+    },
+    {
+      "phrase": "first character ends up last",
+      "meaning": "Each character trades places with its mirror at the other end. Those mirrored pairs are exactly what two pointers from both ends visit.",
+      "pointsTo": "two_pointers_opposite"
+    },
+    {
+      "phrase": "O(1) extra space",
+      "meaning": "A reversed copy, s[::-1] or a stack all hold n characters. Two indexes and one swap at a time need no extra room.",
+      "pointsTo": "two_pointers_opposite"
+    }
+  ],
+  "constraintReading": "len(s) can reach 10⁵, and every character except a middle one has to move, so O(n) is both needed and enough. The O(1) extra space rule is the real limit: it rules out a reversed copy or a stack, so swap in place with two indexes.",
+  "related": [
+    {
+      "slug": "valid-palindrome",
+      "relation": "Same pointers from both ends meeting in the middle, but it compares each mirrored pair instead of swapping it."
+    }
+  ]
+}

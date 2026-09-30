@@ -1,0 +1,151 @@
+{
+  "slug": "min-stack",
+  "title": "Min Stack",
+  "leetcodeUrl": "https://leetcode.com/problems/min-stack/",
+  "difficulty": "medium",
+  "patternId": "stack",
+  "order": 113,
+  "drillOnly": true,
+  "summary": "Design a stack class that can also report its smallest value. `push(val)` puts `val` on top, `pop()` removes the most recently pushed value, `top()` returns that value without removing it, and `getMin()` returns the smallest value still in the stack. Every one of the four operations must run in O(1) time.",
+  "examples": [
+    {
+      "input": "push(3), push(5), push(2), getMin(), pop(), getMin(), top()",
+      "output": "getMin() → 2, getMin() → 3, top() → 5",
+      "explanation": "Popping 2 removes the minimum, so the next getMin() falls back to 3, the smallest value left."
+    },
+    {
+      "input": "push(4), push(1), push(1), pop(), getMin(), pop(), getMin()",
+      "output": "getMin() → 1, getMin() → 4",
+      "explanation": "1 was pushed twice, so after one pop it is still the minimum; after the second pop, the minimum is 4 again."
+    }
+  ],
+  "constraints": [
+    "−2³¹ ≤ val ≤ 2³¹ − 1",
+    "pop, top and getMin are only called when the stack holds at least one value",
+    "At most 3·10⁴ calls in total"
+  ],
+  "targets": {"time": "O(1)", "space": "O(n)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "stack",
+      "structures": ["stack"],
+      "time": "O(1)",
+      "space": "O(n)",
+      "twist": "Push each value together with the smallest value at or below it, so the top always holds the current minimum.",
+      "twistKeywords": [
+        ["min", "smallest", "lowest"],
+        [
+          "pair",
+          "tuple",
+          "alongside",
+          "along with",
+          "together with",
+          "with its",
+          "each value with",
+          "every value with",
+          "each number with",
+          "each element with",
+          "each item with",
+          "next to",
+          "beside",
+          "second stack",
+          "another stack",
+          "extra stack",
+          "helper stack",
+          "auxiliary",
+          "two stacks",
+          "2 stacks",
+          "parallel",
+          "each level",
+          "every level",
+          "per level",
+          "entry",
+          "entries",
+          "below",
+          "beneath",
+          "underneath",
+          "previous",
+          "prior",
+          "at the time",
+          "at that point",
+          "snapshot"
+        ]
+      ]
+    },
+    {
+      "id": "scan_for_min",
+      "patternId": "brute_force",
+      "structures": ["stack"],
+      "time": "O(n)",
+      "space": "O(n)",
+      "twist": "Keep a plain stack and scan every value in it for the smallest one each time getMin is called.",
+      "twistKeywords": [
+        [
+          "scan",
+          "search",
+          "loop",
+          "iterate",
+          "go through",
+          "look through",
+          "check all",
+          "check every",
+          "all values",
+          "all the values",
+          "whole stack",
+          "entire stack",
+          "(stack",
+          "linear",
+          "brute"
+        ],
+        ["min", "smallest", "lowest"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but getMin reads every value on the stack, so it takes O(n) time. The target is O(1) per operation."
+    },
+    {
+      "id": "heap_of_values",
+      "patternId": "stack",
+      "structures": ["stack", "heap"],
+      "time": "O(log n)",
+      "space": "O(n)",
+      "twist": "Push each value onto both the stack and a min-heap, and lazily discard heap entries that were already popped from the stack.",
+      "twistKeywords": [
+        ["heap", "priority queue"],
+        [
+          "lazy",
+          "lazily",
+          "discard",
+          "stale",
+          "popped",
+          "deleted",
+          "removed",
+          "skip",
+          "mark",
+          "invalid",
+          "count"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but every heap push and pop takes O(log n) time. The target is O(1) per operation."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "most recently pushed",
+      "meaning": "Last in, first out. A Python list is already a stack: append pushes and pop removes the newest value, both in O(1).",
+      "pointsTo": "structure:stack"
+    },
+    {
+      "phrase": "smallest value still in the stack",
+      "meaning": "The minimum only changes on a push or a pop. Let each entry remember the smallest value at or below it; after a pop, the new top already knows the minimum of what is left.",
+      "pointsTo": "stack"
+    },
+    {
+      "phrase": "O(1) time",
+      "meaning": "Scanning for the minimum costs O(n) per getMin. To answer at once, have the answer ready from the pushes instead of searching when asked.",
+      "pointsTo": "stack"
+    }
+  ],
+  "constraintReading": "Up to 3·10⁴ calls. If getMin scanned the stack, 1.5·10⁴ pushes followed by 1.5·10⁴ getMin calls would read about 2·10⁸ values: O(n) per call. The O(1) target for every operation rules that out, so the minimum must be ready before anyone asks; one extra number per entry keeps the space at O(n)."
+}

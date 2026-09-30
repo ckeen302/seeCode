@@ -1,0 +1,161 @@
+{
+  "slug": "container-with-most-water",
+  "title": "Container With Most Water",
+  "leetcodeUrl": "https://leetcode.com/problems/container-with-most-water/",
+  "difficulty": "medium",
+  "patternId": "two_pointers_opposite",
+  "order": 107,
+  "drillOnly": true,
+  "summary": "You get a list `height` of n non-negative integers: a vertical wall of height `height[i]` stands at position i. Any pair of walls makes a tank. Water between them rises only to the shorter of the two, and it spans the distance between their positions, so the tank holds (shorter height) × (distance) units. The walls in between don't block anything. Return the most water any pair of walls can hold.",
+  "examples": [
+    {
+      "input": "height = [3, 9, 2, 6, 5, 8, 1]",
+      "output": "32",
+      "explanation": "The walls at positions 1 and 5 hold min(9, 8) × 4 = 32. The two outer walls are farther apart, but the 1 at the right end caps them at 1 × 6 = 6."
+    },
+    {
+      "input": "height = [6, 1, 1, 1, 6]",
+      "output": "24",
+      "explanation": "The short walls in between don't matter: the two 6s hold 6 × 4 = 24."
+    }
+  ],
+  "constraints": ["2 ≤ len(height) ≤ 10⁵", "0 ≤ height[i] ≤ 10⁴"],
+  "targets": {"time": "O(n)", "space": "O(1)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "two_pointers_opposite",
+      "structures": ["array"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Move the pointer at the shorter wall inward, keeping the best area seen so far.",
+      "twistKeywords": [
+        [
+          "the shorter",
+          "is shorter",
+          "shorter wall",
+          "shorter line",
+          "shorter side",
+          "shorter height",
+          "shorter bar",
+          "shorter one",
+          "shorter pointer",
+          "shortest",
+          "the smaller",
+          "is smaller",
+          "smaller wall",
+          "smaller line",
+          "smaller side",
+          "smaller height",
+          "smaller bar",
+          "smaller one",
+          "smaller pointer",
+          "smaller value",
+          "smallest",
+          "the lower",
+          "is lower",
+          "lower wall",
+          "lower line",
+          "lower side",
+          "lower height",
+          "lower bar",
+          "lower one",
+          "lower pointer",
+          "lower value",
+          "lowest",
+          "lesser",
+          "min height",
+          "minimum height",
+          "min wall",
+          "min side",
+          "limiting",
+          "bottleneck",
+          "keep the tall",
+          "keep the high",
+          "keep the big",
+          "keep the larg",
+          "keep the long",
+          "h[l] < h[r]",
+          "h[l]<h[r]",
+          "height[l] < height[r]",
+          "height[l]<height[r]"
+        ],
+        [
+          "move",
+          "advance",
+          "shift",
+          "inward",
+          "drop",
+          "discard",
+          "skip",
+          "shrink",
+          "replace",
+          "give up",
+          "abandon",
+          "throw away",
+          "let go",
+          "increment",
+          "decrement",
+          "+= 1",
+          "-= 1",
+          "+=1",
+          "-=1"
+        ]
+      ]
+    },
+    {
+      "id": "all_pairs",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n²)",
+      "space": "O(1)",
+      "twist": "Try every pair of walls and keep the largest amount of water.",
+      "twistKeywords": [
+        [
+          "every pair",
+          "each pair",
+          "all pairs",
+          "all the pairs",
+          "all possible pairs",
+          "every two",
+          "every combination",
+          "all combinations",
+          "nested",
+          "two loops",
+          "double loop",
+          "inner loop",
+          "two for",
+          "double for",
+          "brute"
+        ],
+        ["area", "water", "amount", "volume", "max", "larg", "big", "best", "most"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but checking every pair takes O(n²) time, about 5·10⁹ pairs for 10⁵ walls. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "any pair of walls",
+      "meaning": "The answer is a pair. Instead of trying all O(n²) pairs, start with the widest one, the two outer walls, and move inward: each step rules out one wall for good.",
+      "pointsTo": "two_pointers_opposite"
+    },
+    {
+      "phrase": "shorter of the two",
+      "meaning": "The shorter wall caps the water. Paired with any wall closer in, it still caps the level while the width shrinks, so it can't do better: move its pointer inward and keep the taller wall.",
+      "pointsTo": "two_pointers_opposite"
+    },
+    {
+      "phrase": "distance between their positions",
+      "meaning": "Width counts, so the two outer walls make the widest tank. Each move inward gives up width, which only pays off if it reaches a taller wall.",
+      "pointsTo": "two_pointers_opposite"
+    }
+  ],
+  "constraintReading": "len(height) can reach 10⁵, so trying every pair means about 5·10⁹ area checks: O(n²) is far too slow. Aim for O(n), one inward pass that rules out a wall at each step. Only two indexes and the best area are stored, so the space is O(1).",
+  "related": [
+    {
+      "slug": "two-sum-ii",
+      "relation": "Same inward pointers, but a sum compared with a target decides which one moves; here the pointer at the shorter wall always moves."
+    }
+  ]
+}

@@ -1,0 +1,132 @@
+{
+  "slug": "squares-of-a-sorted-array",
+  "title": "Squares of a Sorted Array",
+  "leetcodeUrl": "https://leetcode.com/problems/squares-of-a-sorted-array/",
+  "difficulty": "easy",
+  "patternId": "two_pointers_opposite",
+  "order": 109,
+  "drillOnly": true,
+  "summary": "You get a list of integers `nums`, sorted from smallest to largest; some of them may be negative. Return a new list holding the square of every number, also sorted from smallest to largest. Squaring everything and then sorting works, but aim for O(n) time.",
+  "examples": [
+    {
+      "input": "nums = [-6, -2, 0, 3, 5]",
+      "output": "[0, 4, 9, 25, 36]",
+      "explanation": "In input order the squares are [36, 4, 0, 9, 25]: largest at the two ends, smallest in the middle."
+    },
+    {
+      "input": "nums = [-8, -3, -1]",
+      "output": "[1, 9, 64]",
+      "explanation": "When every number is negative, squaring reverses the order."
+    }
+  ],
+  "constraints": [
+    "1 ≤ len(nums) ≤ 10⁴",
+    "−10⁴ ≤ nums[i] ≤ 10⁴",
+    "nums is sorted from smallest to largest; equal values may repeat"
+  ],
+  "targets": {"time": "O(n)", "space": "O(n)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "two_pointers_opposite",
+      "structures": ["array"],
+      "time": "O(n)",
+      "space": "O(n)",
+      "twist": "Fill the result from the back with the larger square of the two ends, then move that pointer inward.",
+      "twistKeywords": [
+        [
+          "abs",
+          "absolute",
+          "magnitude",
+          "larger",
+          "bigger",
+          "greater",
+          "largest",
+          "biggest",
+          "greatest",
+          "max",
+          "compare",
+          "merge",
+          "more negative"
+        ],
+        [
+          "from the back",
+          "at the back",
+          "the back of",
+          "backward",
+          "back to front",
+          "right to left",
+          "from the right",
+          "reverse",
+          "descending",
+          "decreasing",
+          "largest first",
+          "biggest first",
+          "largest to smallest",
+          "biggest to smallest",
+          "fill from",
+          "write from",
+          "result from the end",
+          "output from the end",
+          "answer from the end",
+          "end of the result",
+          "end of the output",
+          "end of the answer",
+          "end of res",
+          "end of the new",
+          "its last",
+          "result's last",
+          "last slot",
+          "last spot",
+          "last open",
+          "last empty",
+          "last free",
+          "square last",
+          "squares last",
+          "it last",
+          "index n-1",
+          "index n - 1",
+          "from n-1",
+          "from n - 1",
+          "k -= 1",
+          "k-=1"
+        ]
+      ]
+    },
+    {
+      "id": "square_then_sort",
+      "patternId": "brute_force",
+      "structures": ["sorted"],
+      "time": "O(n log n)",
+      "space": "O(n)",
+      "twist": "Square every number, then sort the squares.",
+      "twistKeywords": [["square", "**2", "** 2", "x*x", "x * x", "pow", "^2"], ["sort"]],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but sorting the squares takes O(n log n) time. nums is already sorted, so the target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "sorted from smallest to largest",
+      "meaning": "Sorted order puts the biggest squares at the two ends: the most negative number or the largest positive one. Compare the two ends instead of sorting again.",
+      "pointsTo": "two_pointers_opposite"
+    },
+    {
+      "phrase": "may be negative",
+      "meaning": "Squaring flips the order of negatives: −7 is smaller than 5, but its square, 49, is larger than 25. So the squares are large at both ends and small in the middle.",
+      "pointsTo": "two_pointers_opposite"
+    },
+    {
+      "phrase": "O(n) time",
+      "meaning": "Sorting the squares costs O(n log n). The input is already sorted, so one pass from both ends can place every square in order.",
+      "pointsTo": "two_pointers_opposite"
+    }
+  ],
+  "constraintReading": "len(nums) is at most 10⁴, so squaring and sorting, O(n log n), would run fast: the size alone allows it. The O(n) time target is what rules out the sort. The answer list itself takes O(n) space; beyond it, two indexes and a write position are enough.",
+  "related": [
+    {
+      "slug": "two-sum-ii",
+      "relation": "Same pointers at the two ends of a sorted list, but a sum compared with a target decides which one moves instead of the larger square."
+    }
+  ]
+}

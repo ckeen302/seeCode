@@ -1,0 +1,103 @@
+{
+  "slug": "next-greater-element-i",
+  "title": "Next Greater Element I",
+  "leetcodeUrl": "https://leetcode.com/problems/next-greater-element-i/",
+  "difficulty": "easy",
+  "patternId": "stack",
+  "order": 114,
+  "drillOnly": true,
+  "summary": "You get two lists of distinct integers, `nums1` and `nums2`, and every value in `nums1` also appears in `nums2`. For each value in `nums1`, find its next greater value in `nums2`: the first number to its right in `nums2` that is larger than it, or `-1` if there is none. Return the answers in the order of `nums1`. Aim for O(n) time, where n is the total length of both lists.",
+  "examples": [
+    {
+      "input": "nums1 = [6, 2, 9], nums2 = [2, 7, 6, 1, 9, 3]",
+      "output": "[9, 7, -1]",
+      "explanation": "In nums2, 6 is followed by 1, 9 and 3, and 9 is the first larger one. 7 comes right after 2, and nothing larger follows 9."
+    },
+    {
+      "input": "nums1 = [5, 3], nums2 = [3, 8, 5, 6, 10]",
+      "output": "[6, 8]",
+      "explanation": "The answer is the first larger value, not the largest: 6 comes before 10."
+    }
+  ],
+  "constraints": [
+    "1 ≤ len(nums1) ≤ len(nums2) ≤ 1000",
+    "0 ≤ nums1[i], nums2[i] ≤ 10⁴",
+    "No value repeats within nums1 or within nums2",
+    "Every value of nums1 is somewhere in nums2"
+  ],
+  "targets": {"time": "O(n)", "space": "O(n)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "stack",
+      "structures": ["stack", "hash_map"],
+      "time": "O(n)",
+      "space": "O(n)",
+      "twist": "Run a monotonic stack over nums2, save each popped value's next greater in a dict, then look up every nums1 value.",
+      "twistKeywords": [
+        [
+          "monotonic",
+          "decreasing",
+          "descending",
+          "non-increasing",
+          "falling",
+          "pop",
+          "wait",
+          "unresolved",
+          "unanswered",
+          "pending"
+        ],
+        ["dict", "map", "hash", "lookup", "look up", "look it up", "table"]
+      ]
+    },
+    {
+      "id": "scan_right",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n²)",
+      "space": "O(1)",
+      "twist": "For each value in nums1, find it in nums2 and walk right until a larger value appears.",
+      "twistKeywords": [
+        [
+          "walk",
+          "scan",
+          "search",
+          "loop",
+          "iterate",
+          "nested",
+          "brute",
+          "check each",
+          "check every",
+          "one by one"
+        ],
+        ["right", "after it", "after its", "following", "ahead", "forward", "later"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but walking right from every value takes O(n²) time. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "next greater",
+      "meaning": "Values wait on a stack until a larger one arrives; that value answers every smaller value it pops off the top.",
+      "pointsTo": "stack"
+    },
+    {
+      "phrase": "distinct integers",
+      "meaning": "No value repeats, so each value of nums2 can be a dict key that maps to its answer.",
+      "pointsTo": "structure:hash_map"
+    },
+    {
+      "phrase": "O(n) time",
+      "meaning": "Walking right from every value is O(n²). To stay linear, push and pop each value of nums2 once, then answer each value of nums1 with one lookup.",
+      "pointsTo": "stack"
+    }
+  ],
+  "constraintReading": "len(nums2) is at most 1000, so walking right from every value of nums1 costs at most about 10⁶ steps (O(n²)), fast enough at this size. The O(n) time target is what rules it out: push and pop each value of nums2 at most once, then answer each value of nums1 with an O(1) dict lookup. The stack and the dict take O(n) space.",
+  "related": [
+    {
+      "slug": "daily-temperatures",
+      "relation": "The same monotonic stack, but each answer is a number of days, so the stack holds indexes instead of values and no dict is needed."
+    }
+  ]
+}

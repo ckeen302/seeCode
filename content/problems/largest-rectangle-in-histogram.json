@@ -1,0 +1,118 @@
+{
+  "slug": "largest-rectangle-in-histogram",
+  "title": "Largest Rectangle in Histogram",
+  "leetcodeUrl": "https://leetcode.com/problems/largest-rectangle-in-histogram/",
+  "difficulty": "hard",
+  "patternId": "stack",
+  "order": 118,
+  "drillOnly": true,
+  "summary": "You get a list `heights` that describes a bar chart: bar i has height `heights[i]` and width 1, and the bars stand side by side with no gaps. A rectangle drawn inside the chart covers a run of adjacent bars and can be no taller than the shortest bar in that run. Return the largest area such a rectangle can have.",
+  "examples": [
+    {
+      "input": "heights = [2, 4, 5, 3, 1, 3]",
+      "output": "9",
+      "explanation": "The bars at indexes 1 to 3 (heights 4, 5 and 3) hold a rectangle of height 3 and width 3."
+    },
+    {
+      "input": "heights = [1, 8, 2]",
+      "output": "8",
+      "explanation": "The tall bar alone wins: any wider rectangle has to drop to height 2 or 1."
+    }
+  ],
+  "constraints": ["1 ≤ len(heights) ≤ 10⁵", "0 ≤ heights[i] ≤ 10⁴"],
+  "targets": {"time": "O(n)", "space": "O(n)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "stack",
+      "structures": ["stack"],
+      "time": "O(n)",
+      "space": "O(n)",
+      "twist": "Keep indexes of rising heights on a stack; when a shorter bar pops one, that bar's rectangle fills the gap between the new top and the shorter bar.",
+      "twistKeywords": [
+        [
+          "increasing",
+          "ascending",
+          "rising",
+          "monotonic",
+          "non-decreasing",
+          "pop",
+          "shorter",
+          "smaller",
+          "lower",
+          "less than"
+        ],
+        [
+          "width",
+          "wide",
+          "boundar",
+          "bound",
+          "span",
+          "extend",
+          "stretch",
+          "reach",
+          "distance",
+          "between",
+          "gap",
+          "new top",
+          "both sides",
+          "each side",
+          "either side",
+          "left and right",
+          "right and left",
+          "previous and next",
+          "prev and next",
+          "next and previous"
+        ]
+      ]
+    },
+    {
+      "id": "every_run",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n²)",
+      "space": "O(1)",
+      "twist": "Try every run of bars: fix a start, move the end right while tracking the shortest height, and keep the best area.",
+      "twistKeywords": [
+        [
+          "every",
+          "each start",
+          "each pair",
+          "all pairs",
+          "all runs",
+          "all ranges",
+          "all subarrays",
+          "nested",
+          "two loops",
+          "double loop",
+          "brute",
+          "expand",
+          "extend",
+          "outward"
+        ],
+        ["min", "shortest", "lowest", "smallest", "as tall", "as high"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but trying every run of bars takes O(n²) time, far too slow for 10⁵ bars. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "shortest bar",
+      "meaning": "Try each bar as the shortest one: its rectangle stretches left and right until a shorter bar stops it. A stack of rising heights finds both stopping bars in one pass.",
+      "pointsTo": "stack"
+    },
+    {
+      "phrase": "width 1",
+      "meaning": "A run's width is a difference of positions, so keep indexes on the stack, not heights; enumerate() gives each bar's index and height together.",
+      "pointsTo": "toolkit:enumerate"
+    }
+  ],
+  "constraintReading": "Up to 10⁵ bars: trying every run is O(n²), about 5·10⁹ runs, far too slow. O(n) means each bar is pushed once and popped once, and the pop finds its shorter neighbor on each side; the stack can hold every index, so the space is O(n).",
+  "related": [
+    {
+      "slug": "daily-temperatures",
+      "relation": "Also keeps indexes on a stack, but in rising order: a shorter bar pops taller ones and measures their rectangles, where a warmer day pops colder ones."
+    }
+  ]
+}

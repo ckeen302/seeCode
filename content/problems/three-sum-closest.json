@@ -1,0 +1,91 @@
+{
+  "slug": "three-sum-closest",
+  "title": "3Sum Closest",
+  "leetcodeUrl": "https://leetcode.com/problems/3sum-closest/",
+  "difficulty": "medium",
+  "patternId": "two_pointers_opposite",
+  "order": 111,
+  "drillOnly": true,
+  "summary": "You get a list of integers `nums` and an integer `target`. Pick three numbers at three different positions so that their sum is as close as possible to `target`, and return that sum, not the numbers. Exactly one sum is closest, so the answer is unique.",
+  "examples": [
+    {
+      "input": "nums = [3, -8, 5, 10, -2], target = 1",
+      "output": "0",
+      "explanation": "3 + (-8) + 5 = 0 is 1 away from the target, and no three numbers add up to 1 or 2."
+    },
+    {
+      "input": "nums = [8, -5, 1, 4], target = 20",
+      "output": "13",
+      "explanation": "No sum reaches 20, so the largest one, 8 + 1 + 4 = 13, comes closest."
+    }
+  ],
+  "constraints": [
+    "3 ≤ len(nums) ≤ 500",
+    "−1000 ≤ nums[i] ≤ 1000",
+    "−10⁴ ≤ target ≤ 10⁴",
+    "nums is in no particular order"
+  ],
+  "targets": {"time": "O(n²)", "space": "O(1)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "two_pointers_opposite",
+      "structures": ["sorted"],
+      "time": "O(n²)",
+      "space": "O(1)",
+      "twist": "Sort, fix one number, run two pointers on the rest, and keep the sum nearest to target.",
+      "twistKeywords": [
+        ["sort"],
+        [
+          "fix",
+          "anchor",
+          "each number",
+          "each element",
+          "each index",
+          "each value",
+          "every number",
+          "every element",
+          "every index",
+          "every value",
+          "for each",
+          "for every",
+          "outer loop",
+          "loop over",
+          "iterate over",
+          "one number",
+          "one element",
+          "first number",
+          "first element",
+          "nums[i]",
+          "for i in",
+          "i in range"
+        ],
+        ["close", "near", "diff", "distance", "abs", "min", "smallest", "best", "gap"]
+      ]
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "three numbers",
+      "meaning": "Fix one number and the other two become a pair: run two pointers on the rest of the sorted list, once per fixed number.",
+      "pointsTo": "two_pointers_opposite"
+    },
+    {
+      "phrase": "as close as possible",
+      "meaning": "No exact hit is promised, so remember the closest sum so far. Start the best distance at float('inf') so the first sum always replaces it.",
+      "pointsTo": "toolkit:inf"
+    },
+    {
+      "phrase": "no particular order",
+      "meaning": "Only the sum is returned, not positions, so you're free to sort first. Sorting costs O(n log n), cheap next to the O(n²) search, and it lets each pointer move push the sum up or down.",
+      "pointsTo": "structure:sorted"
+    }
+  ],
+  "constraintReading": "len(nums) is at most 500, so checking every triple means about 2·10⁷ sums (O(n³)), slow in Python, while O(n²) is at most 2.5·10⁵ steps. That allows one fixed number plus one inward pass for the other two. Sorting first adds only O(n log n), and sorting in place keeps the extra space O(1).",
+  "related": [
+    {
+      "slug": "three-sum",
+      "relation": "Same sort, fixed number and two pointers, but it collects every triple that sums to exactly zero and skips duplicates instead of keeping the nearest sum."
+    }
+  ]
+}
