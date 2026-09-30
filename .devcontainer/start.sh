@@ -1,16 +1,28 @@
 #!/usr/bin/env bash
-# Starts SeeCode in a codespace ("postAttachCommand" in devcontainer.json): migrates the
-# database, builds the web app when the code has changed, then runs the API (port 8000,
-# internal) and the web app (port 3000). The web server forwards /api/v1/* to the API,
-# so the browser only needs port 3000.
+# Starts SeeCode in a codespace ("postAttachCommand" in devcontainer.json): pulls the
+# latest commits, migrates the database, builds the web app when the code has changed,
+# then runs the API (port 8000, internal) and the web app (port 3000). The web server
+# forwards /api/v1/* to the API, so the browser only needs port 3000.
 set -euo pipefail
-cd "$(dirname "$0")/.."
+self="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+cd "$(dirname "$self")/.."
 
 OPEN_HINT="If no tab opened, open the PORTS tab below and click the globe icon next to port 3000."
 
 if curl -fsS -o /dev/null http://127.0.0.1:3000/ 2>/dev/null; then
   echo "SeeCode is already running. $OPEN_HINT"
   exit 0
+fi
+
+# Fast-forward to the latest version of the branch (skipped when files were edited
+# locally), then restart this script from the updated copy.
+if [ "${1:-}" != "--updated" ]; then
+  if git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null \
+    && git rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
+    echo "Getting the latest version..."
+    git pull --ff-only --quiet || echo "Could not update; starting the version already here."
+  fi
+  exec bash "$self" --updated
 fi
 
 export NEXT_PUBLIC_API_URL=/api/v1
