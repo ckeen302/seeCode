@@ -24,3 +24,32 @@ Anything that departs from or fills a gap in `docs/SPEC.md` is recorded here.
 - 2026-09-30 · Content version = first 12 hex chars of SHA-256 over every `content/**/*.json` (path + bytes) · Section 16.1 asks for "a hash of the content/ folder"; the content README does not change it.
 - 2026-09-30 · docker compose also creates a `seecode_test` database · The API test suite rebuilds it from scratch on every run.
 - 2026-09-30 · M0 `validate_content.py` only checks that JSON parses · The full Section 10.7 rules belong to M1; CI runs the script from M0 on.
+- 2026-09-30 · pnpm 10.34 (latest 10.x), not 12 · Vercel supports pnpm up to 10 without an experimental Corepack setting.
+- 2026-09-30 · React 19.3.0 · Matches the React canary that Next 16.3.7 bundles for the App Router.
+- 2026-09-30 · Next.js 16 conventions: `proxy.ts` (formerly middleware) refreshes the Supabase session and gates routes; `pnpm lint` runs ESLint and Prettier directly (`next lint` was removed); `typecheck` runs `next typegen` first · Required by Next 16.
+- 2026-09-30 · Tailwind v4 maps tokens with `@theme inline` in `styles/globals.css` (v4's replacement for `theme.extend.colors`); the default palette, font sizes, weights, radii and shadows are reset so only Section 18 tokens exist · Class names match the spec (`bg-surface`, `text-muted`).
+- 2026-09-30 · The 18.2 type scale uses Tailwind's size names: xs 12/16, sm 13/20, base 15/24, lg 17/26, xl 20/28, 2xl 24/32, 3xl 32/40 · shadcn components and class merging work without custom config.
+- 2026-09-30 · Radii: `rounded-md` 6 px (inputs, chips, buttons), `rounded-lg` 10 px (cards, panels, dialogs), `rounded-full` pills · Section 18.3 is silent on buttons; they follow inputs.
+- 2026-09-30 · Two tokens beyond 18.1: `--on-accent` (text on accent; dark in the dark theme per 18.4, white in light) and `--popover-shadow` (18.3's dark value; lighter in the light theme) · Needed for primary buttons and popovers.
+- 2026-09-30 · shadcn/ui components come from the CLI (Radix base, Nova preset) and are rewritten to the spec tokens; the CLI is not a dependency and its Radix state variants are copied into globals.css · shadcn's own `--muted`/`--accent` mean different things than the spec's; the CLI package pulls in ts-morph, Babel and more just to ship one CSS file.
+- 2026-09-30 · Libraries that come with shadcn/ui: `radix-ui`, `cmdk` (Command, ⌘K), `class-variance-authority`, `cn` (shadcn's clsx + tailwind-merge replacement), `tw-animate-css` (dialog and popover transitions) · Part of the Section 13 shadcn/ui choice.
+- 2026-09-30 · Test companions: `vite` + `@vitejs/plugin-react` (Vitest's React transform), `jsdom`, `@testing-library/dom`, `@testing-library/jest-dom`, `@testing-library/user-event`, `@axe-core/playwright` · Standard partners of the Section 21 tools.
+- 2026-09-30 · One root `.env` for both apps: the API reads it through pydantic-settings; `next.config.ts` loads it with Node's `process.loadEnvFile` (real environment variables win) · Section 22.1 copies one `.env.example`; no extra dependency.
+- 2026-09-30 · `NEXT_PUBLIC_AUTH_DEV_BYPASS` (web) shows the dev user switcher; the chosen dev user lives in the `seecode-dev-user` cookie so proxy.ts can gate routes · Section 22.1 asks for a switcher but lists only the API variable.
+- 2026-09-30 · `NEXT_PUBLIC_SUPABASE_ANON_KEY` holds the Supabase anon key or its newer "publishable" key · Keeps the spec's variable name; Supabase renamed the key type and both work.
+- 2026-09-30 · Theme (`seecode:theme`: dark, light or system) and sidebar collapse (`seecode:sidebar`) are stored in localStorage and applied by an inline `<head>` script before paint · Next 16's documented flash-free pattern; Settings (M6) will also save the theme to the profile.
+- 2026-09-30 · Theme switcher sits in the sidebar footer (cycles dark → light → system) until Settings exists · M0 asks for a switcher; Settings is M6.
+- 2026-09-30 · The ⌘K palette is mounted app-wide and its hotkey listens in the capture phase · Section 17.4 says "anywhere"; capture phase keeps it working inside widgets that stop key events (dialogs now, Monaco from M2).
+- 2026-09-30 · `?` shortcut-help dialog deferred to M2/M3 · Only ⌘K exists in M0.
+- 2026-09-30 · Links to pages the proxy would redirect for the current visitor (private pages while signed out, `/` while signed in) are not prefetched (`AppLink`) · Next.js answers a redirected segment prefetch with a 404, which filled the browser console with errors.
+- 2026-09-30 · Placeholder pages stand in for routes of later milestones; Today already greets the user by name from `/me` · Sidebar links need targets; the greeting shows `/me` working end to end.
+- 2026-09-30 · TanStack Query key `["me", userId]` for the profile · Section 17.1 has no key for `/me`; including the user id refetches when users switch.
+- 2026-09-30 · CI runs on pull requests and pushes to `main` (not every branch push) and also builds the API Docker image · Avoids duplicate runs per PR commit; the image build keeps the API deployable.
+- 2026-09-30 · Dependabot and the high-severity audit gate (Section 20) wait for M9 · Launch requirements outside M0's task list; avoids automated PR noise early on.
+- 2026-09-30 · Playwright can use a preinstalled Chromium through `PW_CHROMIUM_PATH`; CI installs its own · The cloud dev box ships an older Chromium and cannot download browsers.
+- 2026-09-30 · Note for M9: the CSP (Section 20) must allow the inline theme script by nonce or hash · Otherwise the flash-free theme bootstrap breaks.
+
+## Open questions (waiting on the owner)
+
+- Section 18.1 requires ≥ 4.5:1 text contrast and ≥ 3:1 for UI borders, but `--border` measures 1.2–1.35:1 in both themes, and in the light theme `--good`, `--close`, `--accent-2` and `--error` measure 3.2–4.4:1 as text (`--muted` on `--surface-2` is 4.39:1). M0 uses the exact spec values; M0 screens avoid the failing combinations.
+- M0 acceptance "Sign-in with GitHub works against a Supabase dev project" needs a Supabase project, a GitHub OAuth app, and a web URL the owner's browser can reach (the cloud dev box is not reachable).

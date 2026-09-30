@@ -1,0 +1,218 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Dark is the default theme (Section 18.1). An inline script in app/layout.tsx sets
+   data-theme on <html> before first paint. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Radix state variants used by components/ui (adapted from shadcn/tailwind.css, MIT). */
+@custom-variant data-open {
+  &:where([data-state="open"]),
+  &:where([data-open]:not([data-open="false"])) {
+    @slot;
+  }
+}
+@custom-variant data-closed {
+  &:where([data-state="closed"]),
+  &:where([data-closed]:not([data-closed="false"])) {
+    @slot;
+  }
+}
+@custom-variant data-selected {
+  &:where([data-selected="true"]) {
+    @slot;
+  }
+}
+
+/* Desktop sidebar: collapsed by choice, or always icons-only below 1200 px (18.6). */
+@custom-variant sidebar-collapsed {
+  &:where(:root[data-sidebar="collapsed"] *) {
+    @slot;
+  }
+  @media (width < 1200px) {
+    @slot;
+  }
+}
+
+/* ---------------------------------------------------------------- 18.1 color tokens */
+
+:root {
+  --bg: #fafaf9;
+  --surface: #ffffff;
+  --surface-2: #f3f4f6;
+  --border: #e5e7eb;
+  --text: #111827;
+  --muted: #6b7280;
+  --accent: #4f5bd5;
+  --accent-2: #c26a1b;
+  --good: #1f9d63;
+  --close: #b7791f;
+  --wrong: #6b7280;
+  --error: #d64545;
+  --ptr-a: #4f5bd5;
+  --ptr-b: #c26a1b;
+  --ptr-c: #1f9d63;
+  --ptr-d: #a33bb0;
+  --window: rgba(79, 91, 213, 0.1);
+  --confirmed: rgba(31, 157, 99, 0.1);
+  --signal: rgba(183, 121, 31, 0.16);
+  /* Not in 18.1: text on an accent background, and the popover shadow (18.3). */
+  --on-accent: #ffffff;
+  --popover-shadow: 0 8px 24px rgba(17, 24, 39, 0.12);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg: #0d0f12;
+  --surface: #15181d;
+  --surface-2: #1c2027;
+  --border: #262b33;
+  --text: #e8eaed;
+  --muted: #9aa1ac;
+  --accent: #7c8cff;
+  --accent-2: #f2a65a;
+  --good: #4cc38a;
+  --close: #e5b454;
+  --wrong: #8b93a1;
+  --error: #f06a6a;
+  --ptr-a: #7c8cff;
+  --ptr-b: #f2a65a;
+  --ptr-c: #4cc38a;
+  --ptr-d: #d57be0;
+  --window: rgba(124, 140, 255, 0.14);
+  --confirmed: rgba(76, 195, 138, 0.14);
+  --signal: rgba(229, 180, 84, 0.22);
+  --on-accent: #0d0f12;
+  --popover-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}
+
+/* ---------------------------------------------------------------- Tailwind theme */
+
+@theme {
+  /* Only design tokens exist: no stray palette colors, sizes, weights or shadows. */
+  --color-*: initial;
+  --text-*: initial;
+  --font-weight-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+
+  /* 18.2 type scale on Tailwind's size names (size / line height). */
+  --text-xs: 12px; /* caption */
+  --text-xs--line-height: 16px;
+  --text-sm: 13px; /* secondary */
+  --text-sm--line-height: 20px;
+  --text-base: 15px; /* body */
+  --text-base--line-height: 24px;
+  --text-lg: 17px; /* lead */
+  --text-lg--line-height: 26px;
+  --text-xl: 20px; /* h3 */
+  --text-xl--line-height: 28px;
+  --text-2xl: 24px; /* h2 */
+  --text-2xl--line-height: 32px;
+  --text-3xl: 32px; /* h1 */
+  --text-3xl--line-height: 40px;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  /* 18.3 shape: 6 px inputs, chips and buttons; 10 px cards and panels; pills use rounded-full. */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  /* 18.5 motion */
+  --default-transition-duration: 150ms;
+  --default-transition-timing-function: ease-out;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-on-accent: var(--on-accent);
+  --color-good: var(--good);
+  --color-close: var(--close);
+  --color-wrong: var(--wrong);
+  --color-error: var(--error);
+  --color-ptr-a: var(--ptr-a);
+  --color-ptr-b: var(--ptr-b);
+  --color-ptr-c: var(--ptr-c);
+  --color-ptr-d: var(--ptr-d);
+  --color-window: var(--window);
+  --color-confirmed: var(--confirmed);
+  --color-signal: var(--signal);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, "SFMono-Regular", monospace;
+
+  --shadow-popover: var(--popover-shadow);
+}
+
+/* ---------------------------------------------------------------- base */
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    background-color: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--bg);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+  }
+
+  /* 18.3: a 2 px accent outline with a 2 px offset on every interactive element. */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+
+  b,
+  strong {
+    font-weight: 600;
+  }
+
+  code,
+  kbd,
+  pre,
+  samp {
+    font-family: var(--font-mono);
+  }
+}
+
+/* 18.5: respect the system setting (and, from M6, the Settings toggle). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+:root[data-reduced-motion="true"] *,
+:root[data-reduced-motion="true"] *::before,
+:root[data-reduced-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
