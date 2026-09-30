@@ -1,0 +1,390 @@
+{
+  "slug": "two-sum-ii",
+  "title": "Two Sum II (sorted input)",
+  "leetcodeUrl": "https://leetcode.com/problems/two-sum-ii-input-array-is-sorted/",
+  "difficulty": "medium",
+  "patternId": "two_pointers_opposite",
+  "order": 5,
+  "summary": "You get a list of integers `numbers`, sorted from smallest to largest (a value can repeat), and an integer `target`. Exactly one pair of different positions holds two numbers that add up to `target`. Return those two positions as a list, smaller first, counting from 1 instead of 0. Use only O(1) extra space: a few variables, but no dict, set or copy of the list.",
+  "examples": [
+    {
+      "input": "numbers = [1, 4, 6, 9, 13], target = 15",
+      "output": "[3, 4]",
+      "explanation": "6 + 9 = 15. They sit at indexes 2 and 3, which are positions 3 and 4 when you count from 1."
+    },
+    {
+      "input": "numbers = [2, 2, 5, 8], target = 4",
+      "output": "[1, 2]",
+      "explanation": "2 + 2 = 4. The two 2s sit at different positions, so they can form the pair."
+    },
+    {
+      "input": "numbers = [-8, -3, 0, 4, 10], target = -3",
+      "output": "[2, 3]",
+      "explanation": "-3 + 0 = -3. Negative numbers and a negative target work the same way."
+    }
+  ],
+  "constraints": [
+    "2 ≤ len(numbers) ≤ 3·10⁴",
+    "−1000 ≤ numbers[i] ≤ 1000",
+    "−1000 ≤ target ≤ 1000",
+    "Each number is at least as large as the one before it"
+  ],
+  "targets": {"time": "O(n)", "space": "O(1)"},
+  "entry": "twoSum",
+  "starterCode": "class Solution:\n    def twoSum(self, numbers: list[int], target: int) -> list[int]:\n        pass\n",
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "two_pointers_opposite",
+      "structures": ["array"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Use the sorted order: move l up when the sum is too small and r down when it is too big.",
+      "twistKeywords": [
+        [
+          "too small",
+          "too big",
+          "too large",
+          "too low",
+          "too high",
+          "too little",
+          "too much",
+          "not enough",
+          "less than",
+          "is less",
+          "more than",
+          "is more",
+          "greater",
+          "bigger",
+          "larger",
+          "higher",
+          "smaller",
+          "lower",
+          "below",
+          "above",
+          "exceed",
+          "overshoot",
+          "undershoot",
+          "short of",
+          "sum <",
+          "sum >",
+          "sum<",
+          "sum>",
+          "< target",
+          "> target",
+          "<target",
+          ">target",
+          "under target",
+          "over target",
+          "under the target",
+          "over the target"
+        ],
+        [
+          "move",
+          "moving",
+          "increment",
+          "decrement",
+          "increase",
+          "decrease",
+          "advance",
+          "shift",
+          "step",
+          "bump",
+          "++",
+          "--",
+          "+= 1",
+          "-= 1",
+          "+=1",
+          "-=1",
+          "inward",
+          "toward",
+          "shrink",
+          "narrow",
+          "slide",
+          "go left",
+          "go right",
+          "goes left",
+          "goes right",
+          "retreat",
+          "raise",
+          "drop",
+          "discard",
+          "rule out",
+          "rules out",
+          "eliminate",
+          "skip",
+          "l up",
+          "r down",
+          "left up",
+          "right down"
+        ]
+      ]
+    },
+    {
+      "id": "hash_map",
+      "patternId": "hashing",
+      "structures": ["hash_map"],
+      "time": "O(n)",
+      "space": "O(n)",
+      "twist": "Ignore the order: store each number's position in a dict and look up its partner target − x, as in Two Sum.",
+      "twistKeywords": [
+        [
+          "target -",
+          "target-",
+          "target −",
+          "target−",
+          "minus",
+          "subtract",
+          "difference",
+          "complement",
+          "partner",
+          "counterpart",
+          "missing",
+          "complet",
+          "other number"
+        ],
+        [
+          "map",
+          "dict",
+          "hash",
+          "seen",
+          "store",
+          "remember",
+          "save",
+          "look up",
+          "lookup",
+          "already",
+          "so far",
+          "previous",
+          "earlier",
+          "visited",
+          "cache",
+          "memo"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works in O(n) time, but the dict can hold up to n numbers: O(n) extra space. The target is O(1), and the sorted order makes the dict unnecessary."
+    },
+    {
+      "id": "all_pairs",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n²)",
+      "space": "O(1)",
+      "twist": "Check every pair of positions and return the first one whose numbers add up to target.",
+      "twistKeywords": [
+        [
+          "every pair",
+          "each pair",
+          "all pairs",
+          "all the pairs",
+          "every two",
+          "every combination",
+          "all combinations",
+          "nested",
+          "two loops",
+          "double loop",
+          "inner loop",
+          "two for",
+          "double for",
+          "brute"
+        ],
+        ["sum", "add", "plus", "+", "total", "target", "equal"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but checking every pair takes O(n²) time. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "sorted from smallest to largest",
+      "meaning": "Moving l right never lowers the sum, and moving r left never raises it. So comparing the sum with target tells you which pointer to move.",
+      "pointsTo": "two_pointers_opposite"
+    },
+    {
+      "phrase": "add up to",
+      "meaning": "You want a pair with a known sum. On sorted input, the sum of the two ends shows which end can't be in the pair: too small rules out the left number, too big rules out the right one.",
+      "pointsTo": "two_pointers_opposite"
+    },
+    {
+      "phrase": "O(1) extra space",
+      "meaning": "Two Sum's dict of seen numbers takes O(n) space, so it's out. Two indexes into the list fit the budget.",
+      "pointsTo": "two_pointers_opposite"
+    }
+  ],
+  "constraintReading": "len(numbers) can reach 3·10⁴, so checking every pair means up to about 4.5·10⁸ sums: O(n²) is too slow. Aim for O(n), a single pass. The O(1) space target rules out Two Sum's dict of seen numbers, so the sorted order has to do the work: two indexes that only move inward.",
+  "hints": {
+    "clarify": "Do you return the numbers or their positions, and does counting start at 0 or 1? Can one number pair with itself? Try [3, 5, 8, 11] with a target of 16 by hand: 8 + 8 would make 16, but there's only one 8, so it can't count twice. The pair is 5 + 11, at positions 2 and 4 when you count from 1, so the answer is [2, 4].",
+    "approach": "Two pointers from opposite ends. Put `l` on the first number and `r` on the last, and add the two. Because `numbers` is sorted, the sum tells you which pointer to move. If it's smaller than `target`, the number at `l` falls short even with the largest number left, so it can't be in the pair: move `l` right. If it's bigger, the number at `r` overshoots even with the smallest number left: move `r` left. Each step rules out one number for good, so one pass finds the pair.",
+    "whyNot": "Two Sum's dict works here in O(n) time, but it can hold up to n numbers, so it takes O(n) extra space, and the target is O(1). Checking every pair needs no extra space but takes O(n²) time. A binary search for each number's partner fits in O(1) space but costs O(n log n) time. Two pointers do better because one comparison rules out a whole number.",
+    "slots": {
+      "setup": "Put `l` on the first index and `r` on the last: the smallest number and the largest.",
+      "loop": "Keep going while `l` is strictly left of `r`, since one number can't pair with itself. A pair always exists, so you'll find it before they meet.",
+      "update": "If the sum is smaller than `target`, move `l` one step right to a bigger number. If it's bigger, move `r` one step left to a smaller number.",
+      "record": "Add the numbers at `l` and `r` and compare the sum with `target`. When they're equal, you've found the pair.",
+      "return": "Return the two positions counting from 1: one more than `l`, then one more than `r`. `l` is left of `r`, so the smaller position comes first. A pair always exists, so the empty list after the loop is only a fallback."
+    }
+  },
+  "solution": {
+    "code": "class Solution:\n    def twoSum(self, numbers: list[int], target: int) -> list[int]:\n        l, r = 0, len(numbers) - 1\n        while l < r:\n            total = numbers[l] + numbers[r]  # viz:sum\n            if total == target:\n                return [l + 1, r + 1]  # viz:found\n            if total < target:\n                l += 1  # viz:move_l\n            else:\n                r -= 1  # viz:move_r\n        return []\n",
+    "explanation": "Each round either returns or moves one pointer inward, so the gap between `l` and `r` shrinks by one every time, and the loop runs at most n − 1 times: O(n) time. You only keep two indexes and one sum, so the extra space is O(1).",
+    "toolkit": []
+  },
+  "viz": {
+    "primary": "numbers",
+    "pointers": [
+      {"var": "l", "into": "numbers", "label": "l", "color": "a"},
+      {"var": "r", "into": "numbers", "label": "r", "color": "b"}
+    ],
+    "window": null,
+    "range": null,
+    "roles": {"stack": [], "queue": [], "hidden": []},
+    "confirmed": {"into": "numbers", "outside": ["l", "r"]},
+    "events": [
+      {
+        "id": "sum",
+        "at": "sum",
+        "label": "sum",
+        "say": "{numbers[l]} and {numbers[r]} add up to {numbers[l] + numbers[r]}. The target is {target}"
+      },
+      {
+        "id": "move_l",
+        "at": "move_l",
+        "label": "move l",
+        "say": "{total} is less than {target}, and {numbers[r]} is the largest number left, so no pair with {numbers[l]} can reach {target}. l moves right"
+      },
+      {
+        "id": "move_r",
+        "at": "move_r",
+        "label": "move r",
+        "say": "{total} is more than {target}, and {numbers[l]} is the smallest number left, so every pair with {numbers[r]} overshoots. r moves left"
+      },
+      {
+        "id": "found",
+        "at": "found",
+        "label": "found",
+        "say": "{total} is the target, so return [{l + 1}, {r + 1}], one more than indexes {l} and {r}"
+      }
+    ],
+    "predict": [
+      {
+        "atEvent": "sum",
+        "occurrence": 1,
+        "ask": "Will l move next?",
+        "kind": "yesno",
+        "answerWhen": "numbers[l] + numbers[r] < target"
+      },
+      {
+        "atEvent": "move_l",
+        "occurrence": 1,
+        "ask": "What will the next sum be?",
+        "var": "total",
+        "kind": "value"
+      },
+      {
+        "atEvent": "sum",
+        "occurrence": 2,
+        "ask": "Will l move next?",
+        "kind": "yesno",
+        "answerWhen": "numbers[l] + numbers[r] < target"
+      }
+    ]
+  },
+  "tests": [
+    {"id": "e1", "args": [[1, 4, 6, 9, 13], 15], "expected": [3, 4], "hidden": false},
+    {"id": "e2", "args": [[2, 2, 5, 8], 4], "expected": [1, 2], "hidden": false},
+    {"id": "e3", "args": [[-8, -3, 0, 4, 10], -3], "expected": [2, 3], "hidden": false},
+    {"id": "h1", "args": [[-5, 7], 2], "expected": [1, 2], "hidden": true},
+    {"id": "h2", "args": [[-10, -4, 1, 3, 20], 10], "expected": [1, 5], "hidden": true},
+    {"id": "h3", "args": [[1, 1, 1, 4, 4], 8], "expected": [4, 5], "hidden": true},
+    {"id": "h4", "args": [[-9, -7, -4, -2, -1], -13], "expected": [1, 3], "hidden": true},
+    {"id": "h5", "args": [[-3, 0, 0, 5], 0], "expected": [2, 3], "hidden": true},
+    {"id": "h6", "args": [[-1000, 0, 400, 999, 1000], -1000], "expected": [1, 2], "hidden": true},
+    {"id": "h7", "args": [[-6, -1, 2, 3, 8, 15], 5], "expected": [3, 4], "hidden": true},
+    {"id": "h8", "args": [[-1000, -999, -1, 1000], -1000], "expected": [2, 3], "hidden": true},
+    {
+      "id": "h9",
+      "args": [
+        [
+          -999, -994, -994, -993, -986, -986, -986, -983, -980, -975, -974, -972, -969, -967, -963,
+          -958, -955, -953, -951, -946, -945, -942, -933, -932, -930, -930, -930, -929, -926, -925,
+          -922, -921, -919, -919, -918, -917, -912, -910, -910, -909, -907, -907, -906, -906, -906,
+          -906, -904, -902, -899, -898, -898, -898, -896, -894, -893, -891, -889, -887, -885, -885,
+          -877, -877, -876, -876, -874, -874, -872, -871, -870, -869, -868, -866, -866, -865, -864,
+          -864, -861, -861, -861, -860, -860, -859, -857, -854, -849, -848, -848, -846, -845, -845,
+          -843, -843, -842, -836, -835, -832, -830, -827, -823, -820, -819, -815, -809, -807, -807,
+          -806, -806, -803, -801, -800, -800, -799, -798, -795, -790, -790, -786, -785, -783, -782,
+          -782, -780, -779, -775, -775, -773, -772, -771, -767, -764, -764, -762, -762, -760, -754,
+          -754, -753, -743, -737, -737, -728, -727, -724, -722, -721, -720, -718, -714, -711, -705,
+          -705, -700, -692, -677, -676, -676, -676, -672, -670, -667, -667, -664, -659, -655, -653,
+          -652, -651, -651, -650, -647, -647, -646, -643, -638, -635, -635, -633, -631, -631, -624,
+          -619, -616, -609, -609, -608, -603, -600, -600, -599, -598, -591, -590, -587, -586, -584,
+          -582, -581, -578, -570, -568, -566, -566, -565, -564, -561, -560, -558, -557, -549, -545,
+          -543, -542, -538, -538, -538, -536, -532, -530, -524, -523, -522, -522, -520, -514, -511,
+          -511, -508, -504, -503, -501, -497, -490, -490, -485, -484, -482, -481, -478, -478, -476,
+          -471, -470, -469, -466, -464, -464, -461, -459, -457, -457, -456, -451, -451, -451, -450,
+          -450, -444, -442, -442, -442, -439, -435, -434, -433, -430, -430, -415, -415, -415, -412,
+          -406, -398, -394, -393, -393, -392, -392, -392, -392, -382, -376, -376, -371, -370, -369,
+          -365, -362, -352, -350, -349, -348, -345, -345, -345, -345, -341, -339, -337, -337, -330,
+          -326, -325, -323, -321, -319, -316, -315, -315, -314, -313, -303, -302, -301, -300, -298,
+          -298, -286, -285, -285, -284, -283, -279, -276, -276, -273, -269, -269, -268, -268, -267,
+          -258, -257, -256, -256, -252, -251, -249, -249, -247, -247, -242, -233, -231, -229, -228,
+          -226, -221, -221, -217, -216, -215, -214, -210, -210, -209, -208, -208, -205, -198, -196,
+          -194, -193, -193, -189, -188, -187, -182, -178, -175, -171, -170, -168, -166, -165, -164,
+          -161, -161, -160, -160, -156, -156, -152, -152, -150, -149, -149, -149, -148, -145, -145,
+          -143, -143, -143, -140, -138, -138, -134, -134, -132, -126, -125, -124, -124, -120, -117,
+          -108, -108, -105, -99, -96, -91, -91, -90, -82, -80, -80, -73, -72, -68, -63, -60, -56,
+          -53, -48, -45, -45, -44, -38, -37, -32, -29, -24, -21, -21, -14, -11, -10, -10, -9, -9,
+          -4, -2, 2, 4, 10, 11, 11, 16, 18, 18, 18, 21, 21, 21, 24, 24, 25, 27, 28, 31, 31, 33, 35,
+          36, 36, 38, 42, 43, 43, 44, 44, 47, 47, 48, 48, 48, 49, 50, 51, 61, 61, 62, 63, 63, 67,
+          68, 72, 72, 78, 79, 81, 81, 83, 84, 84, 85, 85, 91, 91, 91, 91, 92, 92, 96, 96, 96, 100,
+          105, 107, 110, 111, 115, 117, 117, 118, 118, 118, 118, 122, 125, 128, 132, 134, 136, 137,
+          142, 143, 145, 149, 150, 152, 153, 153, 154, 155, 155, 156, 157, 159, 160, 163, 164, 164,
+          165, 165, 168, 170, 170, 171, 173, 176, 176, 177, 178, 178, 183, 184, 186, 186, 188, 188,
+          189, 189, 191, 192, 194, 195, 196, 196, 198, 201, 201, 202, 202, 203, 206, 207, 211, 213,
+          214, 220, 223, 224, 224, 225, 230, 231, 231, 231, 234, 234, 240, 241, 244, 250, 250, 251,
+          251, 252, 253, 256, 256, 258, 258, 264, 264, 264, 265, 267, 268, 268, 268, 272, 272, 274,
+          274, 279, 281, 283, 284, 290, 291, 299, 300, 304, 306, 309, 309, 310, 310, 318, 320, 321,
+          322, 322, 323, 323, 323, 328, 329, 332, 334, 339, 343, 344, 348, 348, 348, 349, 350, 350,
+          355, 357, 359, 360, 364, 364, 367, 369, 372, 380, 381, 382, 383, 387, 392, 396, 397, 398,
+          398, 399, 400, 407, 407, 412, 414, 414, 414, 415, 419, 426, 426, 427, 427, 428, 431, 433,
+          436, 443, 443, 447, 448, 448, 448, 448, 449, 455, 459, 459, 459, 459, 461, 461, 468, 469,
+          472, 472, 473, 483, 483, 484, 490, 492, 494, 495, 495, 500, 503, 504, 504, 509, 511, 512,
+          517, 518, 518, 520, 522, 523, 524, 524, 524, 525, 525, 526, 526, 526, 528, 532, 532, 533,
+          534, 536, 536, 537, 538, 538, 539, 539, 540, 540, 541, 541, 541, 542, 544, 544, 546, 547,
+          550, 553, 555, 556, 556, 557, 557, 558, 558, 560, 565, 568, 569, 573, 574, 575, 577, 580,
+          582, 582, 584, 585, 585, 585, 589, 597, 599, 600, 602, 604, 605, 612, 614, 616, 617, 620,
+          624, 625, 625, 628, 628, 629, 629, 630, 630, 632, 633, 637, 642, 643, 643, 644, 644, 647,
+          649, 650, 652, 653, 654, 655, 662, 663, 663, 664, 664, 665, 670, 672, 674, 674, 677, 683,
+          683, 683, 684, 685, 685, 687, 687, 687, 690, 691, 691, 696, 699, 704, 706, 708, 708, 710,
+          711, 712, 713, 716, 716, 720, 725, 726, 731, 734, 738, 741, 742, 747, 754, 757, 758, 758,
+          758, 760, 762, 762, 762, 764, 767, 767, 769, 771, 774, 774, 776, 777, 778, 778, 779, 779,
+          781, 782, 782, 785, 786, 793, 794, 794, 798, 798, 800, 800, 803, 805, 808, 810, 810, 811,
+          812, 812, 817, 818, 819, 819, 824, 824, 825, 826, 828, 831, 834, 835, 836, 836, 836, 838,
+          844, 846, 846, 854, 854, 856, 860, 862, 867, 870, 870, 871, 872, 873, 876, 878, 884, 884,
+          884, 884, 885, 887, 888, 888, 892, 892, 893, 898, 898, 900, 902, 903, 905, 906, 911, 913,
+          913, 914, 915, 915, 915, 915, 918, 921, 925, 925, 926, 929, 931, 931, 931, 933, 934, 941,
+          942, 945, 947, 949, 949, 950, 951, 953, 958, 962, 962, 968, 970, 975, 976, 977, 978, 981,
+          984, 984, 987, 993, 993, 993, 993
+        ],
+        137
+      ],
+      "expected": [458, 510],
+      "hidden": true
+    }
+  ],
+  "related": [
+    {
+      "slug": "two-sum",
+      "relation": "Same pair sum, but the numbers come in no particular order, so a dict of seen numbers finds each partner instead of two pointers, at the cost of O(n) space."
+    },
+    {
+      "slug": "three-sum",
+      "relation": "Runs this pair search once for each fixed number of a sorted list, aiming at minus that number, and skips repeated values so no triple appears twice."
+    },
+    {
+      "slug": "binary-search",
+      "relation": "Also leans on sorted input, but checks the middle to find one value instead of moving both ends to find a pair."
+    }
+  ]
+}

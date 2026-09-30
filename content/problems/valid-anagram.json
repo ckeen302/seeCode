@@ -1,0 +1,281 @@
+{
+  "slug": "valid-anagram",
+  "title": "Valid Anagram",
+  "leetcodeUrl": "https://leetcode.com/problems/valid-anagram/",
+  "difficulty": "easy",
+  "patternId": "hashing",
+  "order": 2,
+  "summary": "You get two strings, `s` and `t`. Decide whether `t` is an anagram of `s`, meaning the two hold the same letters in any order, with each letter appearing the same number of times in both. Identical strings count as anagrams too.",
+  "examples": [
+    {
+      "input": "s = \"state\", t = \"taste\"",
+      "output": "true",
+      "explanation": "Both have two t's and one each of s, a and e."
+    },
+    {
+      "input": "s = \"seas\", t = \"ease\"",
+      "output": "false",
+      "explanation": "Both use only s, e and a, but \"seas\" has two s's and one e, while \"ease\" has two e's and one s."
+    },
+    {
+      "input": "s = \"earth\", t = \"heat\"",
+      "output": "false",
+      "explanation": "Every letter of \"heat\" is also in \"earth\", but the \"r\" in \"earth\" is left over."
+    }
+  ],
+  "constraints": ["1 ≤ len(s), len(t) ≤ 5·10⁴", "s and t contain only lowercase English letters"],
+  "targets": {"time": "O(n)", "space": "O(1)"},
+  "entry": "isAnagram",
+  "starterCode": "class Solution:\n    def isAnagram(self, s: str, t: str) -> bool:\n        pass\n",
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "hashing",
+      "structures": ["counter"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Count how many times each letter appears in s and in t, and compare the counts.",
+      "twistKeywords": [
+        [
+          "count",
+          "freq",
+          "tally",
+          "tallies",
+          "how many",
+          "often",
+          "occur",
+          "number of times",
+          "number of each",
+          "amount of each",
+          "times each",
+          "histogram",
+          "26"
+        ],
+        [
+          "compar",
+          "equal",
+          "same",
+          "match",
+          "==",
+          "identical",
+          "differ",
+          "both",
+          "each string",
+          "two strings",
+          "s and t",
+          "t and s",
+          "against",
+          "subtract",
+          "decrement",
+          "decreas",
+          "reduc",
+          "minus",
+          "-=",
+          "cancel",
+          "zero",
+          "negative",
+          "below 0",
+          "use up",
+          "used up",
+          "run out",
+          "runs out",
+          "left over",
+          "leftover"
+        ]
+      ]
+    },
+    {
+      "id": "sort_compare",
+      "patternId": "brute_force",
+      "structures": ["sorted"],
+      "time": "O(n log n)",
+      "space": "O(n)",
+      "twist": "Sort both strings and check that the sorted letters are equal.",
+      "twistKeywords": [
+        ["sort"],
+        ["compar", "equal", "same", "match", "==", "identical", "differ", "check"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but sorting takes O(n log n) time, and the sorted copies take O(n) space. The target is O(n) time and O(1) space."
+    },
+    {
+      "id": "cross_off",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n²)",
+      "space": "O(n)",
+      "twist": "For each letter of s, find a matching letter in a list copy of t and remove it.",
+      "twistKeywords": [
+        [
+          "remove",
+          "delete",
+          "cross off",
+          "cross out",
+          "cross it off",
+          "strike",
+          "pop",
+          "discard",
+          "erase",
+          "take out",
+          "take it out"
+        ],
+        [
+          "find",
+          "search",
+          "look for",
+          "locate",
+          "scan",
+          "index",
+          "each letter",
+          "every letter",
+          "each char",
+          "every char",
+          "one by one",
+          "nested",
+          "loop"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but every search and removal scans the list again, so it takes O(n²) time. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "the same letters in any order",
+      "meaning": "Order is the one thing that doesn't matter, so describe each string by something that ignores it: how many times each letter appears. A hash map keeps those counts with O(1) updates.",
+      "pointsTo": "hashing"
+    },
+    {
+      "phrase": "the same number of times",
+      "meaning": "You need how often each letter appears, not just which letters appear. A Counter counts every letter of a string in one pass, and it gives 0 for a letter it has never seen.",
+      "pointsTo": "toolkit:counter"
+    },
+    {
+      "phrase": "lowercase English letters",
+      "meaning": "Only 26 different letters can appear, so the counts have at most 26 keys. That's O(1) extra space, however long the strings get.",
+      "pointsTo": "structure:counter"
+    }
+  ],
+  "constraintReading": "len(s) and len(t) can each reach 5·10⁴. Matching every letter of t against the letters of s is O(n²), up to 2.5·10⁹ steps: far too slow. Aim for O(n), one read of each string. Only 26 different letters can appear, so the counts take O(1) space however long the strings get.",
+  "hints": {
+    "clarify": "Does the order of the letters matter? Does it matter how many times a letter appears? No, and yes. Try \"lead\" and \"deal\" by hand: each has one l, one e, one a and one d, so the answer is true. Now try \"aab\" and \"abb\": both use only a and b, but the first has two a's and the second has one, so the answer is false.",
+    "approach": "Hash map and counting. Two strings are anagrams exactly when every letter appears the same number of times in both, so compare their letter counts. Count the letters of `s` with a `Counter`, then walk through `t` and use up one copy for each of its letters. If a letter of `t` finds no copy left, `t` has more of it than `s` does. Check the lengths first: when they're equal and no letter runs out, no copy can be left over either. Each count and lookup takes O(1) time, so one pass over each string is enough.",
+    "whyNot": "Sorting both strings and comparing them works, but sorting costs O(n log n) time and makes sorted copies, while the target is O(n) time and O(1) space. Crossing letters off a list copy of `t` works too, but every search scans that list again: O(n²). Comparing the sets of letters is wrong: \"aab\" and \"abb\" have the same set but different counts.",
+    "slots": {
+      "setup": "First compare the lengths: if they differ, return `False` right away. Otherwise count the letters of `s` in a `Counter` called `counts`. The key is a letter; the value is how many copies of it are still unused.",
+      "loop": "Visit the letters of `t` one at a time.",
+      "update": "Use up one copy of the letter: lower its count by one.",
+      "record": "Before you use a copy, look the letter up in `counts`. If its count is 0, or the letter was never in `s`, then `t` has more of it than `s`: return `False`.",
+      "return": "If every letter of `t` found a copy, return `True`. The lengths are equal, so no copy is left over."
+    }
+  },
+  "solution": {
+    "code": "class Solution:\n    def isAnagram(self, s: str, t: str) -> bool:\n        if len(s) != len(t):\n            return False  # viz:uneven\n        counts = Counter(s)  # viz:count\n        for c in t:\n            if counts[c] == 0:  # viz:check\n                return False  # viz:ran_out\n            counts[c] -= 1  # viz:use\n        return True  # viz:done\n",
+    "explanation": "Counting `s` reads each of its n letters once, and the loop reads each letter of `t` once with O(1) work per letter, so the time is O(n). `counts` has at most 26 keys, one per lowercase letter, so the extra space is O(1). A `Counter` gives 0 for a letter it has never seen, so a letter of `t` that isn't in `s` needs no special case. `Counter(s) == Counter(t)` compares the two counts in one line; the loop does the same work and stops at the first letter that runs out.",
+    "toolkit": ["counter"]
+  },
+  "viz": {
+    "primary": "t",
+    "pointers": [],
+    "window": null,
+    "range": null,
+    "roles": {"stack": [], "queue": [], "hidden": []},
+    "confirmed": null,
+    "events": [
+      {
+        "id": "uneven",
+        "at": "uneven",
+        "label": "lengths differ",
+        "say": "s has {len(s)} letters but t has {len(t)}, so one of them has a letter the other can't match: not an anagram"
+      },
+      {
+        "id": "count",
+        "at": "count",
+        "label": "count s",
+        "say": "Both strings have {len(s)} letters. Count the letters of s: each count is how many copies t may use"
+      },
+      {
+        "id": "check",
+        "at": "check",
+        "label": "look up",
+        "say": "Next letter of t: {c!r}. Is a {c!r} still left in counts?"
+      },
+      {
+        "id": "use",
+        "at": "use",
+        "label": "use",
+        "say": "counts has a {c!r} left, so use it: take one off counts[{c!r}]"
+      },
+      {
+        "id": "ran_out",
+        "at": "ran_out",
+        "label": "ran out",
+        "say": "No {c!r} is left in counts, so t has more {c!r}s than s does: not an anagram"
+      },
+      {
+        "id": "done",
+        "at": "done",
+        "label": "return",
+        "say": "Every letter of t used up a copy from s, and the lengths are equal, so nothing is left over: t is an anagram of s"
+      }
+    ],
+    "predict": [
+      {
+        "atEvent": "use",
+        "occurrence": 1,
+        "ask": "Will counts still have a copy of this letter after this step?",
+        "kind": "yesno",
+        "answerWhen": "counts[c] > 1"
+      },
+      {
+        "atEvent": "check",
+        "occurrence": 4,
+        "ask": "Is a copy of this letter still left in counts?",
+        "kind": "yesno",
+        "answerWhen": "counts[c] > 0"
+      }
+    ]
+  },
+  "tests": [
+    {"id": "e1", "args": ["state", "taste"], "expected": true, "hidden": false},
+    {"id": "e2", "args": ["seas", "ease"], "expected": false, "hidden": false},
+    {"id": "e3", "args": ["earth", "heat"], "expected": false, "hidden": false},
+    {"id": "h1", "args": ["q", "q"], "expected": true, "hidden": true},
+    {"id": "h2", "args": ["x", "y"], "expected": false, "hidden": true},
+    {"id": "h3", "args": ["aabbc", "abbcc"], "expected": false, "hidden": true},
+    {"id": "h4", "args": ["zzzz", "zzzz"], "expected": true, "hidden": true},
+    {"id": "h5", "args": ["zzz", "zzzz"], "expected": false, "hidden": true},
+    {"id": "h6", "args": ["abc", "abd"], "expected": false, "hidden": true},
+    {"id": "h7", "args": ["ad", "bc"], "expected": false, "hidden": true},
+    {"id": "h8", "args": ["stressed", "desserts"], "expected": true, "hidden": true},
+    {"id": "h9", "args": ["pepper", "hopper"], "expected": false, "hidden": true},
+    {
+      "id": "h10",
+      "args": [
+        "abwfnckjwvyxhahznnfvnehjondfbkmrnhajujhycjrhwwirynisxcbehksbvxcjabfzskkkwjuwxbqjwjadcvqennkvwywxnsvcmwjywktmbyjcvcgwpnevkvvgvrwuqxflqrnlnqyxdvcakjkwxfcykwlnvswkgvymrxqerdddvnsxsuhgrnjijkwcfyxhmquzfrcvdrnajrsxrlnjnrvqnyvddyoykrbucuuiiqghvnwnxjkgfmxjxrvlyatwcrhvwxrrnjwvcvndwssxmqntuflsrwxhcclscqzvbqstldrrmqbhrrnjrcmbavstdmnycdikukhdyyrwsvsnahrqfnqrrkswlghqintvnrgncucuidvdjhqhurpflyuqvrzuidzkunohwrlylyzvrrxugucffsrnisyfryyxrlqdkhkwcztdrbjrxixwdylsckixfftyjqknbcgkiinwmykqseksnfvdqqkxfmkcswsbcfkuigpqxudxlkwkdtdawcnnqtumqnkwnvxxehhscjtzxlfdjllkcxxrvjdeuulywhmnwnfrxcjwuvelhnlvbywwjqfswdcxhbclnufvsmnnimnjqssjxercwuquvdrdvhldialadpjvxwngxlvrdudwvfxuqxakdshzulvyxcgjmcsmwjcsjjqndyvrelawkbmrdgnonirkqwyazejfmiiwjrxvrfxzykgcwlluqshjsxdqiqjxrxvhxknlyfzkxrvdsxnqdiyqvgwixdtdnknrxvlnwwwbigskfvtbcdblhydnlwivwqqybxayivudmbqkmxqargimbvbjdxnmxdcvnrffkvsnsmhgjdxbksskfsddqivvybyzwddwxicrxfcsbxjwydrrqnjbxjmfsvdrqevncbuvycyrjnfisxqtdbzfzujpalwbfqhhvljlbvledzsjvnczvwsdjsxkwhusudcbkdhkajfdhrwrjautxnyfqlcmlvesgcnrgvdrdvxafyrxsnrycmtkihbpagjwnyhjbvzfwswwmlxjwtiifforvkhnwnmhwhlvjvkuafqvchqmmviajlfvbmqvldmxhsxykrwfbvqilbhwyezbzuraibyuklinonakimddjcqdmqlvvnkitlasrbamnhxmlfdarnywqgwrjbccuyzsldyldsxdljdgjrrjuawclwghrvsdnzihszcwwlltvgsnqilwadhlbalvythlkllqgcxliwkiusvsrjjfesjztyfztjksdnvhumfvrvkwwzqslknzwlxllwrzcllywmxiqjhmssfflmqzjffgwcfgwtnkfcgddfhsaluinnjnskjcivrhnvvvdudihqxkjdxzfwdvehjntjsfzuhjnfmjxqldkbnhdhvrwsxxynswhaikjtwrxqxfqjlxytgmvmmlxechqfvnfkquabqcdhzvkfqxlwdkduifkswuqwsxhjvrcrdjfjxmvdfnxvhzulztvnikqvnccnkdhkswulklgbxixbkdcxtynxwqjxxzybpvgrejdzswhvsatrhirwiyzrxjawrkznilhwxzjyyvsxssldxnaxdnvrqsnymshrhkrqqzxwaviythcqikjfzvjykfmykbxjnkvkydvjurwycgfjxvxjnhdlxwkinmjmtjlqrysgsqvyrhecjarwaddcnyseigwpvskkfcjkxmcjwkuqwrjkohczfldcrnttazxdarrcnyvvesvbwfxrwawstlganfqqkwaijnfdiyhraxxkgrtnaivvcjvbnzwxxnbgfquvlbmfyaydxzrnbuxzvzdscnjlzabswvxuqwysgqvsnrnlrmvawnuwwfsuqadhybfjqviszrwvszdjrwfxykuyagrsnnkdpmkrjrqxcunxcfjtwavlqjlsiiydnavkenggyyvsyqxsqvvdxvqdivcvagtasujbhcdvnniurvoqtjcxnhhfdxivgfshxrylttvllkvchh",
+        "klxfsvcxjqflimkkblzivqhtnhlhhjyviwfgbwqjnswvbjcntjnxwzxwkdprkrsisxqlsxyhwzgfbfbzhdxjvrrcvduidfydvhvxnwjdhvlkxnjeubwtawwmfccirvsyrfnlelblmfhrcddhfwqpjnjwoidhcnvqnrrgsncrwcniswydqwkcjjdeqndnwsvsjmfgvlcwiihdzkuhrgzqnhkciinnbnnnbvgtvqznnfgvicsyiwrudcvrlcnxsyrvnqdkvbukyywndhxblhkxqdqavqhilrixfmlwnhfmsfzlqsicxujsfvgwrxyjqjzqsaxvsuyvarwhqrwrmutrasebqlvmhraxwqtyljvbfmnvkulnhmlrcfnvcxwqylmdsnmjjliceyjnwskyirdztebixblckdvdasdlwukrnnxjbljwltjdsaqtadsximdxaluuvrciwxrgkvxlsskhshvvfklfyyvwsfeshsoxmrvdryfuwxvulmdckjnxijijnwqxhlqrkedbdngufdqyvxtmzjaxinwrndjuriqpjsqjrhulnhvkdbvxjmzwtgvzqkksrxwuxpvtmacachnnhzhnclvhvqksrcndrbkxzdtnsdvwmcnfarjrhxbcsjkshvdufnkvvwwwjiyqydujkbywtbccdqszvrkwpyqcsnfztfcnaqnnhxvivvwtxdjlxrnfhjwiwdrskvkdhllkfwvwxczsrwnjzelnqdtkjbcssytuvajmwfuaaulbctdhjsauvvcscascrvbwxsisfkrschcydnmancyvrxfzntqduihyklqdenrfrgjkyrjyivfxhqbetlauxrxfqtmskwxwllkcmdlrnzrnarorqirlwwdlzhssgwmqvmhywmygnjnkmckckcdirxgdwryycasohwishvzlgxxlvgxvglwqxvwznfxxuwkswigcqmfnnvejycsrvjncciltjmvushyhlrhmxsalxwhdxawdwreyvjuqyjrgmrlnxknfkudvnwxszqkarcctjjmrgscwrcnjsujqzwjxucdvjvxdjsvvovbioqyshqfiowedsjqrknwfjdzsqxycfjwyvvdnckmklfnxrvrmvamtxbaydkfdtvfwvnnjfdcqhhjxszquryxyeqlbmxhzmwdkycqcfngajhqtnfrmxinnzimsjxsjdkrvxjwdlzmdavwxksxxxkcixmcjyjlcadkjzizsbjbvqkxvlbiyzdunnscdkninqvzyyfbqyfwuhcafupnqdsuugwnxbcarrivjyhhfbnrvxrknxdnfnavswfquiavgrjilsxfsflyjwcyhvcmbrfdehjjrzfqmhsjwhijgwaxaglxalqqmkrxbkllsysijnrlvtrbiuxsndyqtyrlxqwrdlhenmwxjplwkdwfassvlghykviixiiewfjaizhulntanfwmtrdzvlyxaxuyvwuflvckzgwuwvzhrzhqdvryxyuuxlhxulyeulabjvexxnmbjvqdrwqkdicmhfcbqgvnfhxdunwkvdhjrmgxfrksqjsbcbnwvdsgvfnrvqwnlkdybckvkvavwfzyjfyafvfywlzfknlqdrkudhdkgxxkmbmulvxijkdbnvrywjatsyjyyfqgfbqzrvwxmrjwfdrxdkjtvxphoktjnxsvjewrrrjsvadjlnzrsxtkvtxvvrvvsinhtxnacadtqgxbwbrffjxwiuajhrdyybxnwkwiqndxgqgadcyvagikdmclcwrsvhvqiyydgwpwrqlbcankwkrtsqeuvsrfmuwzunlzyvkgqcgjczsddqwcnfvgxnkrdjnnrqdruanduqdxhftyqrwhukrndnxhwkvjzkevbxjsivhwkmxvxnqdwulfnavlggyqaklwfkgbyzysugfqiinlyuwhvykdvksvxjsxuibzccqqdfjwxyabkvyswjdjllnbkvssdlsqyfxjblrknudhhnjrleckn"
+      ],
+      "expected": true,
+      "hidden": true
+    },
+    {
+      "id": "h11",
+      "args": [
+        "rbcacakhkkpdwszsvdslrfsrvcximfcfhumcsrncjhbwcjxmfqcatcvrvzuanfcidclyqmnhsvclflyainamnjgsiksbzgtllwrrnshadzmrngrakxrdgbzkfedunwqxhvvlatcsxrvqrvakxskflqacnlxnddidjibsujbmnjgdnrlwcuyfhrlajanqdckgfaaiziqnlzequdkysbkxkufxvmzjfinsdslrbdrrrsqvjihnrqcnuhxjiffthwyddqnnvriykydnhalnslqvsrwnsdnstdnzhrdxuijvylfqewucwwbwuxdsbxaswdidbdjiwhgsvrslrcvwyzhyfxbqulujvnrqdselqdhvjykgyfzqvzixxluhctvysgdadkgkyjqkcrfxnyxldlnzqwbwfvnxtnngvfbihckcrhewqoeyjrlnlzmjvvavrjzwymkxbvncykuuhvusghyqyeazxbshazenbnvdrhbrcvdmqvfnxvvuwldskuulqlazigncrtnjjdydywfcydlsyddwdchnnkdvxnwzejgrnljqvrivssryfwyavdlucwaavsxqbtknmfblrswvlrzraqckhbsbleirirsyrjwywszvqtyrgqxwxrquuaqfhhflnnwjcwwemiddrhidkmrgtqtvjxnvjlvfiwwafeltjxqdnnjdwmkejnvvikhyisusvwnrcnmkujhfrdrwwaybqknksnuevncwqdrfjkfdbafddrnfvwxnjwkuqsdhvxxbajzccbxmcxvdiblkfmrlnrblizarsvnxuwdxwcdwtrbsqcvvsgqxxvbizvmdktjxkvffmwkltczsvotmsutmmaczvwjriqyenvvyviautyivjwnlxlnxlqhlqhcjycydackfbszxlzxnfnyifknvmkglqiyvevqfabblvaqcsngnjrixixhfknnejiifelalhxdvyxsfajsphjbishenxvdwuwsqidjuxpjlmlnnsjjqdwdydmzslbrwuwbifcsalqahzvxjsfhgcnhtvxcfyjamuwkryxnxrtwramauivlazviduykvrdkaalxrcsfwvdfyqcsucqealnkskdzrqxfaxexjmblvhrwrnwrzvvewnftybkcgwvhkhfxxznwihdlieqvcmhyhmrykyusupnrzqvqysydazikrklxsxmywyqcuyrevtnnndrfnndmxywhtkdvdcylkddtbvqkehfvgcizkjnxfcxnhlhvdqvkkkbdywcmkdbbukcvjwrdtqwzvnaorqqqhjvdscmwhyvulnuasuflpxvfaqmncqwddydsyzljfdksjvbysckusrykyvxvhlukjckjkchebwjgwdkvdiinkdgkdclxvwhvnbvxhvmmlrwbrkmfsidzifcweuhvjidtdahkswdtjlvlcjytrzvxwjukmhklinzmhfansqrwkfzrzhsvlyhsqcwcwkwsavvrtjjdcsrbvxxhsanifnfkcafwnhwxsrldrkimrlvvavfxzacvxquxdaqnlyxsczhdranjwfeqxcwhurbywnfamdilguxnkxlzfdswwumvisfjvkwpchhylhwvynwxlqkddryxkafrhjsszarxbaawndnhlbkcqjcjkyylwivdubvncudsurfvjvqhjakxlqhkefatsshadchptixytcrkwipacjtfrxxbmyjxvtllakycnxxjawjssngsljldjqwcwybzxugqxjjgfxghstlhbkqxbgawhwshlllgrwkauwvchxbrxmyyctjcxxkxxtjwwqhqxjyvqwxumfafjdkfuuygbsnxdwugigvgrcsxnnvkfiukwnqvbsajwlkwmzxunmfcnvwnujxjufubnxxkzsyicjejxqkyfrzbcflkkqprgljmufvdkdaqsjgmunrnrmvfxjdyfydbrjibrdxnmyvqxtgthwijgwhxtdkwlijdslduduwnihgvdcrgjcxrdcvfw",
+        "flbhfdjdavfddcqvnuqxzzxaayykgwznhynqkxjhdbjdnicymljarxmhvnwqvljvwklahqarnvjkejknvjvzqugdinahhjrtwsciuiqnrxwnnrfbzcqxujdiddfikyaewsssdnczhhgaygwvwpwunsxjhthvznhtixrakhvkwbsvsrlfkxhvrpxjfxsxsixwmzsvqsuqvbffsjcnnsgkysysxvnzcnqzyllxvtavuwqfyngxrdfnxraqdnvcnskddrnxclqsuvwddxdxbxlnqfxqrxiclahncwrafskgbdyclenmmlvsnkluqjlypmvdyiwmqdssriwvdelajjqxlwflwvrdsflmnnuyfnnfzhawlrdvslrhsnbtguqljngwaslffcjyhucmkvhlgqvfyhvysvrkculhdnjszaklhlahfsvnsqwasrzivhsrevvkmrqrdvdblyhdhffwgmvdeykikzvgxdauvyjdwnwisdiydrczbmlcyvvdthvlgyfjlwfiwfrsdiljkrcgkorghnkiscgxdvcrjabihnxzckvviffukmhlijjtkurpjlvvwdnmgakmjjkktnrxjxwmcdhwrvjzjivkqtnnzdvqqeurfmifyxbwkkifxnfwibkscwrwknrlzmakesfklabldhsziwdwiflssusxhrxuvkqwynjflaeceuitidjanfjfuvkxrntjkivudnrudqfwsxfslkjijamcydnxxsuwdwrbrhsfyrgbvnivqhcvvlbyzgicqrqnyhnhlrincluvndrxsjcxdhmhteuhcdriasybavujsqnvqcbudidvkwrhcwcgdivavjcabrhqnhqtilbstelrsndweuqfvmfuhklbdlmikvusdrjeknhkwzyrrwljavdyxhjkmffgxtyrjcjhqkryhscesxkjabhjfjmztcsrbmcicbyvnrxwzedblicgadqvanrwmdryauqjwyfbqbdluqxnxcdnxrwvrmbdfnvqgxmdwyrcaxnxcylxdxinhsdanutdvssnhdskczvwdbzjhjkccssxtljvxvnbryacktsxdnyenxdjqaflmisvmvnrrfbqkawdxcklvpnjnchxglhdasmidhhzfdkywcmksujqnyoxiaaqqjewccmscnwlxgxdqfsitnmafvqqflnxdyxjdjclubufcfcsyryswuavnljftqnrrakufjcvxbalkvdkijnywjwfwyswgvjllvgmbynwssmjkkbajafvtlggzyicvlysuvkvnwxxvrnjbchkwvjbgyzkxluxqilqcutpvxaxiuzchuwkkbnvawfvrvnkxxavifuyvztbeyhjxwfdyqfdwfzrssjdwnnsutdnwfcwljwzlcrfdrhdhxawcngnvfuyfridrqrzadsjljlbzhaxximwpkhlucwqctkqnqtvxplvnvgdiuvxwbxmhseudqnaqvrfhfjnifwnfdrimxqkkutmezhtutrqycirdcswlxryxdjhswjxlusnrcxmvnfuafqddkkytdyyudxczwcqhednxlfcunhcnihgruefdmrnnakqvdddzdbbrcduxalswjuhwgcvvraahwlkcvvrnwrbnnyzdazvjvcjlcgfjxlzivmxxwxskhxzrkqqtaudglawoyrkwkwudwwrlwsxxwtxdylbkgnabxjydkjtcxfyczkdjtqwwjatyzjjkvsbhzisyxkyyrywwsuukvxrdahwwxuerxqsblxcinbavrrlwjuuvxkhzuiauebznaymrnbiwwnefxkkwvwcbrbkskcyxywneknkjuxdwsqwghtsecycybdlyyqvwrvsihahdivrfmzbcjxvjmjsxnarfzbsbkwwlkgkaqfllvkzylgqytvevqvbyhjawlvvkrjcjtasrykruhxdmxerylvztfxcqqqalciwwxhnfblvknvkmhmgsqddbrqfssmlfcqickyxlpbqndtqdvmvrmmz"
+      ],
+      "expected": false,
+      "hidden": true
+    }
+  ],
+  "related": [
+    {
+      "slug": "group-anagrams",
+      "relation": "Uses the same letter counts, but as a dict key shared by every word in a group, instead of comparing just two strings."
+    },
+    {
+      "slug": "longest-repeating-replacement",
+      "relation": "Also counts letters, but inside a window that slides along one string, where the most common letter decides whether the window is valid."
+    }
+  ]
+}

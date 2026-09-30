@@ -1,0 +1,326 @@
+{
+  "slug": "longest-substring-no-repeat",
+  "title": "Longest Substring Without Repeating Characters",
+  "leetcodeUrl": "https://leetcode.com/problems/longest-substring-without-repeating-characters/",
+  "difficulty": "medium",
+  "patternId": "sliding_window",
+  "order": 11,
+  "summary": "You get a string `s`. Find the longest substring of `s` in which no character appears more than once, and return its length. A substring is a run of neighboring characters, so it can't skip any. Every character counts, including spaces, digits and symbols, and an empty string has an answer of `0`.",
+  "examples": [
+    {
+      "input": "s = \"sunshine\"",
+      "output": "5",
+      "explanation": "\"unshi\" and \"shine\" each have five different characters. Every longer run holds a second \"s\" or a second \"n\"."
+    },
+    {
+      "input": "s = \"1+1=2\"",
+      "output": "4",
+      "explanation": "Digits and symbols count as characters. \"+1=2\" has no repeat, but any run that holds both 1s does."
+    }
+  ],
+  "constraints": [
+    "0 ≤ len(s) ≤ 5·10⁴",
+    "s is made of printable ASCII characters: English letters, digits, symbols and spaces"
+  ],
+  "targets": {"time": "O(n)", "space": "O(1)"},
+  "entry": "lengthOfLongestSubstring",
+  "starterCode": "class Solution:\n    def lengthOfLongestSubstring(self, s: str) -> int:\n        pass\n",
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "sliding_window",
+      "structures": ["hash_set"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Shrink from the left while the new character is already in the window.",
+      "twistKeywords": [
+        [
+          "shrink",
+          "from the left",
+          "left pointer",
+          "left end",
+          "left side",
+          "left edge",
+          "left index",
+          "left bound",
+          "leftmost",
+          "left forward",
+          "left up",
+          "move left",
+          "move the left",
+          "moving the left",
+          "advance the left",
+          "move l",
+          "moving l",
+          "advance l",
+          "increment l",
+          "bump l",
+          "l +=",
+          "l+=",
+          "move the start",
+          "start of the window",
+          "window start",
+          "start pointer",
+          "start forward",
+          "from the front",
+          "the front",
+          "popleft",
+          "pop left",
+          "evict",
+          "oldest"
+        ],
+        [
+          "already",
+          "repeat",
+          "duplicate",
+          "dupe",
+          "twice",
+          "again",
+          "more than once",
+          "in the window",
+          "in window",
+          "in the set",
+          "in set",
+          "in seen",
+          "in the seen",
+          "in it",
+          "s[r] in",
+          "exist",
+          "contain",
+          "occurrence",
+          "collision",
+          "clash",
+          "conflict",
+          "same char",
+          "same letter",
+          "copy",
+          "copies",
+          "not unique",
+          "no longer unique",
+          "until unique",
+          "until it's unique",
+          "until it is unique",
+          "unique again"
+        ]
+      ]
+    },
+    {
+      "id": "last_index",
+      "patternId": "sliding_window",
+      "structures": ["hash_map"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Store each character's last index in a dict, and when it repeats inside the window, jump l just past that earlier copy.",
+      "twistKeywords": [
+        [
+          "last",
+          "previous",
+          "prior",
+          "earlier",
+          "most recent",
+          "latest",
+          "index",
+          "position",
+          "where it was",
+          "dict",
+          "map"
+        ],
+        [
+          "jump",
+          "just past",
+          "one past",
+          "past it",
+          "past the",
+          "past its",
+          "move l",
+          "set l",
+          "l = ",
+          "l=",
+          "+ 1",
+          "+1",
+          "max(",
+          "beyond",
+          "right after",
+          "just after",
+          "move the left",
+          "move left"
+        ]
+      ]
+    },
+    {
+      "id": "all_substrings",
+      "patternId": "brute_force",
+      "structures": ["hash_set"],
+      "time": "O(n²)",
+      "space": "O(1)",
+      "twist": "Check every substring, growing a set from each start index, and keep the longest one without a repeat.",
+      "twistKeywords": [
+        [
+          "every substring",
+          "each substring",
+          "all substrings",
+          "all the substrings",
+          "every start",
+          "each start",
+          "all starts",
+          "every index",
+          "each index",
+          "every position",
+          "each position",
+          "every possible",
+          "all possible",
+          "nested",
+          "two loops",
+          "double loop",
+          "inner loop",
+          "two for",
+          "double for",
+          "brute",
+          "restart"
+        ],
+        [
+          "repeat",
+          "duplicate",
+          "unique",
+          "distinct",
+          "set",
+          "twice",
+          "more than once",
+          "longest",
+          "check"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but there are about n²/2 substrings to check, so it takes O(n²) time. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "longest substring",
+      "meaning": "The answer is one unbroken run of characters. Grow a window on the right, and keep the longest one that follows the rule.",
+      "pointsTo": "sliding_window"
+    },
+    {
+      "phrase": "appears more than once",
+      "meaning": "Keep the window's characters in a set. Checking whether the new character is already there, with the in operator, takes O(1) time.",
+      "pointsTo": "toolkit:set_ops"
+    },
+    {
+      "phrase": "printable ASCII characters",
+      "meaning": "Only 95 different characters exist, and the window never holds one twice, so a set of its characters never grows past 95 entries.",
+      "pointsTo": "structure:hash_set"
+    }
+  ],
+  "constraintReading": "len(s) can reach 5·10⁴, so checking all of its substrings, about 1.25·10⁹ of them, is O(n²) and far too slow. Aim for O(n): each character should enter the window once and leave it at most once. The O(1) space target still allows a set, because the window never holds a character twice: the set can't grow past the 95 printable ASCII characters.",
+  "hints": {
+    "clarify": "Does a space count as a character? Yes: every character counts, including spaces, digits and symbols. Can the substring skip characters? No: it's a run of neighbors. Try \"abab\" by hand: \"ab\" and \"ba\" have no repeat, but any run of three holds a letter twice, so the answer is 2.",
+    "approach": "Sliding window. Keep a window from `l` to `r` that never holds a character twice, and a set `window` of the characters in it. Move `r` right one step at a time. If the new character is already in the set, drop characters from the left, moving `l` forward, until it's gone; then add the new one and measure the window. Each character enters the window once and leaves at most once, so one pass is enough.",
+    "whyNot": "Checking every substring works, but there are about n²/2 of them: over 10⁹ when `s` has 5·10⁴ characters. Restarting from each start index also reads the same characters again and again. The window keeps what it already knows: when a repeat arrives, only the part up to its first copy has to go.",
+    "slots": {
+      "setup": "An empty set `window` for the characters in the window, `l` at 0, and `best` at 0.",
+      "loop": "Move `r` through `s` from left to right. The character at `r` is the one about to join the window.",
+      "update": "While the character at `r` is already in `window`, remove the character at `l` from the set and move `l` one step right. Stop as soon as the repeat is gone.",
+      "record": "Add the character at `r` to `window`. The window from `l` to `r` now has no repeat, and its length is r − l + 1; keep the larger of that and `best`.",
+      "return": "Once `r` has passed the end, return `best`. An empty string never enters the loop, so it returns 0."
+    }
+  },
+  "solution": {
+    "code": "class Solution:\n    def lengthOfLongestSubstring(self, s: str) -> int:\n        window: set[str] = set()\n        l = 0\n        best = 0\n        for r in range(len(s)):\n            while s[r] in window:\n                window.remove(s[l])  # viz:shrink\n                l += 1\n            window.add(s[r])  # viz:grow\n            best = max(best, r - l + 1)\n        return best  # viz:done\n",
+    "explanation": "Each character is added to `window` once, when `r` reaches it, and removed at most once, when `l` passes it, so the two pointers take at most 2n steps in total: O(n) time. The window never holds a character twice, so the set has at most 95 entries, one per printable ASCII character: O(1) extra space however long `s` is.",
+    "toolkit": ["set_ops"]
+  },
+  "viz": {
+    "primary": "s",
+    "pointers": [
+      {"var": "l", "into": "s", "label": "l", "color": "a"},
+      {"var": "r", "into": "s", "label": "r", "color": "b"}
+    ],
+    "window": {"into": "s", "start": "l", "end": "r", "inclusive": true},
+    "range": null,
+    "roles": {"stack": [], "queue": [], "hidden": []},
+    "confirmed": null,
+    "events": [
+      {
+        "id": "shrink",
+        "at": "shrink",
+        "label": "shrink",
+        "say": "{s[r]!r} is already in the window, so drop {s[l]!r} from the left"
+      },
+      {
+        "id": "new_best",
+        "at": "grow",
+        "when": "r - l + 1 > best",
+        "label": "new best",
+        "say": "{s[r]!r} isn't in the window, so add it. s[{l}..{r}] has no repeat, and its length, {r - l + 1}, is the longest so far"
+      },
+      {
+        "id": "grow",
+        "at": "grow",
+        "when": "r - l + 1 <= best",
+        "label": "grow",
+        "say": "{s[r]!r} isn't in the window, so add it. s[{l}..{r}] has no repeat, but its length, {r - l + 1}, doesn't beat {best}"
+      },
+      {
+        "id": "done",
+        "at": "done",
+        "label": "return",
+        "say": "No characters are left, so return the longest length found: {best}"
+      }
+    ],
+    "predict": [
+      {
+        "atEvent": "new_best",
+        "occurrence": 3,
+        "ask": "Will the next character force the window to shrink?",
+        "kind": "yesno",
+        "answerWhen": "r + 1 < len(s) and (s[r + 1] in window or s[r + 1] == s[r])"
+      },
+      {
+        "atEvent": "shrink",
+        "occurrence": 2,
+        "ask": "Once this character is dropped, will the window be free of repeats?",
+        "kind": "yesno",
+        "answerWhen": "s[l] == s[r]"
+      }
+    ]
+  },
+  "tests": [
+    {"id": "e1", "args": ["sunshine"], "expected": 5, "hidden": false},
+    {"id": "e2", "args": ["1+1=2"], "expected": 4, "hidden": false},
+    {"id": "h1", "args": [""], "expected": 0, "hidden": true},
+    {"id": "h2", "args": ["q"], "expected": 1, "hidden": true},
+    {"id": "h3", "args": ["zzzz"], "expected": 1, "hidden": true},
+    {"id": "h4", "args": ["abcdefg"], "expected": 7, "hidden": true},
+    {"id": "h5", "args": ["xyyx"], "expected": 2, "hidden": true},
+    {"id": "h6", "args": ["  "], "expected": 1, "hidden": true},
+    {"id": "h7", "args": ["tacocat"], "expected": 4, "hidden": true},
+    {"id": "h8", "args": ["hello world"], "expected": 6, "hidden": true},
+    {"id": "h9", "args": ["@#@#@"], "expected": 2, "hidden": true},
+    {
+      "id": "h10",
+      "args": [
+        " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+      ],
+      "expected": 95,
+      "hidden": true
+    },
+    {
+      "id": "h11",
+      "args": [
+        "nmwjx2f6lfvg2jlrcx4swtni73w1h4ia2soi2p7cbkmyvkx69oltj53303prhypipytjpkjf7w6s7e1ulw65gck8rrlpn6jms9cpxsu1ktppciw1rhxyrmuzue8ttu1jr7p9f9ux4frgyx9gq4gaocj74wqzgzsbqv71n0ujlnos2la4m9b9abdigzos5mptp839f6atq1sazlefik7lupb6wwzqvmgmykt0c8prp90ndjzx50jdzol9ladxel9rxrsik21jeoh1uk90dhoossrbf01mmcasow1ls2keap5qoiirwa5plw9819fegmapmyf77q3jhvkv699ufkm68hdpizu23tyrqzcjhk82ess5vee3jcfle55ta9iqthta85szvcqckwb6hx66m3ii9vdb0dn054aiyb2ynwdr5odqytcbun9f18ny2s20ex4iiw63jcl47mph1e1vhyhzvagd61x11bu9spw3xeifutafu4wwcqnvvanqmf0e69039bkt6wrujd5vids0ikwxlo8wmgdvdzrsu3kptvldqjmwb58nmq7tobpecjqx0u4kpje40kao61iwiov345sobpf721s61xnte2yru01vvv33cu6835dlv2e17wiyzg1zsup0ftuprv29pan0y7npurw4hwarj7o79icyv1va9mui0qyesgyd36f1j30lpcveq2ljop3xg5p1u3znegfcjvt88okixek6mayrtvkvtt11yge3wfy1vhq45308jkp98tlfjdi69d3ig2ewswbnkzjdsc1n37gr3t90nwh0lul3dzzyrpsdzikbfy89b80swpxeglpc2h9eytdjabdje7op6aowrphkj6ispu5yuxv0ns7rho0nex1x7edkdrlc6kttfc2luwx6kowsptus0qlpo4uzd4x65j1uz6o7lmnyq2vp3v6hvv88vopjsg1bczosk2jl8aopn86ii6pckhxptt79nud5uj17z78pd57j1ded4h20j4k3yygh4d5qd7rwymq7yco7cs3noqu4nnxrkv7ed18xd72hy90q5pom35ueurthux5zj9i0jrsz89zlj161ykebnb6bv3s5dlw7zklmeuj4z9wxxefv43rs02bpb8ytbn9swhf4vf6qp57dpeussgdo77y6umzvdlqenb8hdxx6jdfgftvctobcpf18vy0zaoag3p1sxdzlyhpdr79xcw96w0exdw5fm3q5rzebcydbqq5tlc5cw0wil9yhq8jdvd1vt1kg5jnd1kue9s6h4uahfz9gvlcumtrzyrautyfd6cbzulut4cw48u9w6ncifpa0dnpkbzwyyrgfn0n7au5vfz26vnhwyah38b47oyq6ylbkptkpuu2t3ul4isxw13g4xfn3xjuah6qr9ct5lh33tz1gl4nm43sm8wg2r9xv5r3d6hw2lc6213s6peo0g7ngpmuek2hgv1frayugg3btv3ya8x7an1hivihua2rbz7fxh2ztffglj3yao0kbq13p4dvf5sttm4mn3auv9mfp8bsgfcvxrfeiuu3me6ukfv2ty78y9h1u1l86hsau2hd9rw6qxbmmlgvip5f8zy5ll39ucc3gjsujcaf72wpg7pve7sy0158nns6pr661ycvsvlweruu62ltp1v2byfvuvrp36pveedfrdq2tdmc8pzzyar4jb5fz5i29xxycqjycmdingua4ddked749a3o1dbm0zss7rmx1gmqfdg4lvd7rthv2r4aobsdrlif4ghxobkaiq1g93iod52z8lcqjxw3kue1yk6tttefg08larvho5fpcrzi93scc2aizzkl1wsr185wp2okq0svihxdj2zt6pru5zz0w7pta1wyia9622dq9rqmiyzpyj5i5q2zljirjezb61n8qe8ct521v2pjtwkqdf0db6972ib0mb16n1j0p6l83r0pgplppjje1qc6o5f3o3gx28y5d3od9wkdu"
+      ],
+      "expected": 19,
+      "hidden": true
+    }
+  ],
+  "related": [
+    {
+      "slug": "longest-repeating-replacement",
+      "relation": "Same grow-and-shrink window, but letters may repeat: the window breaks only when it would need more than k changes, so you keep letter counts instead of a set."
+    },
+    {
+      "slug": "best-time-to-buy-sell-stock",
+      "relation": "Also keeps a left end behind a right end, but the left end jumps straight to each new lowest price instead of stepping past repeats."
+    }
+  ]
+}

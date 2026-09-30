@@ -1,0 +1,321 @@
+{
+  "slug": "longest-repeating-replacement",
+  "title": "Longest Repeating Character Replacement",
+  "leetcodeUrl": "https://leetcode.com/problems/longest-repeating-character-replacement/",
+  "difficulty": "medium",
+  "patternId": "sliding_window",
+  "order": 12,
+  "summary": "You get a string `s` of uppercase English letters and an integer `k`. You may change any letter of `s` into any other uppercase letter, with at most k changes in total. Return the length of the longest substring that can end up as one letter repeated, like \"BBBB\".",
+  "examples": [
+    {
+      "input": "s = \"ABBCBBA\", k = 1",
+      "output": "5",
+      "explanation": "Change the \"C\" in \"BBCBB\" to \"B\" to get five B's in a row. Every longer substring would need at least two changes."
+    },
+    {
+      "input": "s = \"QRSQ\", k = 2",
+      "output": "4",
+      "explanation": "Change \"R\" and \"S\" to \"Q\", and the whole string becomes \"QQQQ\"."
+    },
+    {
+      "input": "s = \"XXYYYX\", k = 0",
+      "output": "3",
+      "explanation": "With no changes allowed, the answer is the longest run of one letter: \"YYY\"."
+    }
+  ],
+  "constraints": [
+    "1 ≤ len(s) ≤ 10⁵",
+    "s holds only uppercase English letters, A to Z",
+    "0 ≤ k ≤ len(s)"
+  ],
+  "targets": {"time": "O(n)", "space": "O(1)"},
+  "entry": "characterReplacement",
+  "starterCode": "class Solution:\n    def characterReplacement(self, s: str, k: int) -> int:\n        pass\n",
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "sliding_window",
+      "structures": ["counter"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Count the letters in the window; it stays valid while its length minus its top letter count is at most k.",
+      "twistKeywords": [
+        [
+          "top letter",
+          "top count",
+          "top char",
+          "top freq",
+          "the top",
+          "its top",
+          "a top",
+          "top-",
+          "top_",
+          "most frequent",
+          "most common",
+          "most often",
+          "most repeated",
+          "most used",
+          "appears most",
+          "appear most",
+          "occurs most",
+          "occur most",
+          "highest count",
+          "highest freq",
+          "max count",
+          "max freq",
+          "max letter",
+          "max char",
+          "maxcount",
+          "maxfreq",
+          "max_count",
+          "max_freq",
+          "maxf",
+          "max(count",
+          "max(freq",
+          "max(cnt",
+          "maximum count",
+          "maximum freq",
+          "largest count",
+          "biggest count",
+          "dominant",
+          "majority",
+          "popular"
+        ],
+        [
+          "minus",
+          "subtract",
+          "difference",
+          "diff",
+          "length -",
+          "length-",
+          "length −",
+          "length−",
+          "len -",
+          "len-",
+          "size -",
+          "size-",
+          "- top",
+          "-top",
+          "− top",
+          "- max",
+          "-max",
+          "− max",
+          "- most",
+          "- the",
+          "- count",
+          "other letter",
+          "other char",
+          "other than",
+          "others",
+          "the rest",
+          "rest of",
+          "remaining",
+          "non-top",
+          "not the top",
+          "not the most",
+          "aren't the",
+          "isn't the",
+          "that differ",
+          "don't match",
+          "do not match",
+          "mismatch"
+        ],
+        [
+          "at most k",
+          "<= k",
+          "<=k",
+          "≤ k",
+          "≤k",
+          "> k",
+          ">k",
+          "than k",
+          "exceed",
+          "over k",
+          "up to k",
+          "within k",
+          "k change",
+          "k replace",
+          "k swap",
+          "k edit",
+          "k flip",
+          "k or fewer",
+          "k or less",
+          "limit",
+          "budget",
+          "allowed"
+        ]
+      ]
+    },
+    {
+      "id": "all_substrings",
+      "patternId": "brute_force",
+      "structures": ["counter"],
+      "time": "O(n²)",
+      "space": "O(1)",
+      "twist": "Try every substring, count its letters, and keep the longest one whose length minus its top count is at most k.",
+      "twistKeywords": [
+        [
+          "every substring",
+          "each substring",
+          "all substrings",
+          "all the substrings",
+          "every start",
+          "each start",
+          "every window",
+          "each window",
+          "all windows",
+          "every possible",
+          "all possible",
+          "nested",
+          "two loops",
+          "double loop",
+          "inner loop",
+          "two for",
+          "double for",
+          "brute"
+        ],
+        ["count", "frequen", "top", "most", "max", "minus", "differ", "replace", "change", "valid"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but there are about n²/2 substrings to check, so it takes O(n²) time. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "longest substring",
+      "meaning": "The answer is one unbroken run of letters. Grow a window on the right, and keep the longest one that follows the rule.",
+      "pointsTo": "sliding_window"
+    },
+    {
+      "phrase": "at most k",
+      "meaning": "The rule is a limit on changes: grow the window, and shrink it from the left while it would need more than k of them.",
+      "pointsTo": "sliding_window"
+    },
+    {
+      "phrase": "uppercase English letters",
+      "meaning": "Only 26 letters can appear, so the letter counts of a window take at most 26 entries. A Counter keeps them up to date as letters enter and leave.",
+      "pointsTo": "toolkit:counter"
+    }
+  ],
+  "constraintReading": "len(s) can reach 10⁵, so checking every substring means about 5·10⁹ of them: O(n²) is far too slow. Aim for O(n), one pass where each letter enters the window once and leaves it at most once. The O(1) space target still allows counting: with only 26 uppercase letters, the counts never take more than 26 entries.",
+  "hints": {
+    "clarify": "Can a letter change into any letter? Yes, any uppercase letter. Do you have to use all k changes? No, k is only a limit. Try \"AABA\" by hand: with k = 1, change the \"B\" to get \"AAAA\", so the answer is 4. With k = 0 nothing can change, and the longest run of one letter is \"AA\", so the answer is 2.",
+    "approach": "Sliding window with letter counts. To make a window all one letter with the fewest changes, keep its most common letter and change every other one: that's its length minus its top letter count. Move `r` right one letter at a time and add that letter to the counts. While the window would need more than `k` changes, take the letter at `l` out of the counts and move `l` right. Then the window is valid, so compare its length with the best. Each letter enters and leaves the window at most once.",
+    "whyNot": "Checking every substring works, but there are about n²/2 of them: O(n²) time, around 5·10⁹ when `s` has 10⁵ letters. The window avoids that. Adding a letter never lowers the number of changes a window needs, so once it needs too many, you drop letters from the left instead of starting over, and neither end ever moves back.",
+    "slots": {
+      "setup": "An empty Counter `count` for the letters in the window, `l` at 0, and `best` at 0.",
+      "loop": "Move `r` through `s` from left to right, and add one to the count of the letter at `r`.",
+      "update": "While the window's length, r − l + 1, minus its top letter count is more than `k`, take one off the count of the letter at `l` and move `l` one step right.",
+      "record": "Now the window from `l` to `r` needs at most `k` changes. Keep the larger of its length and `best`.",
+      "return": "Once `r` has passed the end, return `best`."
+    }
+  },
+  "solution": {
+    "code": "class Solution:\n    def characterReplacement(self, s: str, k: int) -> int:\n        count: Counter[str] = Counter()\n        l = 0\n        best = 0\n        for r in range(len(s)):\n            count[s[r]] += 1  # viz:grow\n            while r - l + 1 - max(count.values()) > k:\n                count[s[l]] -= 1  # viz:shrink\n                l += 1\n            best = max(best, r - l + 1)  # viz:record\n        return best  # viz:done\n",
+    "explanation": "Each letter joins the window once and leaves it at most once, so the loop and all the shrinking take O(n) steps together. Each check finds the top count among at most 26 letters, a fixed amount of work, so the total time is O(n). The Counter never holds more than 26 letters, so the extra space is O(1).",
+    "toolkit": ["counter"]
+  },
+  "viz": {
+    "primary": "s",
+    "pointers": [
+      {"var": "l", "into": "s", "label": "l", "color": "a"},
+      {"var": "r", "into": "s", "label": "r", "color": "b"}
+    ],
+    "window": {"into": "s", "start": "l", "end": "r", "inclusive": true},
+    "range": null,
+    "roles": {"stack": [], "queue": [], "hidden": []},
+    "confirmed": null,
+    "events": [
+      {
+        "id": "grow",
+        "at": "grow",
+        "label": "grow",
+        "say": "Add {s[r]!r} on the right: the window is now s[{l}..{r}]"
+      },
+      {
+        "id": "shrink",
+        "at": "shrink",
+        "label": "shrink",
+        "say": "s[{l}..{r}]: length {r - l + 1} minus top count {count.most_common(1)[0][1]} is {r - l + 1 - count.most_common(1)[0][1]}, more than k = {k}. Drop {s[l]!r} from the left"
+      },
+      {
+        "id": "new_best",
+        "at": "record",
+        "when": "r - l + 1 > best",
+        "label": "new best",
+        "say": "s[{l}..{r}]: length {r - l + 1} minus top count {count.most_common(1)[0][1]} is {r - l + 1 - count.most_common(1)[0][1]}, at most k = {k}. It's the longest valid window so far"
+      },
+      {
+        "id": "record",
+        "at": "record",
+        "when": "r - l + 1 <= best",
+        "label": "valid",
+        "say": "s[{l}..{r}]: length {r - l + 1} minus top count {count.most_common(1)[0][1]} is {r - l + 1 - count.most_common(1)[0][1]}, at most k = {k}. It's valid, but not longer than {best}"
+      },
+      {
+        "id": "done",
+        "at": "done",
+        "label": "return",
+        "say": "No letters are left, so return the longest valid length: {best}"
+      }
+    ],
+    "predict": [
+      {
+        "atEvent": "grow",
+        "occurrence": 4,
+        "ask": "Will the window have to shrink once this letter joins?",
+        "kind": "yesno",
+        "answerWhen": "r - l + 1 - count.most_common(1)[0][1] > k and r - l - count[s[r]] > k"
+      },
+      {
+        "atEvent": "grow",
+        "occurrence": 5,
+        "ask": "Will the window have to shrink once this letter joins?",
+        "kind": "yesno",
+        "answerWhen": "r - l + 1 - count.most_common(1)[0][1] > k and r - l - count[s[r]] > k"
+      }
+    ]
+  },
+  "tests": [
+    {"id": "e1", "args": ["ABBCBBA", 1], "expected": 5, "hidden": false},
+    {"id": "e2", "args": ["QRSQ", 2], "expected": 4, "hidden": false},
+    {"id": "e3", "args": ["XXYYYX", 0], "expected": 3, "hidden": false},
+    {"id": "h1", "args": ["A", 0], "expected": 1, "hidden": true},
+    {"id": "h2", "args": ["A", 1], "expected": 1, "hidden": true},
+    {"id": "h3", "args": ["ZZZZZ", 0], "expected": 5, "hidden": true},
+    {"id": "h4", "args": ["ABCDE", 0], "expected": 1, "hidden": true},
+    {"id": "h5", "args": ["ABCDE", 5], "expected": 5, "hidden": true},
+    {"id": "h6", "args": ["BAABAB", 2], "expected": 5, "hidden": true},
+    {"id": "h7", "args": ["KKLKMKKN", 2], "expected": 7, "hidden": true},
+    {"id": "h8", "args": ["ABBBBA", 0], "expected": 4, "hidden": true},
+    {"id": "h9", "args": ["AAABBBCCC", 2], "expected": 5, "hidden": true},
+    {
+      "id": "h10",
+      "args": [
+        "BAAABBBAACAAACBCABAAABAABABBAABAABCBCBAAAABBCAACAACBCAABBBAAACABAABCCABACCCBCBAAACBAACAABBBACAABAAACCBABACABBABCBBABCABCAACACBABABABAAACBBBBCBCBABCBAAACAABCAABABABACAABABBCCBAABABACBABACCCBCBBBBABCAAACABAACAAACAABBACAAACBBBCABBCBBBCCACAACABAAAABCAACBACAACCABAABAACABACAACCBABACABABBBAABACBCBCCBABAAABACCCBBCAAAAAAABBBBCBABABBAAABAAABACACBAACBAAABACBABAAACAABBAAACBABAACCAAAAAABBAABBCACBCCBAAABAABACBAAAACCBCBACABACBBBCBCBCACABCCAAABABABACBAAAAABCABBAAAAACBBAAABABAACABBBBCAAABABCABBCAAACBACAAAAABBABACBBABAAAAAABCAAACCBCBBCACCABBCBCCCAABCAACABACCBBBCABAABACBACCACABBAAABCABACABBCAAAAAAAACAABBCBAABBABCAAABCBCAAAAABAAACBAABABAAAAAACBAAABBAAAACAAAAAAABABBABCCABAACAAABABACBBCCBAABBABBBCCCAACCABCAAACAACBBACCCAAAAABACBAABBCACAAAAAACAAAAAACBAAACBBAAABBABCABBACAAABAAAAACBCACCCBCBABCABBAACBACABACABABBCBCBCCBABABABABCBCBCAAAAAAAAAAAAABBACACBBCCACACAAAACAAACCAAACABACACCAABABAAACCABBCAAAABAABBAAAABCBBABAABCACBAABABBAABBAAAAABBBABABBBCBACBACAACAABCBAAACBAAABCACBAAAAAABCBCBCCBBAAAACAAAACAAAAABABABAAAAACAACBACAABBAACAAACABABAAAAAAAACABCABACBABAAAABCABBCCCCCBBACCAABACCAABACCBAAAACBAAAAAAACBBBABBABAABBACAABABAABABBAACBACBAACAABACCAABAAAABBBAAAABCACABAAAAACABCCCAABABABBBCBBAABBCABABABBACCBAAAAACBBCBABAACBABAAABBABABAACBBBACBBCACCBBCCCAABBAABCAABBAABAACABBCBCABABBBBACAABABAAAAAAAABBBAAABBBBCBBBCBCABAABACABCBBACCAAABAABCACBBAACABBBBABAABCBAAABCAAACAAABAAACBABAABAABBABAAABCAAAABBABBABABBCCCCBABCAAABBBAACCBBAAAAAAAACACAAAABBCCBACACABBABCBBBCACCCAAACAAAAAABBBAACBABBBAAABCAAACCAACBABBAACBAAAAAABAAACAABACAC",
+        40
+      ],
+      "expected": 103,
+      "hidden": true
+    },
+    {
+      "id": "h11",
+      "args": [
+        "ZCXQOEMBYTUKCBRZVEIYMSLJJWGCVZFBMFKQDPUWWGGLANUCKTVUFMHOOITUGJXZLBROIGPSSKIXALOFTIYQXHKGBAATOMSFTTOALGZROLLKTQNIZNNWFFGUQEMGTDLIMFCTYWHQSOQEYXZBWBTWJXNWFRMGJPQSTPTGOMGEMXTHNOLQIWYIIUJUATAOEJXSEFLWCXQONYFRYCPKHQGCNRWJGBYEQUEGDFPHRGKPFAKVTEXYFHOZEHATNLMZVWUCJLKOSLIFNHXIHNYMNFSTYQMEKQRTIQIJZCNNWXMIUKAENOAVOOMEQIJUJMUUIICTYIVIMHTVGFOUYQDAAYRGDLMJWXUWRRRTEFZPWNPCUMCYVXUHYEORLTXENLHCMIISULPGQRZAYDHDFYTLTNZDFCULYHZMQAXPNPRYCYCULPBDYUBQWFDIKOSJXDXXWPEZSHSVEFEHBCLIQHTJDOEWFWLHTTMQYOLULRBEFDESNAPWEMPCHLGJKUDTILFKJIKABFXVSTCWXKOGDJPHPYCVTGYIKSZHRIQNLDJCYJSLKMMGZAZKUMUVOOFRIGVZYQHGVOZAVQZQHNCJYYIRBBCCFKQJYOGILMZVFBHUKNWDUMHCPCHZIFBRTSUGENUBAMQZCNASEEQDXZUMQOPMSWCFDKQYVTCSGTQGFCQMACDMDMSWEJDPSUOBNZWUHGZBBVNNIYCYJSPNJQKEMQFICJNVYNGHASXEJHGRZWCACTJPCRHNNDLYKOUXTIWEYOLWTGVHNNRLCHCRVGEIDVRVPIXWZZXHJFWLPKQR",
+        30
+      ],
+      "expected": 36,
+      "hidden": true
+    }
+  ],
+  "related": [
+    {
+      "slug": "longest-substring-no-repeat",
+      "relation": "Same window, but it breaks as soon as any character repeats, so a set replaces the counts and there's no k."
+    },
+    {
+      "slug": "valid-anagram",
+      "relation": "Also counts letters with a Counter, but compares the counts of two whole strings instead of checking one window against k."
+    }
+  ]
+}
