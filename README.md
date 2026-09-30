@@ -5,7 +5,8 @@ solution, then code it, with visual walkthroughs and spaced review so it sticks.
 
 - **Spec:** [`docs/SPEC.md`](docs/SPEC.md) is the single source of truth.
 - **Decisions:** [`docs/DECISIONS.md`](docs/DECISIONS.md) logs every choice the spec leaves open.
-- **Status:** milestone **M0 (scaffold)** of the build plan in Section 23 of the spec.
+- **Status:** milestones **M0 (scaffold)** and **M1 (content system)** of the build plan in
+  Section 23 of the spec are done; next is M2 (runner and basic Workspace).
 
 ## Try it in your browser
 
@@ -23,8 +24,8 @@ itself after 30 idle minutes.
 ```text
 apps/web     Next.js 16 app (React 19, TypeScript, Tailwind v4, shadcn/ui on Radix)
 apps/api     FastAPI app (Python 3.12, SQLAlchemy 2 async, Alembic, uv)
-content/     Learning content as JSON (served by the API; filled in M1)
-scripts/     Content validator, database helpers
+content/     Learning content as JSON, served by the API (see content/README.md)
+scripts/     Content validator and formatter, database helpers
 docs/        Spec and decision log
 ```
 
@@ -41,7 +42,7 @@ pnpm install                      # web dependencies
 docker compose up -d db           # Postgres 16 on :5432 (also creates seecode_test)
 (cd apps/api && uv run alembic upgrade head)
 
-uv run --project apps/api python scripts/validate_content.py
+uv run --project apps/api python scripts/validate_content.py   # the API starts only on valid content
 ```
 
 Run the two apps in separate terminals:
@@ -50,6 +51,10 @@ Run the two apps in separate terminals:
 (cd apps/api && uv run uvicorn app.main:app --reload --port 8000)   # http://localhost:8000/api/v1/health
 pnpm dev                                                              # http://localhost:3000
 ```
+
+The API loads `content/` once at startup. When you edit content, restart it, or start it
+with `--reload --reload-dir . --reload-dir ../../content --reload-include '*.json'` so it
+reloads (and revalidates) on every save.
 
 Open <http://localhost:3000/login> and pick a user under **Developer sign-in**. Dev sign-in
 (`AUTH_DEV_BYPASS`) needs no accounts or keys and only works with `ENV=development`; the
@@ -63,9 +68,18 @@ at your own database.
 ## Checks
 
 ```bash
-# API (needs Postgres; the test database is rebuilt from scratch on every run)
+# Content, from the repo root: every Section 10.7 rule, including running each reference
+# solution against its tests (content/README.md explains the rules), then the JSON layout
+uv run --project apps/api python scripts/validate_content.py
+uv run --project apps/api python scripts/format_content.py --check
+
+# API, plus the content scripts and the shared test harness (needs Postgres; the test
+# database is rebuilt from scratch on every run)
 cd apps/api
-uv run ruff check . && uv run ruff format --check . && uv run mypy app && uv run pytest
+uv run ruff check . ../../scripts ../web/public/py
+uv run ruff format --check . ../../scripts ../web/public/py
+uv run mypy app ../../scripts ../web/public/py/harness.py
+uv run pytest
 
 # Web
 pnpm lint && pnpm typecheck && pnpm test && pnpm build

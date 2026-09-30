@@ -1,0 +1,50 @@
+[
+  {
+    "id": "array",
+    "label": "Array / string"
+  },
+  {
+    "id": "hash_map",
+    "label": "Hash map (dict)"
+  },
+  {
+    "id": "hash_set",
+    "label": "Hash set"
+  },
+  {
+    "id": "counter",
+    "label": "Counter / frequency array"
+  },
+  {
+    "id": "stack",
+    "label": "Stack"
+  },
+  {
+    "id": "queue",
+    "label": "Queue / deque"
+  },
+  {
+    "id": "heap",
+    "label": "Heap"
+  },
+  {
+    "id": "sorted",
+    "label": "Sorted array (sort first)"
+  },
+  {
+    "id": "grid",
+    "label": "2D grid"
+  },
+  {
+    "id": "linked_list",
+    "label": "Linked list"
+  },
+  {
+    "id": "tree",
+    "label": "Tree"
+  },
+  {
+    "id": "graph",
+    "label": "Graph"
+  }
+]

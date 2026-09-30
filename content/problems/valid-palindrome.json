@@ -1,0 +1,258 @@
+{
+  "slug": "valid-palindrome",
+  "title": "Valid Palindrome",
+  "leetcodeUrl": "https://leetcode.com/problems/valid-palindrome/",
+  "difficulty": "easy",
+  "patternId": "two_pointers_opposite",
+  "order": 4,
+  "summary": "You get a string `s`. Decide whether it reads the same forward and backward once you ignore letter case and skip every character that is not a letter or digit, such as spaces and punctuation. A string with no letters or digits at all counts as a palindrome.",
+  "examples": [
+    {
+      "input": "s = \"Top spot!\"",
+      "output": "true",
+      "explanation": "Keep the letters and digits and lowercase them: \"topspot\" reads the same both ways."
+    },
+    {
+      "input": "s = \"Top 2 spot\"",
+      "output": "false",
+      "explanation": "Digits count too: after \"t\", \"o\" and \"p\" match their partners, the \"2\" meets an \"s\"."
+    },
+    {
+      "input": "s = \"?! .\"",
+      "output": "true",
+      "explanation": "Nothing is left once the punctuation and the space are skipped, and an empty string reads the same both ways."
+    }
+  ],
+  "constraints": [
+    "1 ≤ len(s) ≤ 2·10⁵",
+    "s is made of printable ASCII characters: letters, digits, spaces and punctuation"
+  ],
+  "targets": {"time": "O(n)", "space": "O(1)"},
+  "entry": "isPalindrome",
+  "starterCode": "class Solution:\n    def isPalindrome(self, s: str) -> bool:\n        pass\n",
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "two_pointers_opposite",
+      "structures": ["array"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Skip characters that are not letters or digits, and compare in lowercase.",
+      "twistKeywords": [
+        [
+          "skip",
+          "ignore",
+          "filter",
+          "remove",
+          "drop",
+          "strip",
+          "past",
+          "step over",
+          "pass over",
+          "discard",
+          "exclude",
+          "omit",
+          "jump",
+          "disregard",
+          "only",
+          "except",
+          "clean",
+          "not count",
+          "n't count",
+          "not matter",
+          "n't matter"
+        ],
+        [
+          "alnum",
+          "alphanumeric",
+          "alpha-numeric",
+          "letter or",
+          "letter and",
+          "digit",
+          "number",
+          "numeric",
+          "a-z",
+          "0-9",
+          "punctuation",
+          "symbol",
+          "special",
+          "comma"
+        ],
+        ["case", "lower", "upper", "capital"]
+      ]
+    },
+    {
+      "id": "clean_reverse",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n)",
+      "space": "O(n)",
+      "twist": "Build a lowercase copy of s that keeps only letters and digits, and compare it with its reverse.",
+      "twistKeywords": [
+        [
+          "clean",
+          "filter",
+          "copy",
+          "new string",
+          "build",
+          "join",
+          "strip",
+          "remove",
+          "keep only",
+          "list",
+          "comprehension"
+        ],
+        ["reverse", "[::-1]", "flip"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works in O(n) time, but the cleaned copy and its reverse take O(n) extra space. The target is O(1)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "reads the same forward and backward",
+      "meaning": "A palindrome is a row of mirrored pairs. Check the pairs from both ends inward; one pair that differs settles the answer.",
+      "pointsTo": "two_pointers_opposite"
+    },
+    {
+      "phrase": "ignore letter case",
+      "meaning": "\"R\" and \"r\" count as equal. Lowercase both characters with .lower() before you compare them.",
+      "pointsTo": "toolkit:lower"
+    },
+    {
+      "phrase": "not a letter or digit",
+      "meaning": "Spaces and punctuation don't count. .isalnum() tells you whether a character is a letter or digit, so a pointer can step past the rest.",
+      "pointsTo": "toolkit:isalnum"
+    }
+  ],
+  "constraintReading": "len(s) can reach 2·10⁵, so O(n²), up to 4·10¹⁰ steps, is ruled out. Aim for O(n): every character might matter, so you can't do better than one look at each. The O(1) space target also rules out building a cleaned or reversed copy of s, so read it in place with two indexes.",
+  "hints": {
+    "clarify": "Does a space or a comma count? Is \"N\" the same as \"n\"? No to the first, yes to the second: only letters and digits count, and case doesn't matter. Try \"No, on!\" by hand: skip the comma, the space and the \"!\", then lowercase what's left. You get \"noon\", which reads the same both ways, so the answer is true.",
+    "approach": "Two pointers from opposite ends. A palindrome is a row of mirrored pairs: the first character that counts must match the last one, the second must match the second to last, and so on. Put `l` at the start and `r` at the end. When a pointer sits on a character that doesn't count, step it inward. When both sit on letters or digits, compare them in lowercase: a mismatch means the answer is `False`, and a match moves both pointers inward. Each step moves at least one pointer, so one pass is enough.",
+    "whyNot": "The tempting route is to build a cleaned, lowercase copy of `s` and compare it with its reverse. That works in O(n) time, but the copy and its reverse take O(n) extra space, and the target is O(1). The two pointers skip the same characters in place, so nothing is copied.",
+    "slots": {
+      "setup": "Put `l` on the first index and `r` on the last.",
+      "loop": "Keep going while `l` is strictly left of `r`. When they meet, stop: a character both point at is the middle one, and it has no partner to check.",
+      "update": "If the character at `l` isn't a letter or digit, move `l` one step right. Otherwise, if the one at `r` isn't, move `r` one step left. After a matching pair, move both inward.",
+      "record": "When both pointers sit on letters or digits, compare the two characters in lowercase. If they differ, stop and return `False`.",
+      "return": "If the loop ends without a mismatch, every pair matched, so return `True`. That includes a string with no letters or digits at all."
+    }
+  },
+  "solution": {
+    "code": "class Solution:\n    def isPalindrome(self, s: str) -> bool:\n        l, r = 0, len(s) - 1\n        while l < r:\n            if not s[l].isalnum():\n                l += 1  # viz:skip_l\n            elif not s[r].isalnum():\n                r -= 1  # viz:skip_r\n            elif s[l].lower() != s[r].lower():  # viz:compare\n                return False  # viz:mismatch\n            else:\n                l += 1  # viz:match\n                r -= 1\n        return True  # viz:done\n",
+    "explanation": "Each round of the loop either moves one pointer past a character that doesn't count, stops at a mismatch, or moves both pointers inward after a match. So the gap between `l` and `r` shrinks by at least one each round, and the loop runs at most n times: O(n) time. Nothing is copied; you only keep two indexes, so the extra space is O(1).",
+    "toolkit": ["isalnum", "lower"]
+  },
+  "viz": {
+    "primary": "s",
+    "pointers": [
+      {"var": "l", "into": "s", "label": "l", "color": "a"},
+      {"var": "r", "into": "s", "label": "r", "color": "b"}
+    ],
+    "window": null,
+    "range": null,
+    "roles": {"stack": [], "queue": [], "hidden": []},
+    "confirmed": {"into": "s", "outside": ["l", "r"]},
+    "events": [
+      {
+        "id": "skip_l",
+        "at": "skip_l",
+        "label": "skip",
+        "say": "s[{l}] is {s[l]!r}, not a letter or digit, so l steps past it"
+      },
+      {
+        "id": "skip_r",
+        "at": "skip_r",
+        "label": "skip",
+        "say": "s[{r}] is {s[r]!r}, not a letter or digit, so r steps past it"
+      },
+      {
+        "id": "compare",
+        "at": "compare",
+        "label": "compare",
+        "say": "s[{l}] is {s[l]!r} and s[{r}] is {s[r]!r}. Both count, so compare them"
+      },
+      {
+        "id": "match",
+        "at": "match",
+        "label": "match",
+        "say": "{s[l].lower()!r} matches {s[r].lower()!r}, so both pointers move inward"
+      },
+      {
+        "id": "mismatch",
+        "at": "mismatch",
+        "label": "mismatch",
+        "say": "{s[l].lower()!r} and {s[r].lower()!r} differ, so s is not a palindrome"
+      },
+      {
+        "id": "done",
+        "at": "done",
+        "label": "return",
+        "say": "No pairs are left to check, and none of them differed, so s is a palindrome"
+      }
+    ],
+    "predict": [
+      {
+        "atEvent": "skip_r",
+        "occurrence": 1,
+        "ask": "Where will r point next?",
+        "var": "r",
+        "kind": "index"
+      },
+      {
+        "atEvent": "compare",
+        "occurrence": 1,
+        "ask": "Do these two characters count as a match?",
+        "kind": "yesno",
+        "answerWhen": "s[l].lower() == s[r].lower()"
+      },
+      {
+        "atEvent": "skip_l",
+        "occurrence": 1,
+        "ask": "After l steps past this character, will the loop keep going?",
+        "kind": "yesno",
+        "answerWhen": "l + 1 < r"
+      }
+    ]
+  },
+  "tests": [
+    {"id": "e1", "args": ["Top spot!"], "expected": true, "hidden": false},
+    {"id": "e2", "args": ["Top 2 spot"], "expected": false, "hidden": false},
+    {"id": "e3", "args": ["?! ."], "expected": true, "hidden": false},
+    {"id": "h1", "args": ["z"], "expected": true, "hidden": true},
+    {"id": "h2", "args": ["#"], "expected": true, "hidden": true},
+    {"id": "h3", "args": ["AbBa"], "expected": true, "hidden": true},
+    {"id": "h4", "args": ["a7, Wa"], "expected": false, "hidden": true},
+    {"id": "h5", "args": ["2025-5202"], "expected": true, "hidden": true},
+    {"id": "h6", "args": ["Hannah's"], "expected": false, "hidden": true},
+    {"id": "h7", "args": ["Pat's tap."], "expected": true, "hidden": true},
+    {"id": "h8", "args": ["Ab,c d!Ba"], "expected": false, "hidden": true},
+    {
+      "id": "h9",
+      "args": [
+        "3,)Zot?.60BdR,,3:-1B,)C5F-L:8WEy-(u!EZCP))A6R-!2'-68gm(.8kr(?w'-907r).jl,?CzC5.;8QQa7Umv'!qvleI)x(?Q1(3R -u)4C9Tq?F ;Csk,'rz,0ccR;e :V:.xACn!6c!fY.Yy;0I)'SV;-D.(xXw:bh);QE48 K'x8 7  MzHeHQ7!g-,05lXDZF5,C?,kvdF(:W-e(6-oAN',9C7,V!K)'1,09vp'01plh2?77b318Lj!!h:e4-?A!;4x)Wk?z72M):7e(:006:.1'D6W(yko'j)d !4d03'7 )K .xh'II6x6- Zr?'JOh6Ov0U' Pvay1:.G.T!l .0,mQ'.I5!4n7)-g?!U?Hg;08-1!,BWU7.36W7Hn8k.!N; je;;H0?G9Oz0mdlHgWTzt:?zo;q 56-N8bU,k!0OPn5,4!)4wG2MaD?im'q?LG8XS6.?f!;mu!7!;sitA:K..04t)98E5G)l2m;h9E -QEG(,T20 (EFkc: 8),3(d?I4adg)?p.i5-6v'9EC, 5dB38i'64q)!6pEP?(h:.U)'uz. uYr!ge)f5bKqg?;l6:(8E.!yf02;)1oQi)pue815GO7e0gEVu:s-;jjcXr ?QY92MM1jK(ZaS8,Hu0-;06;(95ry()262?O(0,3eoxGrn:!KL,,00I7kT7U!:M?11xIy(QP?.0 !e)dIo dG::W'!Rt J!!23sf0ms'U?M-En3ZYXA0n6,-t,;d (Gol0sr'T-P6j'?4p.ys((dkx86nW1H:K (9's.y7);sN'4,t0 NeY6ccvGhL6Ym(3tPoE,(95.n(;H.n2OZT40 eh,PH7A-:E1)-69P56R,.Y,7qd)ckP,)R'?uR EXCy( 51imjTv( 3;380C:.yg,cX!.gK383.pw-)456b8!,zN:,ur!z -gCWQ4K--2?RG5(-C';1:cR;wFUn(J)DId;eaRD) G,)11:!8.:nI:lJ5!!k;?626Rt,?58SV,;6X6):vXKw ;G!7v-7h4GF?.q1i1S?B53-BaAI6!(9w7 :l7VO-48-;2My'(hhYm!,2:.84o-V7L),7:W96):iaab!(35:BS1i1!;q-f!.G4:-H7V7 :gWkxv6;)X(6vS85'T:R;;6,26K5Jlin'81) 1G,dRA()edI ?Dj:N(!U;(F wrc??1:C, 5?.gR2K4Qw!.cGzRuNZ8:B6;5'4Wp383.kGXCGYC-0833,VtjMI15 !Y?CxE.Ru,(R,pkcDQ7?Y- R65p-961EA -7-hPHE0.4;?tZO;2,?NhN5-9eOpt3MY6Lh;gvCC6)yE,-n0,t,4ns;7..yS;?9kH,1WN68? Xk)-D SYp4,!j6PTrs-,0'.l'oG):d:t6, N0axYZ(3N!-E'MUS;)m0FS32Jtrw! GDoIDE0-'pQYiX'.11m,U7! TK7i00lKnr.G;X.OE3 0)!o262)yR59' 6('00u'H8),SA!z)(k!J1, m. M29yq?'R;;x;!cjJs)u,VEG0 ;e7O?,G?-518eUPi,QO1.20)F-Ye86lGqkB5F,(EgryuZuUH;P.eP-6Q46-i8:;3!bd5ce9( v.6,5?;Ipg d. a4iD3' 8;'Ck-fe:,02T-?G')eqe):9,hM2L)G5e8(!9t40Ka?,t,-is!7??Umf6sx8gLqMIDa:?M2GW.'4:(45:!n?PO0Ku?B'!8N!6? 5(qO??ztz)t wGHlDM0zo!9G0)?HEj,.nK 8N-h?7,W63 '7UwB180gH?!UG',7 'n45IQ!m.)0lt(G1yAVpU:0VO6Ho:Jrz)6X6!'II-hx,)K(730,D4'Djo.kY;!W6D!!1.6(-0'.0e,7M2':7ZKWx);4-A4EhJL8'1('3?-b!?7! 72H)'L?p.'10- pV901kv!7c,9:?na;o:6e:,w)fDvkC5F )z?-d(X)!l50)G7,?QH;ehZm78,xk 8! 4e?,q'-Hb(w(!XXDV!sI:0YYYFC6):N' C!,aXVe;RcC0:zr'kSC.f;.QT9c(?4Ur31qXIelVQ,)Vmu. 7a?Qq8 5C;'zc'lJ)r70)9WRK8Mg- 8!6.2R6A(.pcze:Uy-EW8)l;!f5cb13r(?db 0.-6Toz3!"
+      ],
+      "expected": true,
+      "hidden": true
+    },
+    {
+      "id": "h10",
+      "args": [
+        ".ls((H-(G4-!R6si0!56)f(PTGP.Vw;65kwC2hN9S.:8GaV;;Mxkj.1l;?wO.,Sip7b?:6WQi:?95?.Yt.KIwh6CsyH-,QK't7YO7 :1'F7!69,(4:!0s?,5ve,)q,)dN0.;j).u!1BEC.-L)V08)uzL'!18!M,Vkj2(6FWj:.E'L.pW))y'!ZlIH';3d7B.-2na('JGl9' lL9N(:T9B)WC0B YGp1;,w;ce?BXYD?qd;;c4) f,(jJh- ud62HX:m  4((Fq3'(W5aE;'D82S;)jz-;Br5,e69GtfEi9??uG?Dr;7?.x--EFo..a' t-.6c ,u,)3jz'?4hyW:W-P)X'IL6L2460r'(3fJ'(gde090g--5:7m455;b 'glq',1v((l! t5.K:!7zOUa.X4mT-)u31713;883,R94)1Q))qp3?spqhE':2VFwf?cH(a,,Fxb)ltCOK1O'8.)l6U-Xn?3Y-(9X(-54:x'ro2.(0s5(d;K E)'bma0-:DdL,?1B: VE49?5o6W;-t;.U !8':t.)mRAN;.0,98kKwT2(sn-lK3)0;:BF2RqJ))a'(9?)3MBX9!fRxL;.C !cTNQ'.g))k6,!x.)IPe:J Bei,,t9I(xU;'g97.u-2!(51R,;68j-,v)-1?v.7-lHHH:(0513X-D0(8)t.Ed'SN2EgkB.;1,3!AgsV3 :tLRZ-OqE92r(,y.sJelo.GW(l!:a4)-kzU8!jg-b(3AwmsB?;2AdESHI0:r-'BHYasA-1k.g,M6hnL-!GF b;N!j?h'aO-;1I'!7,NzL,;0iM('Ay sKu!V3K,.C2r?07 M..h0W?)P;,Kk?(B7gmHZI?cZIe9o5z(s0;!rQQltW7(!Z)Tes''nj;2hT(?bk7F52R:UA)(r::5vzsVg;C9z6,,e?.6PCJx)Au3TyG:?0K2nu14?T0NL!GbKKJ-6.:9:,47Ni:M?XLE!78)(RH ,3rC-CZ jjHF.z1.)Y8 ixhP -JD)ZKq-!Nao,zfS0v,'5.;X''N; F7-?sc--2Wqei9TeY6xgx )c)V);iG;S560)h,cy.d,'y2DS.!W',aBfWs!.d'!2yD);y?Ch0,!65s?GiV-Cx:Gx6Yet9-.iE!qW2!?cs ?7.:f-'n'X5?v?0)!sfZo(aNQKzdJ'p!-H;xi8y)1Z.-f,(HjJZ()cC,r3;HR87eLX?!MIn74;-96!JkkB'gL,-N0t41-'u,(N2K0GY.'T3UA-xjCP6E6 Z9c:gV!:SZv5r!!a)u?:r!25( F,7k-(b;TH-2jnS-!ETZ7w(.Tlq.q'R0SZ5o9EI.'zc-Iz;'H)Mg7BkkPW'?0hM70r2CK?!3Vu;?kS;)YAmI0)!l?,Z).n::7i1'o?ahJnBFg'l(.N'?H6Mg.'k1a--Sayh).B-(R0)'IH,sED);a2(.Bsmw:,A3BgJ8?'UzK4.A?lWg!,OLEjs)YR:2:9eqOzR ,LT3VsgA3!.1BKg:e'2??NsDe,t8 0 Dx3.-150?hhHL7v1)vJ,86R-15,.2U79-guxi9T-IE::Bj; Epi:x6;K.(GQnTCcL?!X-rF9xb;-M(;39AjQR2!,FB--03K ,l NS2.t,.Wk' K89,0NArM(,t8uT(?W6o5;,94!(e-v.b1 LD-D0A)MBEkD5s0!,2.O!?rx45X9y;3N';XU6.l 8--o ?1K(o)C'Tl''b-X, fAHc?'FWFV2)(EHqp;(s,3pq')q1-?49r388) 3171:3,)UtM))4x?AUoz-:7K5:TLv(1QlGb55:4M75'-G0-90ed;GJ!'F3R(,064 ?2L6lIxPW!'w?'YH4z )j,.3Uc6t;aO')FEX7(!RDgU9';i;.e:FtG:(96E'5rb:.Z,'j's2-'8;:de!-a5w!3q F4),mXh;?26dUh jJ')F.4)Cdq,;D)yxbE((C!(W1Pg;?Yb0)'Cw:;b9TN9ll9;LGja?n2B7D3(hIl,ZY!.Wp')LEjWF62jkvM81l::Z)u80 Vl C';eb1uJ0n!DQe,V5S0-49:'67F17oy7TKQh'y ?S;;c)6H(Wi.)kTy59i-!qw6b7p??I',SOW;,l1:,jK!Xmva?:G8(!S9n'?H2(cw.!k5(6Wv, Pg;,TP'F650Is),6r4gH,sl."
+      ],
+      "expected": false,
+      "hidden": true
+    },
+    {"id": "h11", "args": ["4 by 4"], "expected": false, "hidden": true}
+  ],
+  "related": [
+    {
+      "slug": "two-sum-ii",
+      "relation": "Same pointers from both ends, but a sum compared with a target decides which pointer moves, instead of skipping characters that don't count."
+    },
+    {
+      "slug": "three-sum",
+      "relation": "Runs the same inward pointers once per fixed first number of a sorted array, and skips repeated values instead of punctuation."
+    }
+  ]
+}

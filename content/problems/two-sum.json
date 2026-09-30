@@ -1,0 +1,407 @@
+{
+  "slug": "two-sum",
+  "title": "Two Sum",
+  "leetcodeUrl": "https://leetcode.com/problems/two-sum/",
+  "difficulty": "easy",
+  "patternId": "hashing",
+  "order": 1,
+  "summary": "You get a list of integers `nums` and an integer `target`. Somewhere in `nums`, exactly one pair of positions holds two numbers that add up to `target`. Return the indices of those two positions; either order is fine. The two indices must be different, though the numbers at them may be equal.",
+  "examples": [
+    {
+      "input": "nums = [5, 11, 2, 8, 6], target = 10",
+      "output": "[2, 3]",
+      "explanation": "2 + 8 = 10. The 5 at index 0 would need a second 5, and there isn't one."
+    },
+    {
+      "input": "nums = [4, 9, 4], target = 8",
+      "output": "[0, 2]",
+      "explanation": "Equal numbers at different positions can form the pair."
+    },
+    {
+      "input": "nums = [-3, 12, 7, -5], target = 2",
+      "output": "[2, 3]",
+      "explanation": "7 + (-5) = 2. Negative numbers pair up the same way."
+    }
+  ],
+  "constraints": [
+    "2 ≤ len(nums) ≤ 10⁴",
+    "−10⁹ ≤ nums[i] ≤ 10⁹",
+    "−10⁹ ≤ target ≤ 10⁹",
+    "nums is in no particular order"
+  ],
+  "targets": {"time": "O(n)", "space": "O(n)"},
+  "entry": "twoSum",
+  "starterCode": "class Solution:\n    def twoSum(self, nums: list[int], target: int) -> list[int]:\n        pass\n",
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "hashing",
+      "structures": ["hash_map"],
+      "time": "O(n)",
+      "space": "O(n)",
+      "twist": "Store each value's index in a dict, and before storing x, look up its partner target − x.",
+      "twistKeywords": [
+        [
+          "target -",
+          "target-",
+          "target −",
+          "target−",
+          "minus",
+          "subtract",
+          "difference",
+          "complement",
+          "partner",
+          "counterpart",
+          "missing",
+          "complet",
+          "other number"
+        ],
+        [
+          "map",
+          "dict",
+          "hash",
+          "seen",
+          "store",
+          "remember",
+          "save",
+          "look up",
+          "lookup",
+          "already",
+          "so far",
+          "previous",
+          "earlier",
+          "visited",
+          "cache",
+          "memo"
+        ]
+      ]
+    },
+    {
+      "id": "all_pairs",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n²)",
+      "space": "O(1)",
+      "twist": "Check every pair of indices i < j and return the first pair whose numbers add up to target.",
+      "twistKeywords": [
+        [
+          "every pair",
+          "each pair",
+          "all pairs",
+          "all the pairs",
+          "every two",
+          "every combination",
+          "all combinations",
+          "nested",
+          "two loops",
+          "double loop",
+          "inner loop",
+          "two for",
+          "double for",
+          "brute"
+        ],
+        ["sum", "add", "plus", "+", "total", "target", "equal"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but checking every pair takes O(n²) time. The target is O(n)."
+    },
+    {
+      "id": "sort_two_pointers",
+      "patternId": "two_pointers_opposite",
+      "structures": ["sorted"],
+      "time": "O(n log n)",
+      "space": "O(n)",
+      "twist": "Sort the numbers together with their original indices, then move two pointers in from both ends until the sum hits target.",
+      "twistKeywords": [
+        ["sort"],
+        [
+          "original",
+          "keep",
+          "track",
+          "carry",
+          "remember",
+          "save",
+          "store",
+          "enumerate",
+          "zip",
+          "tuple",
+          "with index",
+          "with its index",
+          "with their index",
+          "with indices",
+          "with their indices",
+          "(value, index)",
+          "sort indices",
+          "sort the indices",
+          "indices by",
+          "argsort"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but sorting takes O(n log n) time, and you must carry each number's original index through the sort. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "add up to",
+      "meaning": "Each number x has exactly one partner, target − x. Remember the numbers you've passed so you can look that partner up instead of scanning for it.",
+      "pointsTo": "hashing"
+    },
+    {
+      "phrase": "Return the indices",
+      "meaning": "You need positions, not just values. enumerate() gives you the index and the number together.",
+      "pointsTo": "toolkit:enumerate"
+    },
+    {
+      "phrase": "no particular order",
+      "meaning": "Nothing is sorted, so two pointers from both ends won't work without sorting first, and sorting scrambles the indices. A hash map finds a partner in any order.",
+      "pointsTo": "structure:hash_map"
+    }
+  ],
+  "constraintReading": "len(nums) can reach 10⁴, so checking every pair means up to about 5·10⁷ sums: O(n²), slow in Python. The O(n) time target rules that out and asks for one pass with O(1) lookups, paid for with O(n) space.",
+  "hints": {
+    "clarify": "Do you return the numbers or their positions? Can a number pair with itself? Try the list [5, 2, 8] with a target of 10 by hand: 5 + 5 makes 10, but there's only one 5, so it can't count twice. The pair is 2 + 8, at indices 1 and 2.",
+    "approach": "Hash map and counting. Every number x has exactly one partner that completes the pair: target − x. Walk through `nums` once and keep a dict from each number you've passed to its index. For each new number, check the dict for its partner. A dict lookup is O(1), so one pass is enough.",
+    "whyNot": "Checking every pair works, but it's O(n²) time. Sorting and moving two pointers in from both ends costs O(n log n), and sorting moves the numbers, so you'd have to carry each original index along. A set of seen values can't tell you where the partner was.",
+    "slots": {
+      "setup": "An empty dict `seen`. The key is a number you've already passed; the value is its index.",
+      "loop": "Visit `nums` once with `enumerate`, so you have both the index `i` and the number `x`.",
+      "update": "After the lookup misses, store `x` in `seen` with index `i`. Storing it before the lookup could pair `x` with itself.",
+      "record": "Work out the partner, target − x, and look it up in `seen`. A hit means you've found the pair: the partner's stored index and `i`.",
+      "return": "Return those two indices as soon as the lookup hits. A pair always exists, so the loop never runs out; the empty list after it is only a fallback."
+    }
+  },
+  "solution": {
+    "code": "class Solution:\n    def twoSum(self, nums: list[int], target: int) -> list[int]:\n        seen: dict[int, int] = {}\n        for i, x in enumerate(nums):\n            partner = target - x\n            if partner in seen:  # viz:check\n                return [seen[partner], i]  # viz:found\n            seen[x] = i  # viz:store\n        return []\n",
+    "explanation": "The loop visits each number once, and each dict lookup and insert takes O(1) time on average, so the time is O(n). When the pair is only found at the last number, every earlier number is in `seen` by then: up to n − 1 entries, so the space is O(n).",
+    "toolkit": ["enumerate"]
+  },
+  "viz": {
+    "primary": "nums",
+    "pointers": [{"var": "i", "into": "nums", "label": "i", "color": "a"}],
+    "window": null,
+    "range": null,
+    "roles": {"stack": [], "queue": [], "hidden": []},
+    "confirmed": null,
+    "events": [
+      {
+        "id": "not_itself",
+        "at": "check",
+        "when": "partner == x and partner not in seen",
+        "label": "not itself",
+        "say": "{x} needs another {x}. Only earlier numbers are in seen, so {x} can't pair with itself"
+      },
+      {
+        "id": "check",
+        "at": "check",
+        "label": "look up",
+        "say": "nums[{i}] = {x} needs {partner} to make {target}. Is {partner} in seen?"
+      },
+      {
+        "id": "store",
+        "at": "store",
+        "label": "store",
+        "say": "{partner} isn't in seen, so store {x} with index {i}"
+      },
+      {
+        "id": "found",
+        "at": "found",
+        "label": "found",
+        "say": "{partner} was seen at index {seen[partner]}, so return [{seen[partner]}, {i}]"
+      }
+    ],
+    "predict": [
+      {
+        "atEvent": "store",
+        "occurrence": 1,
+        "ask": "Will the next number find its partner in seen?",
+        "kind": "yesno",
+        "answerWhen": "target - nums[i + 1] == x or target - nums[i + 1] in seen"
+      },
+      {
+        "atEvent": "check",
+        "occurrence": 3,
+        "ask": "Is this partner in seen yet?",
+        "kind": "yesno",
+        "answerWhen": "partner in seen"
+      }
+    ]
+  },
+  "tests": [
+    {
+      "id": "e1",
+      "args": [[5, 11, 2, 8, 6], 10],
+      "expected": [2, 3],
+      "hidden": false,
+      "compare": "unordered"
+    },
+    {
+      "id": "e2",
+      "args": [[4, 9, 4], 8],
+      "expected": [0, 2],
+      "hidden": false,
+      "compare": "unordered"
+    },
+    {
+      "id": "e3",
+      "args": [[-3, 12, 7, -5], 2],
+      "expected": [2, 3],
+      "hidden": false,
+      "compare": "unordered"
+    },
+    {"id": "h1", "args": [[-6, 1], -5], "expected": [0, 1], "hidden": true, "compare": "unordered"},
+    {
+      "id": "h2",
+      "args": [[6, 3, 9], 12],
+      "expected": [1, 2],
+      "hidden": true,
+      "compare": "unordered"
+    },
+    {
+      "id": "h3",
+      "args": [[0, 7, 0, -3], 0],
+      "expected": [0, 2],
+      "hidden": true,
+      "compare": "unordered"
+    },
+    {
+      "id": "h4",
+      "args": [[-7, 3, -12, 20, -1], -8],
+      "expected": [0, 4],
+      "hidden": true,
+      "compare": "unordered"
+    },
+    {
+      "id": "h5",
+      "args": [[1000000000, -999999999, 3, -1], -1000000000],
+      "expected": [1, 3],
+      "hidden": true,
+      "compare": "unordered"
+    },
+    {
+      "id": "h6",
+      "args": [[3, 3, 8, 1], 9],
+      "expected": [2, 3],
+      "hidden": true,
+      "compare": "unordered"
+    },
+    {
+      "id": "h7",
+      "args": [
+        [
+          -39503, -29468, -149636, 322328, 530348, -533752, 415204, -354868, 341848, 52668, 494964,
+          972612, 508304, 350296, -122176, 723620, -953492, -895472, 188212, 483408, 573152,
+          -419492, -20764, 929916, 820284, 587704, 225300, -98660, -943780, 704272, -916372, 43000,
+          816584, -822740, -628048, 286192, 117680, -267676, -839232, 937940, -212076, 414608,
+          -324280, 656020, 767252, -864564, 641352, 848764, 961380, -154452, 882248, -903632,
+          -490264, 937676, -985624, 60532, -415828, -67360, 822360, 73596, 668124, 142704, -789140,
+          -575084, 560200, 620864, 297856, 115936, 560588, -655048, 870184, -436036, 576544,
+          -267164, 615020, 164428, -126916, 107872, -419172, -693748, 561724, -622096, 948168,
+          -927792, 802608, -172856, -915712, 34472, 381224, 353000, 201776, 117348, -443920,
+          -443024, 470572, -973956, 110372, -313744, 837192, 539516, -599236, -280756, 366296,
+          -445780, -285264, 991876, -608856, -860004, -713692, -238840, 789832, 295308, -470660,
+          -86304, 757992, -32872, 714432, -425968, -329208, 3512, 330936, -903376, 979264, 837672,
+          155960, 764432, -376800, -452308, 446572, 536344, 844052, 635184, -810336, -916640,
+          -397044, -650716, 828340, -427600, 602840, -178316, -134908, 460956, 959280, -926284,
+          -907176, 694792, 934112, 890392, -424572, -845252, 270716, -308952, -237336, -972492,
+          971640, -905928, 569164, -549392, 76732, -914748, 397084, -825300, -188384, -194992,
+          -208972, 209612, -139128, -720984, 776260, -377984, -297668, 397604, 563632, 481868,
+          731716, 217148, 944132, 478144, -890332, 694280, 243520, 312692, -228412, 484144, 761608,
+          -225644, -271664, 578012, -951464, 375912, -760584, -457956, -865940, 853596, 693576,
+          -13352, 250012, 122920, -642516, -232188, 146772, 299264, 105432, -597908, -168632,
+          590984, 672668, 800972, 829020, -769228, -844152, 805272, -746548, 923404, -450812, 88904,
+          607300, 371540, 231656, 625116, 900616, -802332, -132948, 20028, 367864, 816904, -637148,
+          -237876, 192328, 959312, -873512, 747620, 899132, -175764, 727724, 477728, -827888, 26100,
+          875916, -930324, -659832, -298192, -888084, -814248, -266464, 605740, 193176, -861940,
+          69864, -511780, -968168, 714316, -554620, 172548, -924208, 111908, -306320, -640944,
+          -83484, 659036, 980948, -124296, 160172, 703944, 519376, 668380, -304332, -508128,
+          -139828, 703052, -97536, 298656, 336304, 745540, 219948, 540704, 303160, 199668, 218288,
+          880620, -501656, -614580, -755656, -50268, 519076, 222080, 283832, 288412, 111224, 103980,
+          -949136, -36996, -110588, 118260, -633460, 198376, 383040, 998368, -692984, 841684,
+          399868, -747656, 378064, 623680, 796364, -860588, 10252, -993104, 14244, -213928, 723696,
+          -265400, -661992, -168328, 109788, 819528, -54088, 945880, 863592, -577648, 86744,
+          -840392, 223976, 977384, -145556, -131408, 49272, 830572, 915300, -97568, -870720, 61664,
+          679560, 686572, -248752, 429932, 930460, 749188, 862616, -189976, -667904, -526276,
+          215256, 612564, -673172, 978088, -872944, 120, -884200, 274716, -128472, 917844, -21436,
+          205996, 88852, -658256, -240380, 309760, 507460, -759256, 935920, -719784, 192660,
+          -713008, 60884, 595352, -230176, 57856, -166672, 392424, 314748, 939124, 824308, 467948,
+          296372, 570708, 691724, -430448, -693792, -518608, -758576, 337876, 604956, 56164,
+          -526704, -298812, -122288, -332832, -491272, -282596, -998632, -210932, 825084, -113172,
+          -794380, -345880, -621608, 567504, 951652, -140408, 872444, -589704, -465028, -729968,
+          36240, 671848, 212604, -7932, 554824, 494556, 929356, -552664, 97728, 271388, 503868,
+          -801144, -328784, 664564, -761860, -783952, 280764, -139980, 133644, -103120, -956704,
+          595792, -268724, -329228, 341740, 440968, 803308, 880400, 84636, 272024, 869484, -27328,
+          613636, 63752, 727884, -258612, 952168, 97920, -764568, 275052, 563304, 584228, 651440,
+          185128, -567048, 144644, -646152, 996308, 357936, 676948, -573928, -697076, -838956,
+          -767088, -144316, 971952, -792032, 163732, -520664, -158272, -124452, -599056, 280584,
+          321364, -881968, -624072, 562464, -747872, -784664, -250836, 573288, 799324, 519908,
+          384148, -350272, -148892, -366228, 878368, 242168, -160772, -537448, 712624, -462684,
+          426344, 664328, 22116, 73344, 754568, -570548, 145072, 239172, 932312, -965748, -320868,
+          -642148, -141152, 813044, -511256, -498624, -553728, 43908, 15684, 577720, 852064, -5476,
+          -255096, -773516, 853656, 960364, 302604, 295232, 683408, -69092, 655380, 961472, -606676,
+          -979092, 272620, 508400, 784392, 738612, 260816, -873720, -736016, 281964, -589116,
+          -447860, 565396, 614248, -638084, 822680, 803456, 922000, 216916, 353944, 355672, 319968,
+          -792728, 118532, 259708, -230880, 235020, 749844, -390744, 597764, 75460, -818512,
+          -589432, 670124, -318924, 110140, -401304, -725976, -360748, 830204, -984964, 454684,
+          -643088, 441528, 254512, 903064, -128636, 13316, 177856, 184500, 138524, -861328, 487648,
+          45616, 531448, -777616, -635244, 183252, -73840, -588276, 430804, -766064, 261048, 168812,
+          798832, -867312, 855068, 988532, -464856, 868128, -856992, 936976, -801528, -353468,
+          -65424, -119164, 462856, 198552, -846148, -820316, 206580, -647912, 448864, 691092,
+          -903808, 232828, 180796, 145700, 405760, 553460, 483404, 427348, -49508, -886292, -712244,
+          811480, 302032, 226804, 295208, 909248, -9360, -971104, 240840, 682272, -894976, -794140,
+          -484248, -714348, 281328, 47388, 316936, 861020, 49268, 596064, -308364, 465560, 355416,
+          152564, -841344, -927628, 36508, 558604, -896236, 684052, -939856, 483164, 609216, 835796,
+          461556, -34432, 474572, 117552, -709404, 73108, -13996, -468860, 74936, -477512, 328228,
+          -852236, -488844, -749800, 577864, -330880, -322316, -172984, -331556, 528744, 305168,
+          -196792, 967632, -416396, 705456, -774388, 825344, 381536, 460924, 351948, 964024, 740552,
+          -868652, 417100, 753816, 654712, -815600, 413852, 45944, -942960, -668612, -472480,
+          -788976, 315284, 905264, 252660, 594908, -631104, 622496, 72472, 118112, 230200, -855240,
+          305176, -208320, 302216, -803560, -133388, 431956, -77196, 783404, 723908, -106612,
+          218316, -531296, 497164, -467900, -716608, 197416, -505400, -336032, -841080, 144364,
+          821600, 494048, 490760, 643620, -106820, 46432, 531864, 357400, -775908, -515548, 192968,
+          87036, 727552, -852660, -117208, 576292, -797268, -857364, 420848, 549872, -284820,
+          -333816, -382944, -686108, 689192, 461804, -703300, -928192, -228764, 433716, -418292,
+          540124, 196204, -457080, 187512, 575168, -207156, 311056, 191388, 171428, -59068, -595504,
+          -593532, -85820, -701520, 978056, 683588, 542684, -643972, 236868, -173732, 611088,
+          -985180, 354076, 691284, 555128, 618712, -400044, 122848, -768912, 494592, -338580,
+          -123148, 593680, 548412, -128528, 69144, 673304, 161248, 28156, -432992, 800752, -185784,
+          338920, 994524, -68976, 710144, 996800, 68328, -70732, 389624, 961220, -525440, 581352,
+          -147100, 263636, 542384, 341280, -46928, 949512, 453732, 569200, -836740, -526548,
+          -244856, 562856, 292516, -794396, -417368, -546812, -652044, -628420, -120924, 431808,
+          -134768, 305992, -731732, 107940, -658160, -372700, 642688, 384092, 91404, 989408,
+          -328676, -579500, -109608, 316760, 221060, 950120, 422048, 898960, 260712, 578128,
+          -113096, -241064, 230312, 308104, -725924, 305824, -201744, -452032, -476788, 556932,
+          -146768, -850144, 832796, 809628, -872264, 376484, 379024, 497336, 498340, -710332,
+          594324, 343504, -510448, -895484, -788392, -258520, 581292, 264096, -437032, 907696,
+          223096, -360488, 288292, 912228, 525840, 752412, 980392, -684480, 965900, 966868, 726304,
+          -57368, -21888, 385764, -400680, -830332, 331780, -120520, -580944, -400452, 800952,
+          841312, -320536, -592672, -843828, -558980, -45632, 496544, -152352, 990084, -197596,
+          -244840, -982084, 179940, 944484, -121964, -549896, 50864, -355272, -892576, 846780,
+          -800208, 961928, -524220, -625640, -131200, 583212, -379068, -436288, -371752, -492924,
+          50632, -691824, 780444, 868372, -16608, -487164, 996376, 737480, -190828, -394060, 231700,
+          -870880, 447648, 382796, -662344, 731300, -223044, 132180, 386828, 57236, 933856, -571004,
+          -249800, 592776, -114028, -757612, -663164, 177484, 374768, 253948, -378124, -190028,
+          93236, 937376, -404948, -565788, 545612, 14348, -373760, -128340, -543132, -856368,
+          -191312, 380624, 52768, 725956, -919116, 402268, 620580, -906876, -296200, -799124,
+          -756104, -625492, 67680, -188028, -590416, 571188, -34136, -376532, -495468, -530592,
+          -837536, 169656, 432932, 182140, 36104, 893004, -555536, 578020, 806832, -753992, -556836,
+          918012, 85390
+        ],
+        45887
+      ],
+      "expected": [0, 999],
+      "hidden": true,
+      "compare": "unordered"
+    }
+  ],
+  "related": [
+    {
+      "slug": "two-sum-ii",
+      "relation": "Same pair sum, but the input is sorted, so two pointers from both ends replace the dict and the space drops to O(1)."
+    },
+    {
+      "slug": "three-sum",
+      "relation": "Finds every triple that sums to zero: sort, fix one number, then find its pairs with two pointers instead of a dict, skipping duplicates."
+    }
+  ]
+}

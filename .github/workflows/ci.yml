@@ -32,6 +32,8 @@ jobs:
       - run: uv sync --project apps/api --frozen
       - name: Validate content
         run: uv run --project apps/api python scripts/validate_content.py
+      - name: Check the content JSON layout
+        run: uv run --project apps/api python scripts/format_content.py --check
 
   api:
     name: api
@@ -63,9 +65,10 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
       - run: uv sync --frozen
-      - run: uv run ruff check .
-      - run: uv run ruff format --check .
-      - run: uv run mypy app
+      # Also the content scripts and the test harness the browser runner shares.
+      - run: uv run ruff check . ../../scripts ../web/public/py
+      - run: uv run ruff format --check . ../../scripts ../web/public/py
+      - run: uv run mypy app ../../scripts ../web/public/py/harness.py
       - run: uv run pytest
       - name: Build the API image (deployability)
         working-directory: .

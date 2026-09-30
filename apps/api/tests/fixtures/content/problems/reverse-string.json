@@ -1,0 +1,58 @@
+{
+  "slug": "reverse-string",
+  "title": "Reverse String",
+  "leetcodeUrl": "https://leetcode.com/problems/reverse-string/",
+  "difficulty": "easy",
+  "patternId": "two_pointers_opposite",
+  "order": 101,
+  "summary": "You get a list of characters `s`. Reverse it in place, using only a constant amount of extra memory.",
+  "examples": [
+    {
+      "input": "s = [\"k\", \"a\", \"y\", \"o\"]",
+      "output": "[\"o\", \"y\", \"a\", \"k\"]"
+    }
+  ],
+  "constraints": [
+    "1 ≤ len(s) ≤ 10⁵",
+    "change the list itself instead of returning a new one"
+  ],
+  "targets": {
+    "time": "O(n)",
+    "space": "O(1)"
+  },
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "two_pointers_opposite",
+      "structures": [
+        "array"
+      ],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Swap the two ends and move both pointers inward.",
+      "twistKeywords": [
+        [
+          "swap"
+        ],
+        [
+          "ends",
+          "inward"
+        ]
+      ]
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "in place",
+      "meaning": "No copy: swap elements from both ends.",
+      "pointsTo": "two_pointers_opposite"
+    },
+    {
+      "phrase": "constant amount of extra memory",
+      "meaning": "Only a couple of indexes are allowed.",
+      "pointsTo": "structure:array"
+    }
+  ],
+  "constraintReading": "Up to 10⁵ characters allows O(n); the O(1) memory rule rules out building a reversed copy.",
+  "drillOnly": true
+}

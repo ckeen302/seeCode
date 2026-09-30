@@ -1,4 +1,4 @@
-"""App factory: settings, database, middleware, error envelope and routers."""
+"""App factory: settings, content, database, middleware, error envelope and routers."""
 
 import logging
 from collections.abc import AsyncIterator
@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth import TokenVerifier
 from app.config import Settings, get_settings
-from app.content.store import compute_content_version
+from app.content.store import load_content
 from app.db import create_engine, create_sessionmaker
 from app.errors import install_error_handlers
 from app.middleware import (
@@ -18,13 +18,18 @@ from app.middleware import (
     UnhandledErrorMiddleware,
 )
 from app.ratelimit import TokenBucketLimiter, rate_limit
-from app.routers import health, me
+from app.routers import content, health, me
 
 API_PREFIX = "/api/v1"
+logger = logging.getLogger("seecode.api")
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
+    # Raises ContentError, listing every problem, when content/ does not validate.
+    content_store = load_content(settings.content_dir)
+    for warning in content_store.warnings:
+        logger.warning("content %s", warning)
     engine = create_engine(settings)
 
     @asynccontextmanager
@@ -44,7 +49,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.engine = engine
     app.state.sessionmaker = create_sessionmaker(engine)
-    app.state.content_version = compute_content_version(settings.content_dir)
+    app.state.content = content_store
+    app.state.content_version = content_store.version
     app.state.token_verifier = TokenVerifier(settings)
     app.state.rate_limiter = TokenBucketLimiter(settings.rate_limit_per_minute)
     app.state.known_profiles = set()
@@ -67,9 +73,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     api = APIRouter(prefix=API_PREFIX)
     api.include_router(health.router)  # not rate limited: host health checks poll it
     api.include_router(me.router, dependencies=[Depends(rate_limit)])
+    api.include_router(content.router, dependencies=[Depends(rate_limit)])
     app.include_router(api)
 
-    logging.getLogger("seecode.api").info(
+    logger.info(
         "SeeCode API ready (env=%s, content=%s, dev_bypass=%s)",
         settings.env,
         app.state.content_version,
@@ -78,4 +85,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     return app
 
 
-app = create_app()
+# `uvicorn app.main:app` reads this attribute. It is built on first access rather than at
+# import, so tests and scripts can import create_app without loading the real content.
+app: FastAPI
+
+
+def __getattr__(name: str) -> FastAPI:
+    if name == "app":
+        application = create_app()
+        globals()["app"] = application
+        return application
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

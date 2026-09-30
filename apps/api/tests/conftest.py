@@ -2,14 +2,19 @@
 
 The test database is wiped and migrated from scratch once per run (downgrade to base,
 then upgrade to head), so it must be a database used only for tests.
+
+Apps built here load the small content set in tests/fixtures/content, not the real
+content/ folder, so authoring changes cannot break unrelated tests. test_real_content.py
+checks the real folder.
 """
 
 import json
 import os
 import time
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Mapping
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from typing import Any
 
 import jwt
@@ -22,6 +27,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from app.config import API_DIR, Settings, normalize_database_url
+from app.content.validation import read_content_files
 from app.main import create_app
 
 TEST_DATABASE_URL = os.environ.get(
@@ -31,6 +37,7 @@ SUPABASE_URL = "https://test-project.supabase.co"
 ISSUER = f"{SUPABASE_URL}/auth/v1"
 JWT_SECRET = "test-only-hs256-secret-of-at-least-32-bytes"
 DEV_USER = "00000000-0000-4000-8000-000000000001"
+FIXTURE_CONTENT = Path(__file__).resolve().parent / "fixtures" / "content"
 
 
 def make_settings(**overrides: Any) -> Settings:
@@ -41,6 +48,7 @@ def make_settings(**overrides: Any) -> Settings:
         "supabase_url": SUPABASE_URL,
         "supabase_jwt_secret": JWT_SECRET,
         "cors_origins": "http://localhost:3000",
+        "content_dir": FIXTURE_CONTENT,
     }
     values.update(overrides)
     return Settings(_env_file=None, **values)  # type: ignore[call-arg]
@@ -122,3 +130,27 @@ async def create_auth_user(
             ),
             {"id": user_id, "meta": json.dumps(metadata or {})},
         )
+
+
+# ---------------------------------------------------------------- content fixtures
+
+
+def fixture_documents() -> dict[str, Any]:
+    """A fresh parsed copy of the fixture content, by relative path, for tests to modify."""
+    return {name: json.loads(raw) for name, raw in read_content_files(FIXTURE_CONTENT).items()}
+
+
+def encode_documents(documents: Mapping[str, Any]) -> dict[str, bytes]:
+    return {
+        name: json.dumps(document, ensure_ascii=False).encode()
+        for name, document in documents.items()
+    }
+
+
+def write_documents(root: Path, documents: Mapping[str, Any]) -> Path:
+    """Write documents as a content folder under `root` and return it."""
+    for name, raw in encode_documents(documents).items():
+        path = root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(raw)
+    return root

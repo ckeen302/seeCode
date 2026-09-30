@@ -1,0 +1,181 @@
+{
+  "slug": "valid-anagram",
+  "title": "Valid Anagram",
+  "leetcodeUrl": "https://leetcode.com/problems/valid-anagram/",
+  "difficulty": "easy",
+  "patternId": "hashing",
+  "order": 2,
+  "summary": "You get two strings `s` and `t`. Decide whether `t` uses exactly the same letters as `s`, each one the same number of times, possibly in a different order.",
+  "examples": [
+    {
+      "input": "s = \"stone\", t = \"tones\"",
+      "output": "true"
+    },
+    {
+      "input": "s = \"ab\", t = \"bb\"",
+      "output": "false",
+      "explanation": "t has two \"b\"s and no \"a\"."
+    }
+  ],
+  "constraints": [
+    "1 ≤ len(s), len(t) ≤ 5·10⁴",
+    "both strings hold only lowercase English letters"
+  ],
+  "targets": {
+    "time": "O(n)",
+    "space": "O(1)"
+  },
+  "entry": "isAnagram",
+  "starterCode": "class Solution:\n    def isAnagram(self, s: str, t: str) -> bool:\n        pass\n",
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "hashing",
+      "structures": [
+        "counter"
+      ],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Compare the character counts of both strings.",
+      "twistKeywords": [
+        [
+          "count",
+          "counter",
+          "frequency",
+          "frequencies"
+        ]
+      ]
+    },
+    {
+      "id": "sort_both",
+      "patternId": "brute_force",
+      "structures": [
+        "sorted"
+      ],
+      "time": "O(n log n)",
+      "space": "O(n)",
+      "twist": "Sort both strings and compare them.",
+      "twistKeywords": [
+        [
+          "sort"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but sorting takes O(n log n) time and O(n) space."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "the same number of times",
+      "meaning": "Compare how often each letter appears.",
+      "pointsTo": "toolkit:counter"
+    },
+    {
+      "phrase": "only lowercase English letters",
+      "meaning": "At most 26 keys, so the counts take O(1) space.",
+      "pointsTo": "structure:counter"
+    }
+  ],
+  "constraintReading": "Up to 5·10⁴ letters allows O(n) or O(n log n); only 26 possible letters keeps a count table at O(1) space.",
+  "hints": {
+    "clarify": "Does order matter? Does \"aab\" match \"abb\"? Count the letters of each by hand.",
+    "approach": "Count the letters of s, then walk t and take each letter away. A count that goes below zero means t has an extra letter.",
+    "whyNot": "Two pointers compare positions, but here positions do not matter, only counts.",
+    "slots": {
+      "setup": "Return False early when the lengths differ, then count the letters of s.",
+      "loop": "Go over every letter of t.",
+      "update": "Take one away from that letter's count.",
+      "record": "If a count drops below zero, return False.",
+      "return": "If the loop finishes, every count matched: return True."
+    }
+  },
+  "solution": {
+    "code": "class Solution:\n    def isAnagram(self, s: str, t: str) -> bool:\n        if len(s) != len(t):  # viz:lengths\n            return False\n        counts = Counter(s)  # viz:count\n        for ch in t:\n            counts[ch] -= 1  # viz:use\n            if counts[ch] < 0:\n                return False  # viz:extra\n        return True  # viz:done\n",
+    "explanation": "Counting s and walking t are both O(n). The counter has at most 26 keys, so the space is O(1).",
+    "toolkit": [
+      "counter"
+    ]
+  },
+  "viz": {
+    "primary": "t",
+    "events": [
+      {
+        "id": "lengths",
+        "at": "lengths",
+        "label": "lengths",
+        "say": "Compare the lengths {len(s)} and {len(t)}"
+      },
+      {
+        "id": "use",
+        "at": "use",
+        "label": "use",
+        "say": "Take one {ch!r} away"
+      },
+      {
+        "id": "extra",
+        "at": "extra",
+        "label": "extra",
+        "say": "t has an extra {ch!r}"
+      },
+      {
+        "id": "done",
+        "at": "done",
+        "label": "return",
+        "say": "Every count matched"
+      }
+    ]
+  },
+  "tests": [
+    {
+      "id": "e1",
+      "args": [
+        "stone",
+        "tones"
+      ],
+      "expected": true,
+      "hidden": false
+    },
+    {
+      "id": "e2",
+      "args": [
+        "ab",
+        "bb"
+      ],
+      "expected": false,
+      "hidden": false
+    },
+    {
+      "id": "h1",
+      "args": [
+        "q",
+        "q"
+      ],
+      "expected": true,
+      "hidden": true
+    },
+    {
+      "id": "h2",
+      "args": [
+        "aab",
+        "abb"
+      ],
+      "expected": false,
+      "hidden": true
+    },
+    {
+      "id": "h3",
+      "args": [
+        "listen",
+        "enlist"
+      ],
+      "expected": true,
+      "hidden": true
+    }
+  ],
+  "related": [
+    {
+      "slug": "two-sum",
+      "relation": "Also a hash map, but it remembers positions instead of counts."
+    }
+  ]
+}

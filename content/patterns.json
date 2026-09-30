@@ -1,0 +1,560 @@
+[
+  {
+    "id": "hashing",
+    "family": "hashing",
+    "name": "Hash map and counting",
+    "idea": "Trade memory for speed: remember what you've seen so lookups are O(1).",
+    "explanation": "Reach for a hash map when the problem asks whether you have met something before, how often something appears, or which items belong together. A `dict` or `set` remembers what you have seen, so each new item gets its answer right away, without scanning back through the input.\n\nIt works because looking up a key takes O(1) time on average, however big the map gets. One pass over n items then costs O(n) time. The price is memory: the map can hold up to n entries, so the space is O(n). Counts of lowercase letters are the exception: at most 26 keys, so O(1).\n\nThe brute force compares every item with every other item, which is O(n²). A hash map replaces that inner loop with a single lookup. If the order of the items matters more than their values or counts, a map is usually the wrong tool.",
+    "signals": [
+      {
+        "phrase": "appears more than once",
+        "meaning": "Keep a set of what you've seen and check it before you add."
+      },
+      {"phrase": "how many times", "meaning": "Count with a Counter or a dict in one pass."},
+      {
+        "phrase": "same letters in a different order",
+        "meaning": "Two words match when their letter counts match."
+      },
+      {"phrase": "group together", "meaning": "Map each item to a key its whole group shares."},
+      {
+        "phrase": "add up to a target",
+        "meaning": "In unsorted input, look up the partner each number needs among the numbers seen so far."
+      }
+    ],
+    "template": "def solve(nums):\n    seen = {}  # SETUP: key -> what you need later (an index, a count, a list)\n    for i, x in enumerate(nums):  # LOOP: one pass over the input\n        if x in seen:  # RECORD: look up x before you store it\n            return ...\n        seen[x] = i  # UPDATE: store x so later items can find it\n    return ...  # RETURN: the answer when no lookup ended the loop early\n",
+    "slots": [
+      {
+        "id": "setup",
+        "label": "Pick the map",
+        "prompt": "What is the key, and what do you store with it?"
+      },
+      {"id": "loop", "label": "One pass", "prompt": "What do you visit, one item at a time?"},
+      {"id": "update", "label": "Store", "prompt": "What do you add or count for each item?"},
+      {
+        "id": "record",
+        "label": "Look up",
+        "prompt": "What do you check in the map, and when does that give the answer?"
+      },
+      {
+        "id": "return",
+        "label": "Answer",
+        "prompt": "What do you return, and what if nothing matched?"
+      }
+    ],
+    "variations": [
+      {
+        "name": "Seen set",
+        "line": "Add each item to a set; an item that is already there is a repeat."
+      },
+      {
+        "name": "Partner lookup",
+        "line": "Before storing x, check whether the value it pairs with is already in the map."
+      },
+      {
+        "name": "Count and compare",
+        "line": "Count items with a Counter, then compare two counts or pick the most frequent."
+      },
+      {
+        "name": "Group by key",
+        "line": "Give each item a key its group shares, and collect the groups in a defaultdict(list)."
+      }
+    ],
+    "mistakes": [
+      "Storing x before looking up its partner, so x can pair with itself.",
+      "Reading a missing key from a plain dict, which raises KeyError; use get(key, 0), a Counter or a defaultdict.",
+      "Using a list as a dict key, which raises TypeError; turn it into a tuple first.",
+      "Checking x in a list inside the loop: that scans the list every time and brings back O(n²)."
+    ],
+    "demo": {
+      "code": "class Solution:\n    def demo(self, nums):\n        seen = {}\n        for i, x in enumerate(nums):\n            if x in seen:  # viz:check\n                return [seen[x], i]  # viz:found\n            seen[x] = i  # viz:store\n        return []\n",
+      "entry": "demo",
+      "args": [[4, 7, 1, 7, 3]],
+      "viz": {
+        "primary": "nums",
+        "pointers": [{"var": "i", "into": "nums", "label": "i", "color": "a"}],
+        "events": [
+          {
+            "id": "check",
+            "at": "check",
+            "label": "look up",
+            "say": "Look up {x}: is it already in seen?"
+          },
+          {
+            "id": "store",
+            "at": "store",
+            "label": "store",
+            "say": "{x} is new, so store it: seen[{x}] = {i}"
+          },
+          {
+            "id": "found",
+            "at": "found",
+            "label": "found",
+            "say": "{x} is already in seen at index {seen[x]}, so it repeats at {seen[x]} and {i}"
+          }
+        ]
+      }
+    },
+    "toolkit": [
+      "counter",
+      "set_ops",
+      "enumerate",
+      "defaultdict_list",
+      "most_common",
+      "nlargest",
+      "heapq",
+      "sorted_key",
+      "ord_chr",
+      "join",
+      "zip",
+      "min_max_key",
+      "any_all",
+      "lower"
+    ]
+  },
+  {
+    "id": "two_pointers_opposite",
+    "family": "two_pointers",
+    "name": "Two pointers (opposite ends)",
+    "idea": "Move pointers inward from both ends so each step rules out work.",
+    "explanation": "Reach for two pointers from opposite ends when the input is a sorted array or a string and the answer depends on pairs: a pair with a given sum, a palindrome check, the container that holds the most water. Put `l` at the start and `r` at the end, look at the pair, and move one pointer inward.\n\nIt works because every move rules something out for good. In a sorted array, if `nums[l] + nums[r]` is too small, `nums[l]` can't be in the answer: even the largest number left was not enough. So `l` moves right. Everything outside `l..r` is settled, and that part only grows.\n\nEach pointer crosses the input at most once, so a pass is O(n) time and O(1) extra space. Checking every pair is O(n²). If you need pairs but the input is not sorted, sorting first costs O(n log n), which is still better than O(n²).",
+    "signals": [
+      {
+        "phrase": "sorted array",
+        "meaning": "Moving l or r changes the sum or value in a known direction."
+      },
+      {
+        "phrase": "reads the same forward and backward",
+        "meaning": "Compare the two ends and move inward."
+      },
+      {
+        "phrase": "O(1) extra space",
+        "meaning": "No copies or maps: work in place with two indexes."
+      },
+      {
+        "phrase": "reverse in place",
+        "meaning": "Swap the two ends, then move both pointers inward."
+      },
+      {
+        "phrase": "three numbers",
+        "meaning": "Fix one number, then run two pointers on the rest of the sorted array."
+      }
+    ],
+    "template": "def solve(nums):\n    l, r = 0, len(nums) - 1  # SETUP: one pointer at each end\n    while l < r:  # LOOP: stop when the pointers meet\n        # RECORD: check the pair nums[l], nums[r]; save or return the answer\n        ...\n        # UPDATE: move the pointer that can't be part of a better answer\n        if ...:\n            l += 1\n        else:\n            r -= 1\n    return ...  # RETURN\n",
+    "slots": [
+      {"id": "setup", "label": "Place the pointers", "prompt": "Where do l and r start?"},
+      {"id": "loop", "label": "Stop condition", "prompt": "When do you stop: l < r or l <= r?"},
+      {"id": "update", "label": "Move inward", "prompt": "What decides which pointer moves?"},
+      {
+        "id": "record",
+        "label": "Check the pair",
+        "prompt": "What do you compare or save at each step?"
+      },
+      {
+        "id": "return",
+        "label": "When they meet",
+        "prompt": "What do you return if the pointers meet without an early exit?"
+      }
+    ],
+    "variations": [
+      {
+        "name": "Pair sum on sorted input",
+        "line": "Move l up if the sum is too small, r down if it is too big."
+      },
+      {
+        "name": "Symmetry check",
+        "line": "Compare both ends and move inward; skip characters that don't count."
+      },
+      {
+        "name": "Fixed element + pair",
+        "line": "Sort, loop over one element, and run two pointers on the rest."
+      },
+      {
+        "name": "Keep the better side",
+        "line": "Move the pointer at the shorter side, since only that move can lead to a better answer."
+      }
+    ],
+    "mistakes": [
+      "Using l <= r when the middle element should not be compared with itself.",
+      "Forgetting to move a pointer after a match, so the loop never ends.",
+      "Running opposite-end pointers on unsorted input when the moves depend on order; sort first.",
+      "Skipping characters or duplicates in an inner loop without checking l < r, so one pointer runs past the other."
+    ],
+    "demo": {
+      "code": "class Solution:\n    def demo(self, nums, target):\n        l, r = 0, len(nums) - 1\n        while l < r:\n            s = nums[l] + nums[r]  # viz:sum\n            if s == target:\n                return [l, r]  # viz:found\n            if s < target:\n                l += 1  # viz:move_l\n            else:\n                r -= 1  # viz:move_r\n        return []\n",
+      "entry": "demo",
+      "args": [[1, 3, 4, 6, 8, 11], 10],
+      "viz": {
+        "primary": "nums",
+        "pointers": [
+          {"var": "l", "into": "nums", "label": "l", "color": "a"},
+          {"var": "r", "into": "nums", "label": "r", "color": "b"}
+        ],
+        "confirmed": {"into": "nums", "outside": ["l", "r"]},
+        "events": [
+          {
+            "id": "sum",
+            "at": "sum",
+            "label": "sum",
+            "say": "{nums[l]} + {nums[r]} = {nums[l] + nums[r]}"
+          },
+          {
+            "id": "move_l",
+            "at": "move_l",
+            "label": "move l",
+            "say": "{s} is less than {target}, so l moves right to a bigger number"
+          },
+          {
+            "id": "move_r",
+            "at": "move_r",
+            "label": "move r",
+            "say": "{s} is more than {target}, so r moves left to a smaller number"
+          },
+          {
+            "id": "found",
+            "at": "found",
+            "label": "found",
+            "say": "{s} is the target: return [{l}, {r}]"
+          }
+        ]
+      }
+    },
+    "toolkit": ["lower", "isalnum", "isalpha_isdigit", "reverse_slice", "sorted_key", "inf"]
+  },
+  {
+    "id": "stack",
+    "family": "stack",
+    "name": "Stack",
+    "idea": "Keep unresolved items on a stack; each new item resolves what's on top.",
+    "explanation": "Reach for a stack when each item waits to be matched or answered by a later item, and the newest waiting item is always the one to settle first: opening brackets waiting for their closer, numbers waiting for an operator, days waiting for a warmer day.\n\nA Python list is a stack: `append` pushes onto the top and `pop` takes from the top. When a new item arrives, it only looks at the top, the most recent item still waiting. It pops everything it can settle, then pushes itself to wait. A stack whose values always rise or always fall is called a monotonic stack; it answers \"next greater\" and \"next smaller\" questions.\n\nEach item is pushed once and popped at most once, so the pass is O(n) time even with a `while` inside the `for`. The stack can hold every item, so the space is O(n). The brute force scans ahead from every item, which is O(n²).",
+    "signals": [
+      {
+        "phrase": "properly nested",
+        "meaning": "The latest opener must close first: push openers, pop on closers."
+      },
+      {
+        "phrase": "next greater",
+        "meaning": "Items wait on the stack until a bigger value arrives and answers them."
+      },
+      {
+        "phrase": "most recent",
+        "meaning": "The top of the stack is always the newest item still waiting."
+      },
+      {
+        "phrase": "adjacent duplicates",
+        "meaning": "Compare each item with the top; pop when they cancel out."
+      },
+      {
+        "phrase": "operator comes after its operands",
+        "meaning": "Push numbers; each operator pops two and pushes the result."
+      }
+    ],
+    "template": "def solve(nums):\n    stack = []  # SETUP: items still waiting for their answer\n    for x in nums:  # LOOP\n        # UPDATE: while x settles the top, pop it\n        while stack and ...:\n            top = stack.pop()\n            ...  # RECORD: save the answer for top\n        stack.append(x)  # x waits for its own answer\n    return ...  # RETURN: built from what you recorded, or from what is left\n",
+    "slots": [
+      {
+        "id": "setup",
+        "label": "The stack",
+        "prompt": "What waits on the stack: values, indexes, or openers?"
+      },
+      {"id": "loop", "label": "Scan", "prompt": "In what order do you read the items?"},
+      {
+        "id": "update",
+        "label": "Push and pop",
+        "prompt": "When does a new item pop the top, and when does it push?"
+      },
+      {
+        "id": "record",
+        "label": "Resolve",
+        "prompt": "What do you save when an item leaves the stack?"
+      },
+      {
+        "id": "return",
+        "label": "What's left",
+        "prompt": "What do you return, and what does a non-empty stack mean at the end?"
+      }
+    ],
+    "variations": [
+      {
+        "name": "Matching pairs",
+        "line": "Push openers; each closer must match the top, or the input is invalid."
+      },
+      {
+        "name": "Evaluate as you go",
+        "line": "Push numbers; an operator pops its two operands and pushes the result."
+      },
+      {
+        "name": "Monotonic stack",
+        "line": "Keep indexes whose values fall; a bigger value pops and answers each smaller one."
+      },
+      {
+        "name": "Cancel with the top",
+        "line": "Compare each new item with the top and pop it when they cancel."
+      }
+    ],
+    "mistakes": [
+      "Calling pop() or reading stack[-1] on an empty stack, which raises IndexError; check the stack first.",
+      "Ignoring what is left on the stack at the end, such as an opener that never closed.",
+      "Popping operands in the wrong order: the first pop is the right operand, the second is the left.",
+      "Pushing values when the answer needs positions; push indexes if you need a distance.",
+      "Spotting number tokens with .isdigit(): \"-4\".isdigit() is False, so test for the operators instead."
+    ],
+    "demo": {
+      "code": "class Solution:\n    def demo(self, nums):\n        ans = [-1] * len(nums)\n        stack = []\n        for i, x in enumerate(nums):\n            while stack and nums[stack[-1]] < x:\n                ans[stack.pop()] = x  # viz:pop\n            stack.append(i)  # viz:push\n        return ans  # viz:done\n",
+      "entry": "demo",
+      "args": [[3, 1, 2, 5, 4]],
+      "viz": {
+        "primary": "nums",
+        "pointers": [{"var": "i", "into": "nums", "label": "i", "color": "a"}],
+        "roles": {"stack": ["stack"], "queue": [], "hidden": []},
+        "events": [
+          {
+            "id": "pop",
+            "at": "pop",
+            "label": "pop",
+            "say": "{x} is bigger than {nums[stack[-1]]}, so index {stack[-1]} gets {x} as its answer"
+          },
+          {
+            "id": "push",
+            "at": "push",
+            "label": "push",
+            "say": "Push index {i}: {x} waits for a bigger value"
+          },
+          {
+            "id": "done",
+            "at": "done",
+            "label": "return",
+            "say": "Indexes left on the stack never met a bigger value, so they keep -1"
+          }
+        ]
+      }
+    },
+    "toolkit": ["enumerate", "int_trunc", "split", "join"]
+  },
+  {
+    "id": "sliding_window",
+    "family": "two_pointers",
+    "name": "Sliding window",
+    "idea": "Grow a window on the right, shrink it on the left while it breaks a rule.",
+    "explanation": "Reach for a sliding window when the answer is one contiguous piece of an array or string: the longest substring that follows a rule, the shortest subarray that reaches a sum, the best stretch of days. The window is the slice from `l` to `r`.\n\nMove `r` forward one step at a time to grow the window, and update what you track about it: a sum, a count, a set. When the window breaks the rule, move `l` forward until it is valid again, then record the answer. Neither pointer ever moves back. If the length is fixed at k, add the new item and drop the oldest one in the same step.\n\nEach item enters the window once and leaves at most once, so the pass is O(n) time. The space is what the window state needs: O(1) for a sum, O(k) for counts of k distinct values. Trying every start and end instead is O(n²), plus the cost of checking each slice.",
+    "signals": [
+      {
+        "phrase": "contiguous subarray",
+        "meaning": "The answer is one unbroken slice. A window fits when adding an item only pushes the state one way, like a sum of non-negative numbers."
+      },
+      {
+        "phrase": "longest substring",
+        "meaning": "Grow the window and keep the longest length that follows the rule."
+      },
+      {
+        "phrase": "at most k",
+        "meaning": "The rule is a limit: shrink from the left while you are over it."
+      },
+      {
+        "phrase": "k consecutive",
+        "meaning": "The window has a fixed size: add one item on the right, drop one on the left."
+      },
+      {
+        "phrase": "without repeating characters",
+        "meaning": "Shrink from the left until the new character is the only copy in the window."
+      }
+    ],
+    "template": "def solve(nums):\n    l = 0  # SETUP: the window is nums[l..r], plus what you track about it\n    state = 0\n    best = 0\n    for r in range(len(nums)):  # LOOP: grow the window one step to the right\n        state += nums[r]  # add nums[r] to the window state\n        while ...:  # UPDATE: shrink from the left while the window breaks the rule\n            state -= nums[l]\n            l += 1\n        best = max(best, r - l + 1)  # RECORD: the window is valid here\n    return best  # RETURN\n",
+    "slots": [
+      {
+        "id": "setup",
+        "label": "Window state",
+        "prompt": "What do you track inside the window, and where does l start?"
+      },
+      {
+        "id": "loop",
+        "label": "Grow right",
+        "prompt": "What does each new item on the right add to the state?"
+      },
+      {
+        "id": "update",
+        "label": "Shrink left",
+        "prompt": "What breaks the rule, and what do you undo as l moves right?"
+      },
+      {
+        "id": "record",
+        "label": "Best window",
+        "prompt": "What do you measure once the window is valid?"
+      },
+      {"id": "return", "label": "Answer", "prompt": "What do you return after r reaches the end?"}
+    ],
+    "variations": [
+      {
+        "name": "Lowest point so far",
+        "line": "Keep l at the smallest value seen; compare each new r against it."
+      },
+      {
+        "name": "Longest valid window",
+        "line": "Grow on the right, shrink on the left while the rule breaks, keep the longest."
+      },
+      {
+        "name": "Shortest window that works",
+        "line": "Shrink while the window still meets the goal, and keep the shortest."
+      },
+      {
+        "name": "Fixed size k",
+        "line": "Add the item that enters on the right and remove the one that leaves on the left."
+      }
+    ],
+    "mistakes": [
+      "Shrinking with if instead of while, so the window can stay invalid.",
+      "Recording the answer before the window is valid again.",
+      "Getting the length wrong: the window l..r holds r - l + 1 items.",
+      "Moving l without first removing nums[l] from the window state, which leaves a stale count.",
+      "Using a sum window when values can be negative: adding an item can lower the sum, so shrinking no longer fixes the window. Use prefix sums with a hash map instead."
+    ],
+    "demo": {
+      "code": "class Solution:\n    def demo(self, nums, k):\n        l = 0\n        total = 0\n        best = 0\n        for r in range(len(nums)):\n            total += nums[r]  # viz:grow\n            while total > k:\n                total -= nums[l]  # viz:shrink\n                l += 1\n            best = max(best, r - l + 1)  # viz:record\n        return best  # viz:done\n",
+      "entry": "demo",
+      "args": [[3, 1, 2, 1, 4, 1], 5],
+      "viz": {
+        "primary": "nums",
+        "pointers": [
+          {"var": "l", "into": "nums", "label": "l", "color": "a"},
+          {"var": "r", "into": "nums", "label": "r", "color": "b"}
+        ],
+        "window": {"into": "nums", "start": "l", "end": "r", "inclusive": true},
+        "events": [
+          {
+            "id": "grow",
+            "at": "grow",
+            "label": "grow",
+            "say": "Add {nums[r]} on the right: the sum becomes {total + nums[r]}"
+          },
+          {
+            "id": "shrink",
+            "at": "shrink",
+            "label": "shrink",
+            "say": "The sum {total} is over {k}, so drop {nums[l]} from the left"
+          },
+          {
+            "id": "record",
+            "at": "record",
+            "label": "record",
+            "say": "The sum {total} is at most {k}: the window {l}..{r} has length {r - l + 1}"
+          },
+          {
+            "id": "done",
+            "at": "done",
+            "label": "return",
+            "say": "The longest window with a sum of at most {k} has length {best}"
+          }
+        ]
+      }
+    },
+    "toolkit": ["set_ops", "counter", "ord_chr", "inf", "min_max_key", "deque"]
+  },
+  {
+    "id": "binary_search",
+    "family": "binary_search",
+    "name": "Binary search",
+    "idea": "Halve the search space each step by checking the middle.",
+    "explanation": "Reach for binary search when the input is sorted, or when the answer is a number and a yes/no test on it flips only once: it fails below some point and passes from there on. The middle tells you which half can still hold the answer, so you drop the other half.\n\nKeep `lo` and `hi` at the edges of the range that can still hold the answer. Each step checks `mid`, halfway between them, and moves `lo` or `hi` to drop the half that can't hold the answer. The range halves every step, so n items take about log₂ n steps: a million items take about 20.\n\nA search costs O(log n) time and O(1) space, where a scan from left to right costs O(n). When you search over possible answers, like a speed or a capacity, each test often scans the input, so the total is O(n log m), where m is the size of the answer range.",
+    "signals": [
+      {
+        "phrase": "sorted array",
+        "meaning": "Compare the middle with the target and drop the half that can't hold it."
+      },
+      {"phrase": "O(log n) time", "meaning": "Only halving the range each step gets you to log n."},
+      {
+        "phrase": "smallest value such that",
+        "meaning": "Search on the answer: test a candidate and keep the half where the answer can be."
+      },
+      {
+        "phrase": "rotated",
+        "meaning": "One half around mid is always sorted; use it to choose a side."
+      }
+    ],
+    "template": "def solve(nums, target):\n    lo, hi = 0, len(nums) - 1  # SETUP: the answer can only be in nums[lo..hi]\n    while lo <= hi:  # LOOP: stop when the range is empty\n        mid = (lo + hi) // 2\n        if nums[mid] == target:  # RECORD: check the middle\n            return mid\n        if nums[mid] < target:  # UPDATE: keep the half that can still hold the answer\n            lo = mid + 1\n        else:\n            hi = mid - 1\n    return -1  # RETURN: what \"not found\" means for this problem\n",
+    "slots": [
+      {
+        "id": "setup",
+        "label": "Search range",
+        "prompt": "Which range can hold the answer? Where do lo and hi start?"
+      },
+      {
+        "id": "loop",
+        "label": "Loop condition",
+        "prompt": "Do you loop while lo <= hi or while lo < hi?"
+      },
+      {
+        "id": "update",
+        "label": "Halve",
+        "prompt": "Which half can still hold the answer, and where do lo or hi move?"
+      },
+      {
+        "id": "record",
+        "label": "Check the middle",
+        "prompt": "What does the value at mid tell you?"
+      },
+      {
+        "id": "return",
+        "label": "After the loop",
+        "prompt": "What do lo and hi point at when the loop ends, and what do you return?"
+      }
+    ],
+    "variations": [
+      {
+        "name": "Exact match",
+        "line": "Return mid when it equals the target; otherwise drop the half that can't hold it."
+      },
+      {
+        "name": "First position that passes",
+        "line": "Find the first index where a test passes; lo ends there even without an exact match."
+      },
+      {
+        "name": "Search on the answer",
+        "line": "Binary search over possible answers, and test each candidate with a quick scan."
+      },
+      {
+        "name": "Rotated or 2D input",
+        "line": "Pick the sorted half around mid, or turn one index into a row and a column."
+      }
+    ],
+    "mistakes": [
+      "Setting lo = mid instead of mid + 1: when hi is lo + 1, mid stays at lo and the loop never ends.",
+      "Mixing loop styles. With lo <= hi the range lo..hi is inclusive, so a miss moves hi to mid - 1. With lo < hi and hi = mid the loop ends on the one candidate left, so hi must start at the largest possible answer: len(nums) when the answer can be one past the end.",
+      "Using / instead of //, so mid is a float and indexing fails.",
+      "Searching on the answer with the wrong bounds, such as a lowest speed of 0 instead of 1."
+    ],
+    "demo": {
+      "code": "class Solution:\n    def demo(self, nums, target):\n        lo, hi = 0, len(nums) - 1\n        while lo <= hi:\n            mid = (lo + hi) // 2\n            if nums[mid] == target:  # viz:check\n                return mid  # viz:found\n            if nums[mid] < target:\n                lo = mid + 1  # viz:go_right\n            else:\n                hi = mid - 1  # viz:go_left\n        return -1\n",
+      "entry": "demo",
+      "args": [[1, 4, 6, 9, 13, 17, 21, 30], 13],
+      "viz": {
+        "primary": "nums",
+        "range": {"into": "nums", "lo": "lo", "hi": "hi", "mid": "mid"},
+        "events": [
+          {
+            "id": "check",
+            "at": "check",
+            "label": "check",
+            "say": "The middle is index {mid}, which holds {nums[mid]}"
+          },
+          {
+            "id": "go_right",
+            "at": "go_right",
+            "label": "go right",
+            "say": "{nums[mid]} is less than {target}, so the left half is out: lo = {mid + 1}"
+          },
+          {
+            "id": "go_left",
+            "at": "go_left",
+            "label": "go left",
+            "say": "{nums[mid]} is more than {target}, so the right half is out: hi = {mid - 1}"
+          },
+          {
+            "id": "found",
+            "at": "found",
+            "label": "found",
+            "say": "{nums[mid]} is the target: return {mid}"
+          }
+        ]
+      }
+    },
+    "toolkit": ["bisect_left", "ceil", "divmod"]
+  }
+]
