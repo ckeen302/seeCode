@@ -1,0 +1,54 @@
+[project]
+name = "seecode-api"
+version = "0.1.0"
+description = "SeeCode API: content, learning engine, attempts, AI helpers."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.142.1",
+    "uvicorn[standard]>=0.54.0",
+    "pydantic>=2.13.5",
+    "pydantic-settings>=2.15.0",
+    "sqlalchemy[asyncio]>=2.1.1",
+    "asyncpg>=0.31.0",
+    "alembic>=1.20.0",
+    "pyjwt[crypto]>=2.15.1",
+    "httpx>=0.28.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.16.9",
+    "mypy>=2.3.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "ASYNC", "RUF", "C4", "PT"]
+
+[tool.ruff.lint.isort]
+# The migrations folder is called `alembic` too; the import means the library.
+known-third-party = ["alembic"]
+known-first-party = ["app", "tests"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
