@@ -48,6 +48,9 @@ Anything that departs from or fills a gap in `docs/SPEC.md` is recorded here.
 - 2026-09-30 · Dependabot and the high-severity audit gate (Section 20) wait for M9 · Launch requirements outside M0's task list; avoids automated PR noise early on.
 - 2026-09-30 · Playwright can use a preinstalled Chromium through `PW_CHROMIUM_PATH`; CI installs its own · The cloud dev box ships an older Chromium and cannot download browsers.
 - 2026-09-30 · Note for M9: the CSP (Section 20) must allow the inline theme script by nonce or hash · Otherwise the flash-free theme bootstrap breaks.
+- 2026-09-30 · GitHub Codespaces config in `.devcontainer/` (Python 3.12 + uv image, Node 24 + pnpm feature, Postgres 16 service). Opening a codespace installs, migrates, builds and serves the app, then opens port 3000 · The owner can try the app in a browser with nothing installed and no accounts beyond GitHub until the deploy after M2.
+- 2026-09-30 · Optional same-origin API: with `API_PROXY_TARGET` set, the web server forwards `/api/v1/*` to the API and `NEXT_PUBLIC_API_URL` is `/api/v1`; `proxy.ts` skips `/api/` · In Codespaces each port has its own private URL, so one origin avoids CORS and a public API port. Production keeps the separate API origin (Section 22).
+- 2026-09-30 · The codespace serves a production build (`next build` + `next start`), rebuilt when the checked-out commit changes · Faster pages, and no dev-server origin checks for the `*.app.github.dev` host.
 
 ## Open questions (waiting on the owner)
 

@@ -7,6 +7,17 @@ solution, then code it, with visual walkthroughs and spaced review so it sticks.
 - **Decisions:** [`docs/DECISIONS.md`](docs/DECISIONS.md) logs every choice the spec leaves open.
 - **Status:** milestone **M0 (scaffold)** of the build plan in Section 23 of the spec.
 
+## Try it in your browser
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/ckeen302/seeCode)
+
+GitHub Codespaces runs everything (Postgres, the API and the web app) on GitHub's machines,
+so nothing gets installed on your computer. Click the button, then **Create codespace**. The
+first start takes a few minutes. Then the site opens in a new browser tab. If it doesn't, open
+the **Ports** tab and click the globe icon next to port 3000. Sign in with a dev user.
+Personal GitHub accounts include free Codespaces hours each month, and a codespace stops by
+itself after 30 idle minutes.
+
 ## Layout
 
 ```text

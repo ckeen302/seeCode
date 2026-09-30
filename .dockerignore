@@ -1,6 +1,7 @@
 # Build context is the repo root (apps/api/Dockerfile). Send only what the API image needs.
 .git
 .github
+.devcontainer
 .env
 .env.*
 docs

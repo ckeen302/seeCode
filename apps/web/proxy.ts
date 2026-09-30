@@ -28,8 +28,9 @@ function redirectKeepingCookies(url: URL, from: NextResponse): NextResponse {
   return redirect
 }
 
+// Skips static files and /api/ (the optional same-origin API proxy; the API checks auth).
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|py/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|woff2?)$).*)",
+    "/((?!api/|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|py/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|woff2?)$).*)",
   ],
 }
