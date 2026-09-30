@@ -1,0 +1,160 @@
+{
+  "slug": "ransom-note",
+  "title": "Ransom Note",
+  "leetcodeUrl": "https://leetcode.com/problems/ransom-note/",
+  "difficulty": "easy",
+  "patternId": "hashing",
+  "order": 102,
+  "drillOnly": true,
+  "summary": "You get two strings, `note` and `magazine`. You want to spell out `note` with letters cut from `magazine`. Each letter of `magazine` can be used at most once, and the order you use them in does not matter. Return `true` if `magazine` holds enough letters to build all of `note`, and `false` otherwise.",
+  "examples": [
+    {
+      "input": "note = \"tea\", magazine = \"treat\"",
+      "output": "true",
+      "explanation": "The t, the e and the a all appear in magazine. Its second t is simply left over."
+    },
+    {
+      "input": "note = \"buzz\", magazine = \"zebu\"",
+      "output": "false",
+      "explanation": "Two z's are needed, but magazine has only one."
+    }
+  ],
+  "constraints": [
+    "1 ≤ len(note) ≤ 10⁵",
+    "1 ≤ len(magazine) ≤ 10⁵",
+    "note and magazine contain lowercase English letters only"
+  ],
+  "targets": {"time": "O(n)", "space": "O(1)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "hashing",
+      "structures": ["counter"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Count the letters of magazine, then use up one count for each letter of note, and fail as soon as a count runs out.",
+      "twistKeywords": [
+        [
+          "count",
+          "frequenc",
+          "tally",
+          "tallies",
+          "how many",
+          "as many",
+          "number of",
+          "occurrence",
+          "histogram",
+          "26"
+        ],
+        [
+          "subtract",
+          "decrement",
+          "decrease",
+          "minus",
+          "spend",
+          "use up",
+          "used up",
+          "uses up",
+          "using up",
+          "consume",
+          "take away",
+          "reduce",
+          "remove",
+          "-= 1",
+          "-=1",
+          "- 1",
+          "-1",
+          "run out",
+          "runs out",
+          "ran out",
+          "below zero",
+          "below 0",
+          "negative",
+          "< 0",
+          "<0",
+          "enough",
+          "at least",
+          "at most",
+          "compare",
+          "≤",
+          "≥",
+          "<=",
+          ">=",
+          "cover",
+          "exceed",
+          "more than",
+          "fewer than",
+          "less than",
+          "greater than",
+          "bigger than",
+          "larger than",
+          "smaller than",
+          "lower than",
+          "higher than"
+        ]
+      ]
+    },
+    {
+      "id": "search_and_cross_out",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n²)",
+      "space": "O(n)",
+      "twist": "Search magazine for an unused copy of each letter of note, and cross that copy out.",
+      "twistKeywords": [
+        [
+          "search",
+          "find",
+          "look for",
+          "looking for",
+          "scan",
+          "index(",
+          ".index",
+          "linear",
+          "in magazine",
+          "through magazine",
+          "over magazine"
+        ],
+        [
+          "cross",
+          "remove",
+          "delete",
+          "mark",
+          "used",
+          "replace",
+          "pop",
+          "strike",
+          "erase",
+          "blank",
+          "take out"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but searching magazine again for every letter of note takes O(n²) time, and crossing letters out needs an O(n) copy of magazine. The target is O(n) time and O(1) space."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "used at most once",
+      "meaning": "Every copy of a letter in magazine can cover one letter of note, no more. Count the copies with a Counter, and let note use them up.",
+      "pointsTo": "toolkit:counter"
+    },
+    {
+      "phrase": "enough letters",
+      "meaning": "Enough is a question about counts, not positions: for every letter, magazine needs at least as many copies as note uses.",
+      "pointsTo": "hashing"
+    },
+    {
+      "phrase": "lowercase English letters only",
+      "meaning": "Only 26 different letters can appear, so the counts fit in a Counter with at most 26 keys, or in a list of 26 slots indexed by ord(c) − ord('a'): O(1) space.",
+      "pointsTo": "toolkit:ord_chr"
+    }
+  ],
+  "constraintReading": "Each string can reach 10⁵ letters, so searching magazine once for every letter of note is O(n²), up to 10¹⁰ steps. Counting takes one O(n) pass over both strings, where n is their total length. With only 26 possible letters, the counts need O(1) space.",
+  "related": [
+    {
+      "slug": "valid-anagram",
+      "relation": "Compares the same letter counts, but the two strings' counts must match exactly instead of one covering the other."
+    }
+  ]
+}

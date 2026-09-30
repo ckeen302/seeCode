@@ -1,0 +1,167 @@
+{
+  "slug": "longest-consecutive-sequence",
+  "title": "Longest Consecutive Sequence",
+  "leetcodeUrl": "https://leetcode.com/problems/longest-consecutive-sequence/",
+  "difficulty": "medium",
+  "patternId": "hashing",
+  "order": 105,
+  "drillOnly": true,
+  "summary": "You get an unsorted list of integers `nums`. Pick values from it that form an unbroken chain, each exactly 1 more than the one before, like 4, 5, 6, 7; they can come from anywhere in the list. Return the length of the longest such chain, or 0 if `nums` is empty. A value that repeats counts once. The whole search has to run in O(n) time.",
+  "examples": [
+    {
+      "input": "nums = [31, 7, 5, 30, 6, 8, 12]",
+      "output": "4",
+      "explanation": "5, 6, 7 and 8 are all in the list. 30 and 31 form a shorter chain."
+    },
+    {
+      "input": "nums = [3, -1, 3, 0, 2, 1]",
+      "output": "5",
+      "explanation": "-1, 0, 1, 2 and 3 are all present. The second 3 does not make the chain longer."
+    }
+  ],
+  "constraints": ["0 ≤ len(nums) ≤ 10⁵", "−10⁹ ≤ nums[i] ≤ 10⁹"],
+  "targets": {"time": "O(n)", "space": "O(n)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "hashing",
+      "structures": ["hash_set"],
+      "time": "O(n)",
+      "space": "O(n)",
+      "twist": "Put all the values in a set, and walk upward only from a value x whose x − 1 is missing, so each chain is walked once.",
+      "twistKeywords": [
+        ["set", "hash", "dict", "map", "lookup", "look up"],
+        [
+          "- 1",
+          "-1",
+          "− 1",
+          "−1",
+          "minus 1",
+          "minus one",
+          "predecessor",
+          "one less",
+          "one smaller",
+          "one lower",
+          "smaller neighbor",
+          "smaller neighbour",
+          "lower neighbor",
+          "lower neighbour",
+          "left neighbor",
+          "left neighbour",
+          "start of",
+          "starts a",
+          "beginning of",
+          "begins a",
+          "first value of",
+          "first number of",
+          "first element of",
+          "only start",
+          "only from",
+          "only walk",
+          "only begin",
+          "only count from",
+          "from its smallest",
+          "from their smallest",
+          "from the smallest",
+          "no smaller",
+          "nothing below",
+          "nothing smaller"
+        ]
+      ]
+    },
+    {
+      "id": "sort_and_scan",
+      "patternId": "brute_force",
+      "structures": ["sorted"],
+      "time": "O(n log n)",
+      "space": "O(1)",
+      "twist": "Sort the values, then scan once, growing the current chain while each value is one more than the last and skipping repeats.",
+      "twistKeywords": [
+        ["sort"],
+        [
+          "one more",
+          "+ 1",
+          "+1",
+          "adjacent",
+          "neighbor",
+          "neighbour",
+          "next",
+          "previous",
+          "prev",
+          "consecutive",
+          "streak",
+          "chain",
+          "run",
+          "scan",
+          "walk",
+          "pass",
+          "iterate",
+          "loop",
+          "differ",
+          "gap",
+          "increment",
+          "current"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works with little extra space if you sort in place, but sorting takes O(n log n) time. The target is O(n)."
+    },
+    {
+      "id": "walk_from_every_value",
+      "patternId": "hashing",
+      "structures": ["hash_set"],
+      "time": "O(n²)",
+      "space": "O(n)",
+      "twist": "Put every value in a set, and from each value count upward while the next value is also in the set.",
+      "twistKeywords": [
+        ["set", "hash", "dict", "map", "lookup", "look up"],
+        [
+          "from each",
+          "from every",
+          "for each",
+          "for every",
+          "each value",
+          "every value",
+          "each number",
+          "every number",
+          "each element",
+          "every element",
+          "all values",
+          "all numbers",
+          "all elements"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but counting up from every value walks the same chain again and again, so one long chain makes it O(n²). The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "unsorted",
+      "meaning": "A chain's values are scattered through the list. Sorting would line them up, but it costs O(n log n), so look neighbors up in a set instead.",
+      "pointsTo": "hashing"
+    },
+    {
+      "phrase": "exactly 1 more than the one before",
+      "meaning": "Each step of a chain is a lookup: is x + 1 in the set? And if x − 1 is in it too, x is not where a chain starts, so skip it.",
+      "pointsTo": "structure:hash_set"
+    },
+    {
+      "phrase": "O(n) time",
+      "meaning": "Sorting is O(n log n), so it is out. Starting a walk only at the first value of a chain means each value is visited at most twice: O(n) in total.",
+      "pointsTo": "hashing"
+    },
+    {
+      "phrase": "counts once",
+      "meaning": "Building a set drops the repeats before you start.",
+      "pointsTo": "toolkit:set_ops"
+    }
+  ],
+  "constraintReading": "len(nums) can reach 10⁵, and the required O(n) time rules out sorting, which is O(n log n). Values reach ±10⁹, far too spread out for an array indexed by value, so use a set: O(1) lookups for O(n) space. Walking up only from the first value of each chain keeps the total work O(n).",
+  "related": [
+    {
+      "slug": "two-sum",
+      "relation": "Also looks up a neighboring value in O(1) instead of scanning for it: x − 1 and x + 1 here, target − x there."
+    }
+  ]
+}

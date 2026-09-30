@@ -1,0 +1,206 @@
+{
+  "slug": "contains-duplicate",
+  "title": "Contains Duplicate",
+  "leetcodeUrl": "https://leetcode.com/problems/contains-duplicate/",
+  "difficulty": "easy",
+  "patternId": "hashing",
+  "order": 101,
+  "drillOnly": true,
+  "summary": "You get a list of integers `nums` in no particular order. Decide whether any value appears more than once in it: return `true` if some value repeats, and `false` if every value is different. The copies of a repeated value can sit anywhere in the list, not only side by side.",
+  "examples": [
+    {
+      "input": "nums = [8, 1, 5, 2, 1]",
+      "output": "true",
+      "explanation": "1 appears at index 1 and again at index 4, with other values in between."
+    },
+    {
+      "input": "nums = [6, -3, 10, 4]",
+      "output": "false",
+      "explanation": "All four values are different."
+    }
+  ],
+  "constraints": ["1 ≤ len(nums) ≤ 10⁵", "−10⁹ ≤ nums[i] ≤ 10⁹"],
+  "targets": {"time": "O(n)", "space": "O(n)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "hashing",
+      "structures": ["hash_set"],
+      "time": "O(n)",
+      "space": "O(n)",
+      "twist": "Keep a set of the numbers seen so far, and return true as soon as a number is already in it.",
+      "twistKeywords": [
+        [
+          "set",
+          "hash",
+          "dict",
+          "map",
+          "seen",
+          "visited",
+          "store",
+          "remember",
+          "record",
+          "track",
+          "save",
+          "memo",
+          "cache",
+          "count",
+          "frequenc",
+          "tally",
+          "lookup",
+          "look up"
+        ],
+        [
+          "already",
+          "before",
+          "again",
+          "earlier",
+          "previous",
+          "exists in",
+          "exist in",
+          "is in the",
+          "is in it",
+          "was in the",
+          "was in it",
+          "if x in",
+          "if num in",
+          "if n in",
+          "if x not in",
+          "if num not in",
+          "if it's not in",
+          "if it is not in",
+          "membership",
+          "contains it",
+          "contains the",
+          "contains that",
+          "contains this",
+          "contains x",
+          "contains num",
+          "== len",
+          "!= len",
+          "< len",
+          "> len",
+          "compare len",
+          "compare the len",
+          "compare size",
+          "compare the size",
+          "same size",
+          "same length",
+          "different size",
+          "different length",
+          "sizes",
+          "lengths",
+          "fewer",
+          "smaller",
+          "shorter",
+          "more than 1",
+          "more than one",
+          "above 1",
+          "over 1",
+          "greater than 1",
+          "> 1",
+          ">1",
+          "at least 2",
+          "at least two",
+          "≥ 2",
+          ">= 2",
+          ">=2"
+        ]
+      ]
+    },
+    {
+      "id": "all_pairs",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n²)",
+      "space": "O(1)",
+      "twist": "Compare every pair of numbers, and return true when two of them are equal.",
+      "twistKeywords": [
+        [
+          "every pair",
+          "each pair",
+          "all pairs",
+          "all the pairs",
+          "every two",
+          "every combination",
+          "all combinations",
+          "nested",
+          "two loops",
+          "double loop",
+          "inner loop",
+          "two for",
+          "double for",
+          "brute",
+          "every other",
+          "each other",
+          "all others",
+          "all the others",
+          "against all",
+          "against every",
+          "with every",
+          "with all"
+        ],
+        ["equal", "same", "==", "match", "identical", "compare"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works with O(1) extra space, but comparing every pair takes O(n²) time. The target is O(n)."
+    },
+    {
+      "id": "sort_neighbors",
+      "patternId": "brute_force",
+      "structures": ["sorted"],
+      "time": "O(n log n)",
+      "space": "O(1)",
+      "twist": "Sort the numbers so equal values end up side by side, then compare each number with the next one.",
+      "twistKeywords": [
+        ["sort"],
+        [
+          "neighbor",
+          "neighbour",
+          "adjacent",
+          "next",
+          "previous",
+          "prev",
+          "side by side",
+          "beside",
+          "consecutive",
+          "i + 1",
+          "i+1",
+          "i - 1",
+          "i-1",
+          "one after"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works with little extra space if you sort in place, but sorting takes O(n log n) time. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "appears more than once",
+      "meaning": "A repeat is a value you have already met. Keep the values you pass in a set, and check each new one against it before adding it.",
+      "pointsTo": "hashing"
+    },
+    {
+      "phrase": "no particular order",
+      "meaning": "Copies can sit far apart, so comparing neighbors misses them unless you sort first, which costs O(n log n). A set of the values seen so far catches a repeat wherever it is.",
+      "pointsTo": "structure:hash_set"
+    },
+    {
+      "phrase": "every value is different",
+      "meaning": "All different means a set of the values is exactly as long as the list, so comparing len(set(nums)) with len(nums) settles it too.",
+      "pointsTo": "toolkit:set_ops"
+    }
+  ],
+  "constraintReading": "len(nums) can reach 10⁵, so comparing every pair means about 5·10⁹ checks: O(n²) is far too slow. Sorting first brings it down to O(n log n). The O(n) time target asks for one pass with O(1) set lookups, paid for with O(n) space.",
+  "related": [
+    {
+      "slug": "two-sum",
+      "relation": "Same one pass with a memory of the values so far, but each number looks up the partner it needs instead of a copy of itself."
+    },
+    {
+      "slug": "longest-substring-no-repeat",
+      "relation": "Also spots a repeat with a set of what it has seen, but only inside a window that slides forward."
+    }
+  ]
+}

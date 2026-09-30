@@ -1,0 +1,142 @@
+{
+  "slug": "majority-element",
+  "title": "Majority Element",
+  "leetcodeUrl": "https://leetcode.com/problems/majority-element/",
+  "difficulty": "easy",
+  "patternId": "hashing",
+  "order": 106,
+  "drillOnly": true,
+  "summary": "You get a list of integers `nums`. One value fills more than half of the list: it appears more than len(nums) / 2 times. Return that value. The input always contains such a value, so there is no missing case to handle.",
+  "examples": [
+    {
+      "input": "nums = [5, 1, 5, 5, 2]",
+      "output": "5",
+      "explanation": "5 appears 3 times out of 5, which is more than half."
+    },
+    {
+      "input": "nums = [-4, -4, 7, 7, -4, 7, 7]",
+      "output": "7",
+      "explanation": "7 appears 4 times out of 7, while -4 appears only 3 times."
+    }
+  ],
+  "constraints": ["1 ≤ len(nums) ≤ 5·10⁴", "−10⁹ ≤ nums[i] ≤ 10⁹"],
+  "targets": {"time": "O(n)", "space": "O(n)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "hashing",
+      "structures": ["counter"],
+      "time": "O(n)",
+      "space": "O(n)",
+      "twist": "Count each value in one pass, and return the value whose count is more than half the length of the list.",
+      "twistKeywords": [
+        ["count", "frequenc", "tally", "how many", "occurrence", "histogram"],
+        [
+          "half",
+          "n / 2",
+          "n/2",
+          "n // 2",
+          "n//2",
+          "len(nums) / 2",
+          "len(nums)/2",
+          "len(nums) // 2",
+          "len(nums)//2",
+          "most",
+          "max",
+          "highest",
+          "largest",
+          "biggest",
+          "greatest"
+        ]
+      ]
+    },
+    {
+      "id": "voting",
+      "patternId": "hashing",
+      "structures": ["array"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Keep a candidate and a count that goes up on a match and down otherwise, switching candidates when the count hits zero.",
+      "twistKeywords": [
+        ["candidate", "vote", "voting", "boyer", "leader", "surviv"],
+        [
+          "zero",
+          "hits 0",
+          "reaches 0",
+          "is 0",
+          "== 0",
+          "to 0",
+          "at 0",
+          "cancel",
+          "pair off",
+          "pairs off",
+          "switch",
+          "replace",
+          "reset",
+          "down",
+          "decrement",
+          "subtract",
+          "minus",
+          "-= 1",
+          "-=1",
+          "- 1",
+          "-1",
+          "moore"
+        ]
+      ]
+    },
+    {
+      "id": "sort_middle",
+      "patternId": "brute_force",
+      "structures": ["sorted"],
+      "time": "O(n log n)",
+      "space": "O(1)",
+      "twist": "Sort the list and return the value at the middle index, which the answer always covers.",
+      "twistKeywords": [
+        ["sort"],
+        [
+          "middle",
+          "mid",
+          "center",
+          "centre",
+          "median",
+          "n // 2",
+          "n//2",
+          "n / 2",
+          "n/2",
+          "len(nums) // 2",
+          "len(nums)//2",
+          "len(nums) / 2",
+          "len(nums)/2",
+          "half"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, because a value that fills more than half the list must cover the middle, but sorting takes O(n log n) time. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "more than half",
+      "meaning": "Only how often each value appears matters here, not where it sits: tally every value in one pass with a dict or a Counter.",
+      "pointsTo": "hashing"
+    },
+    {
+      "phrase": "len(nums) / 2",
+      "meaning": "The test is a count against a threshold: Counter(nums) gives each value's count to compare with len(nums) / 2.",
+      "pointsTo": "toolkit:counter"
+    },
+    {
+      "phrase": "always contains such a value",
+      "meaning": "The value is guaranteed to exist, and a value that fills more than half the list is also the one that appears most often, so Counter(nums).most_common(1) finds it.",
+      "pointsTo": "toolkit:most_common"
+    }
+  ],
+  "constraintReading": "len(nums) can reach 5·10⁴, so counting each value by rescanning the list is O(n²), about 2.5·10⁹ steps: too slow. Sorting to find the middle is O(n log n). One pass with a Counter is O(n) time for O(n) space, and values up to 10⁹ in size rule out an array indexed by value.",
+  "related": [
+    {
+      "slug": "valid-anagram",
+      "relation": "Counts values with a Counter the same way, then compares two strings' counts instead of checking one count against half the length."
+    }
+  ]
+}

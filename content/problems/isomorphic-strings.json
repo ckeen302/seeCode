@@ -1,0 +1,190 @@
+{
+  "slug": "isomorphic-strings",
+  "title": "Isomorphic Strings",
+  "leetcodeUrl": "https://leetcode.com/problems/isomorphic-strings/",
+  "difficulty": "easy",
+  "patternId": "hashing",
+  "order": 103,
+  "drillOnly": true,
+  "summary": "You get two strings `s` and `t` of the same length. Decide whether `t` is `s` with its characters relabeled: every copy of a character in `s` must turn into the same character of `t`, and no two different characters may turn into the same one. A character may also stay as it is, and the order never changes.",
+  "examples": [
+    {
+      "input": "s = \"moon\", t = \"deer\"",
+      "output": "true",
+      "explanation": "Each letter gets one partner: m → d, o → e, n → r. Both o's become e, and no two letters of s share a letter of t."
+    },
+    {
+      "input": "s = \"rat\", t = \"pop\"",
+      "output": "false",
+      "explanation": "Both r and t would have to become p."
+    }
+  ],
+  "constraints": [
+    "1 ≤ len(s) ≤ 5·10⁴",
+    "len(t) == len(s)",
+    "s and t may contain any ASCII characters: letters, digits, spaces and symbols"
+  ],
+  "targets": {"time": "O(n)", "space": "O(1)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "hashing",
+      "structures": ["hash_map"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Map each character of s to the character at the same position in t, keep a second map from t back to s, and fail when either map disagrees.",
+      "twistKeywords": [
+        [
+          "map",
+          "dict",
+          "hash",
+          "same position",
+          "same index",
+          "position by position",
+          "index by index",
+          "zip",
+          "pair",
+          "assign",
+          "translat",
+          "encod",
+          "correspond"
+        ],
+        [
+          "both direction",
+          "both way",
+          "both side",
+          "each direction",
+          "per direction",
+          "two direction",
+          "two way",
+          "two-way",
+          "other direction",
+          "other way",
+          "reverse",
+          "back to",
+          "backward",
+          "inverse",
+          "t to s",
+          "t → s",
+          "t→s",
+          "t -> s",
+          "t->s",
+          "bijecti",
+          "one-to-one",
+          "one to one",
+          "1-to-1",
+          "1:1",
+          "injective",
+          "already used",
+          "already taken",
+          "already claimed",
+          "taken",
+          "claimed",
+          "used by",
+          "used twice",
+          "picked twice",
+          "chosen twice",
+          "no two",
+          "to a unique",
+          "to a distinct",
+          "unique partner",
+          "distinct partner",
+          "to different"
+        ]
+      ]
+    },
+    {
+      "id": "all_pairs",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n²)",
+      "space": "O(1)",
+      "twist": "Check every pair of positions: two characters of s must be equal exactly when the characters of t at those positions are.",
+      "twistKeywords": [
+        [
+          "every pair",
+          "each pair",
+          "all pairs",
+          "all the pairs",
+          "every two",
+          "nested",
+          "two loops",
+          "double loop",
+          "inner loop",
+          "two for",
+          "double for",
+          "brute",
+          "every other",
+          "each other",
+          "all others"
+        ],
+        ["equal", "same", "==", "match", "identical"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works with O(1) extra space, but checking every pair of positions takes O(n²) time. The target is O(n)."
+    },
+    {
+      "id": "first_seen_lists",
+      "patternId": "hashing",
+      "structures": ["hash_map", "array"],
+      "time": "O(n)",
+      "space": "O(n)",
+      "twist": "Rewrite each string as the list of first-appearance positions of its characters, and compare the two lists.",
+      "twistKeywords": [
+        [
+          "first appear",
+          "first-appear",
+          "first occurr",
+          "first seen",
+          "first-seen",
+          "first index",
+          "first position",
+          "first time",
+          "earliest",
+          "index of",
+          ".index(",
+          "find(",
+          "signature",
+          "normaliz",
+          "canonical",
+          "fingerprint",
+          "order of appearance",
+          "order they appear",
+          "order of first"
+        ],
+        ["compare", "equal", "same", "==", "match", "identical"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works in O(n) time with a dict of first positions, but the two rewritten lists take O(n) extra space. The target is O(1)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "every copy of a character",
+      "meaning": "Each character of s is tied to one character of t. A dict remembers that pairing, so each later copy can be checked against it in O(1).",
+      "pointsTo": "structure:hash_map"
+    },
+    {
+      "phrase": "no two different characters",
+      "meaning": "The pairing must be one-to-one, so check the other direction too: a second dict from t back to s, or a set of the characters of t already taken.",
+      "pointsTo": "hashing"
+    },
+    {
+      "phrase": "same length",
+      "meaning": "The strings line up position by position, so walk them together with zip(s, t).",
+      "pointsTo": "toolkit:zip"
+    },
+    {
+      "phrase": "ASCII characters",
+      "meaning": "At most 128 different characters can appear, so each dict holds at most 128 keys: O(1) space, however long the strings get.",
+      "pointsTo": "structure:hash_map"
+    }
+  ],
+  "constraintReading": "len(s) can reach 5·10⁴, so checking every pair of positions means about 1.25·10⁹ comparisons: O(n²) is too slow. One pass with dict lookups is O(n). Only ASCII characters appear, so each dict holds at most 128 keys, which is O(1) space.",
+  "related": [
+    {
+      "slug": "valid-anagram",
+      "relation": "Also compares two strings through a dict, but only the letter counts must agree, not which letter stands at each position."
+    }
+  ]
+}

@@ -1,0 +1,124 @@
+{
+  "slug": "permutation-in-string",
+  "title": "Permutation in String",
+  "leetcodeUrl": "https://leetcode.com/problems/permutation-in-string/",
+  "difficulty": "medium",
+  "patternId": "sliding_window",
+  "order": 121,
+  "summary": "You get two strings, `s1` and `s2`. Return true if some substring of `s2` is a rearrangement of `s1`: it has exactly the same letters, each appearing the same number of times, in any order. Otherwise return false.",
+  "examples": [
+    {
+      "input": "s1 = \"ate\", s2 = \"greatly\"",
+      "output": "true",
+      "explanation": "The substring \"eat\", starting at index 2, holds one a, one t and one e."
+    },
+    {
+      "input": "s1 = \"noon\", s2 = \"onion\"",
+      "output": "false",
+      "explanation": "The only substrings with four letters are \"onio\" and \"nion\". Both hold an i, so neither has two n's and two o's."
+    }
+  ],
+  "constraints": ["1 ≤ len(s1), len(s2) ≤ 10⁴", "s1 and s2 contain lowercase English letters only"],
+  "targets": {"time": "O(n)", "space": "O(1)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "sliding_window",
+      "structures": ["counter"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Slide a fixed window of len(s1) across s2, updating its letter counts as letters enter and leave, and compare them with s1's counts.",
+      "twistKeywords": [
+        ["count", "freq", "tally", "histogram", "26", "occurrence", "how many"],
+        [
+          "as long as s1",
+          "as big as s1",
+          "as wide as s1",
+          "as large as s1",
+          "equal to s1",
+          "len(s1)",
+          "len s1",
+          "length of s1",
+          "size of s1",
+          "s1's length",
+          "s1's size",
+          "s1-length",
+          "s1-size",
+          "s1-sized",
+          "s1.length",
+          "length s1",
+          "size s1",
+          "equal to len",
+          "same length",
+          "same size",
+          "equal length",
+          "equal size",
+          "fixed",
+          "length m",
+          "size m",
+          "m letters",
+          "m characters",
+          "m chars"
+        ]
+      ]
+    },
+    {
+      "id": "recount_each_window",
+      "patternId": "brute_force",
+      "structures": ["counter"],
+      "time": "O(n²)",
+      "space": "O(1)",
+      "twist": "Recount the letters of every substring of s2 that is as long as s1, and compare them with s1's counts.",
+      "twistKeywords": [
+        [
+          "every",
+          "for each",
+          "each window",
+          "each substring",
+          "each possible",
+          "all substring",
+          "all window",
+          "all possible",
+          "from scratch",
+          "over again",
+          "each time",
+          "anew",
+          "fresh",
+          "rebuild",
+          "recomput",
+          "separately",
+          "nested",
+          "brute"
+        ],
+        ["count", "freq", "tally", "sort", "anagram", "compare", "match", "equal", "=="]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but recounting every window takes O(n·m) time, which is O(n²) when s1 is about half as long as s2. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "substring",
+      "meaning": "The rearranged copy must sit in one unbroken run of s2 that is exactly as long as s1: a window of fixed size.",
+      "pointsTo": "sliding_window"
+    },
+    {
+      "phrase": "same number of times",
+      "meaning": "Two strings are rearrangements of each other exactly when their letter counts are equal, so compare counts, not orders.",
+      "pointsTo": "structure:counter"
+    },
+    {
+      "phrase": "lowercase English letters only",
+      "meaning": "Only 26 letters can appear, so the counts fit in a list of 26 indexed by ord(c) - ord('a'), and comparing two such lists takes a fixed 26 steps.",
+      "pointsTo": "toolkit:ord_chr"
+    }
+  ],
+  "constraintReading": "Both strings can reach 10⁴ letters. Recounting every window of s2 costs O(n·m): about 2.5·10⁷ steps when s1 is half as long as s2, which is O(n²) and slow in Python. Aim for O(n) by updating the counts as the window moves one letter. With only 26 possible letters, the counts take O(1) space, and comparing two sets of counts is a fixed 26 steps.",
+  "related": [
+    {
+      "slug": "valid-anagram",
+      "relation": "Compares the letter counts of two whole strings once; here the same check runs on every window of s2."
+    }
+  ],
+  "drillOnly": true
+}

@@ -1,0 +1,101 @@
+{
+  "slug": "top-k-frequent-elements",
+  "title": "Top K Frequent Elements",
+  "leetcodeUrl": "https://leetcode.com/problems/top-k-frequent-elements/",
+  "difficulty": "medium",
+  "patternId": "hashing",
+  "order": 104,
+  "drillOnly": true,
+  "summary": "You get a list of integers `nums` and an integer `k`. Return the `k` values that appear most often in `nums`, in any order. The answer is always unique: no two values tie for the last of the `k` places. Your solution must run faster than O(n log n) time, where n is the length of `nums`.",
+  "examples": [
+    {
+      "input": "nums = [4, 4, 1, 4, 6, 6, 2], k = 2",
+      "output": "[4, 6]",
+      "explanation": "4 appears three times and 6 twice, while 1 and 2 appear once. [6, 4] is just as good."
+    },
+    {
+      "input": "nums = [3, 0, 3, 8, 0, 3, 5], k = 1",
+      "output": "[3]",
+      "explanation": "3 appears three times, more than any other value."
+    }
+  ],
+  "constraints": [
+    "1 ≤ len(nums) ≤ 10⁵",
+    "−10⁴ ≤ nums[i] ≤ 10⁴",
+    "1 ≤ k ≤ the number of distinct values in nums"
+  ],
+  "targets": {"time": "O(n)", "space": "O(n)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "hashing",
+      "structures": ["counter", "array"],
+      "time": "O(n)",
+      "space": "O(n)",
+      "twist": "Count each value, then put the values into buckets indexed by count and read the buckets from the highest count down.",
+      "twistKeywords": [
+        ["count", "frequenc", "tally", "how many", "occurrence", "histogram"],
+        [
+          "bucket",
+          "list of lists",
+          "indexed by",
+          "index by",
+          "as the index",
+          "as an index",
+          "as index",
+          "as indices",
+          "as indexes",
+          "group values by",
+          "group the values by",
+          "group them by",
+          "grouped by",
+          "group by"
+        ]
+      ]
+    },
+    {
+      "id": "count_and_heap",
+      "patternId": "hashing",
+      "structures": ["counter", "heap"],
+      "time": "O(n log n)",
+      "space": "O(n)",
+      "twist": "Count each value, then use a heap to pick the k values with the highest counts.",
+      "twistKeywords": [
+        ["count", "frequenc", "tally", "how many", "occurrence"],
+        ["heap", "priority queue", "nlargest", "most_common", "pq"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, and a heap of size k needs only O(n log k) time, but k can be as large as the number of distinct values, which makes it O(n log n). The target is O(n)."
+    },
+    {
+      "id": "count_and_sort",
+      "patternId": "hashing",
+      "structures": ["counter", "sorted"],
+      "time": "O(n log n)",
+      "space": "O(n)",
+      "twist": "Count each value, sort the distinct values by count from high to low, and take the first k.",
+      "twistKeywords": [["count", "frequenc", "tally", "how many", "occurrence"], ["sort"]],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but sorting the distinct values by count takes O(n log n) time. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "appear most often",
+      "meaning": "Frequency comes first: one pass with a Counter gives every value's count. What's left is picking the k biggest counts.",
+      "pointsTo": "toolkit:counter"
+    },
+    {
+      "phrase": "faster than O(n log n)",
+      "meaning": "Sorting the counts costs O(n log n), and so does a heap when k is large. No count can exceed n, so put each value in a bucket indexed by its count and read the buckets from the top: O(n).",
+      "pointsTo": "hashing"
+    }
+  ],
+  "constraintReading": "len(nums) can reach 10⁵. Counting takes one O(n) pass; picking the top k is the hard part. Sorting the counts is O(n log n), and a heap is O(n log k), just as slow when k is near the number of distinct values. Faster than O(n log n) means O(n): a count is at most n, so counts can index buckets directly.",
+  "related": [
+    {
+      "slug": "group-anagrams",
+      "relation": "Also sorts values into groups by a shared key, but there the key describes a word's letters, not how often a value appears."
+    }
+  ]
+}
