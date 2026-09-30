@@ -1,9 +1,10 @@
 import type { Metadata } from "next"
 
-import { PagePlaceholder } from "@/components/shell/PagePlaceholder"
+import { ProblemsList } from "@/components/problems/ProblemsList"
 
 export const metadata: Metadata = { title: "Problems" }
 
-export default function Page() {
-  return <PagePlaceholder title="Problems" milestone="M6" />
+// Section 6.5 (basic until M6 adds filters). Public: guests can open and solve problems.
+export default function ProblemsPage() {
+  return <ProblemsList />
 }

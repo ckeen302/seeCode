@@ -96,3 +96,34 @@ describe("api client", () => {
     expect(shouldRetry(0, new TypeError("network"))).toBe(true)
   })
 })
+
+describe("server-side API URL (Section 17.1)", () => {
+  it("uses the same-origin proxy target when set, else an absolute NEXT_PUBLIC_API_URL", async () => {
+    const { serverApiUrl } = await import("@/lib/api/server")
+    vi.stubEnv("API_PROXY_TARGET", "http://127.0.0.1:8000/")
+    expect(serverApiUrl()).toBe("http://127.0.0.1:8000/api/v1")
+    vi.stubEnv("API_PROXY_TARGET", "")
+    expect(serverApiUrl()).toBe("http://localhost:8000/api/v1")
+    vi.unstubAllEnvs()
+  })
+
+  it("falls back when the API does not answer", async () => {
+    const { fetchProblemTitle } = await import("@/lib/api/server")
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("down", { status: 503 }))
+    )
+    await expect(fetchProblemTitle("two-sum")).resolves.toBeNull()
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ title: "Two Sum" }))
+    )
+    await expect(fetchProblemTitle("two-sum")).resolves.toBe("Two Sum")
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Promise.reject(new TypeError("offline")))
+    )
+    await expect(fetchProblemTitle("two-sum")).resolves.toBeNull()
+    vi.unstubAllGlobals()
+  })
+})

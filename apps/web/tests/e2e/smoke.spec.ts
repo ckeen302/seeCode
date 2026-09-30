@@ -1,5 +1,7 @@
 import AxeBuilder from "@axe-core/playwright"
-import { expect, test, type Page } from "@playwright/test"
+import type { Page } from "@playwright/test"
+
+import { expect, test } from "./fixtures"
 
 // M0 smoke test: health, landing, route gating, dev sign-in, /me, shell, ⌘K, theme.
 
@@ -79,7 +81,7 @@ test("dev sign-in reaches Today with the profile from /me", async ({ page }) => 
 
   await page.keyboard.press("ControlOrMeta+k")
   await expect(page.getByPlaceholder(PALETTE_INPUT)).toBeFocused()
-  await expect(page.getByText("No results yet.")).toBeVisible()
+  await expect(page.getByRole("option", { name: /Valid Palindrome/ })).toBeVisible()
   await page.keyboard.press("Escape")
   await expect(page.getByPlaceholder(PALETTE_INPUT)).toBeHidden()
 

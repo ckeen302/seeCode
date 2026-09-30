@@ -22,11 +22,14 @@ function CommandDialog({
   description = "Search for a problem or pattern",
   children,
   className,
+  commandProps,
   ...props
 }: React.ComponentProps<typeof Dialog> & {
   title?: string
   description?: string
   className?: string
+  /** Props for the inner cmdk root, e.g. `onValueChange` for the highlighted item. */
+  commandProps?: Omit<React.ComponentProps<typeof CommandPrimitive>, "children">
 }) {
   return (
     <Dialog {...props}>
@@ -36,7 +39,7 @@ function CommandDialog({
       >
         <DialogTitle className="sr-only">{title}</DialogTitle>
         <DialogDescription className="sr-only">{description}</DialogDescription>
-        <Command>{children}</Command>
+        <Command {...commandProps}>{children}</Command>
       </DialogContent>
     </Dialog>
   )

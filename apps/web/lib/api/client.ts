@@ -37,7 +37,8 @@ function parseJson(text: string): unknown {
 }
 
 export function createApiClient(options: ApiClientOptions) {
-  const doFetch = options.fetch ?? fetch
+  // Looked up on each request, so a fetch replaced later (tests, polyfills) is used.
+  const doFetch: typeof fetch = options.fetch ?? ((input, init) => fetch(input, init))
 
   async function request<T>(
     method: Method,

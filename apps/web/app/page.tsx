@@ -1,5 +1,6 @@
 import Link from "next/link"
 
+import { ProblemLink } from "@/components/problems/ProblemLink"
 import { Button } from "@/components/ui/button"
 
 // Landing (Section 6.1). The demo strip and feature blocks arrive in M6.
@@ -36,7 +37,7 @@ export default function LandingPage() {
         <p className="max-w-xl text-lg text-muted">Plan it, visualize it, remember it. Free.</p>
         <div className="flex flex-wrap gap-3">
           <Button asChild>
-            <Link href="/p/valid-palindrome">Try a problem</Link>
+            <ProblemLink slug="valid-palindrome">Try a problem</ProblemLink>
           </Button>
           <Button asChild variant="secondary">
             <Link href="/login">Sign in</Link>

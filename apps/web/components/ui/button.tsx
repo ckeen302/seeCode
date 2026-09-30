@@ -33,6 +33,7 @@ type ButtonProps = React.ComponentProps<"button"> &
     asChild?: boolean
     /** Keyboard hint shown on the right, e.g. "⌘↵". */
     shortcut?: string
+    shortcutClassName?: string
   }
 
 function Button({
@@ -41,6 +42,7 @@ function Button({
   size,
   asChild = false,
   shortcut,
+  shortcutClassName,
   children,
   ...props
 }: ButtonProps) {
@@ -54,7 +56,7 @@ function Button({
     >
       <Slot.Slottable>{children}</Slot.Slottable>
       {shortcut ? (
-        <kbd aria-hidden className="font-mono text-xs opacity-70">
+        <kbd aria-hidden className={cn("font-mono text-xs font-normal", shortcutClassName)}>
           {shortcut}
         </kbd>
       ) : null}

@@ -3,7 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query"
 import { LogInIcon, LogOutIcon, UsersIcon } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -11,14 +11,26 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useMe } from "@/lib/api/hooks"
 import { signOut, useAuth } from "@/lib/auth/session"
 
-export function ProfileMenu({ labelClassName }: { labelClassName?: string }) {
+/**
+ * The account button: the sidebar shows the name next to the avatar; `compact` (the
+ * Workspace top bar) shows the avatar alone, opens the menu downward, and comes back to
+ * the current page after sign-in.
+ */
+export function ProfileMenu({
+  labelClassName,
+  compact = false,
+}: {
+  labelClassName?: string
+  compact?: boolean
+}) {
   const auth = useAuth()
   const me = useMe()
   const router = useRouter()
+  const pathname = usePathname()
   const queryClient = useQueryClient()
 
   if (auth.status === "loading") {
-    return <Skeleton className="h-9 w-full" />
+    return <Skeleton className={compact ? "size-8 rounded-full" : "h-9 w-full"} />
   }
 
   if (auth.status === "signed_out") {
@@ -26,9 +38,14 @@ export function ProfileMenu({ labelClassName }: { labelClassName?: string }) {
       <Button
         asChild
         variant="ghost"
-        className="w-full justify-start gap-3 px-3 text-muted hover:text-text"
+        size={compact ? "sm" : "md"}
+        className={
+          compact
+            ? "gap-2 text-muted hover:text-text"
+            : "w-full justify-start gap-3 px-3 text-muted hover:text-text"
+        }
       >
-        <Link href="/login">
+        <Link href={compact ? `/login?next=${encodeURIComponent(pathname)}` : "/login"}>
           <LogInIcon />
           <span className={labelClassName}>Sign in</span>
         </Link>
@@ -52,7 +69,8 @@ export function ProfileMenu({ labelClassName }: { labelClassName?: string }) {
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          className="w-full justify-start gap-3 px-2"
+          size={compact ? "icon" : "md"}
+          className={compact ? "rounded-full" : "w-full justify-start gap-3 px-2"}
           aria-label={`Account: ${name}`}
         >
           <span
@@ -61,10 +79,16 @@ export function ProfileMenu({ labelClassName }: { labelClassName?: string }) {
           >
             {initial}
           </span>
-          <span className={`truncate text-left ${labelClassName ?? ""}`}>{name}</span>
+          {compact ? null : (
+            <span className={`truncate text-left ${labelClassName ?? ""}`}>{name}</span>
+          )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent side="top" align="start" className="w-56">
+      <PopoverContent
+        side={compact ? "bottom" : "top"}
+        align={compact ? "end" : "start"}
+        className="w-56"
+      >
         <div className="px-2 py-1">
           <p className="truncate font-medium">{name}</p>
           <p className="truncate text-xs text-muted">

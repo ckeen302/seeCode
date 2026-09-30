@@ -10,8 +10,11 @@ import {
   applyTheme,
   nextThemePreference,
   readThemePreference,
+  resolveTheme,
   setThemePreference,
   subscribeTheme,
+  systemPrefersLight,
+  type ResolvedTheme,
   type ThemePreference,
 } from "@/lib/theme"
 
@@ -24,6 +27,15 @@ const ICONS = { dark: MoonIcon, light: SunIcon, system: MonitorIcon }
 
 export function useThemePreference(): ThemePreference {
   return useSyncExternalStore(subscribeTheme, readThemePreference, () => "dark")
+}
+
+/** The theme on screen (a "system" preference resolved), e.g. for the code editor. */
+export function useResolvedTheme(): ResolvedTheme {
+  return useSyncExternalStore(
+    subscribeTheme,
+    () => resolveTheme(readThemePreference(), systemPrefersLight()),
+    () => "dark"
+  )
 }
 
 export function useSidebarCollapsed(): boolean {

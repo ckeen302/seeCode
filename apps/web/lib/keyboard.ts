@@ -10,6 +10,9 @@ export interface Hotkey {
 
 export const HOTKEYS = {
   commandPalette: { key: "k", mod: true },
+  run: { key: "Enter", mod: true },
+  submit: { key: "Enter", mod: true, shift: true },
+  toggleBottomPanel: { key: "j", mod: true },
 } as const satisfies Record<string, Hotkey>
 
 export function isMacPlatform(platform: string): boolean {
@@ -36,7 +39,8 @@ export function matchesHotkey(event: KeyboardEvent, hotkey: Hotkey, mac: boolean
 export function formatHotkey(hotkey: Hotkey, mac: boolean): string {
   const key = hotkey.key.length === 1 ? hotkey.key.toUpperCase() : hotkey.key
   if (mac) {
-    return `${hotkey.mod ? "⌘" : ""}${hotkey.alt ? "⌥" : ""}${hotkey.shift ? "⇧" : ""}${key}`
+    const symbol = key === "Enter" ? "↵" : key
+    return `${hotkey.mod ? "⌘" : ""}${hotkey.alt ? "⌥" : ""}${hotkey.shift ? "⇧" : ""}${symbol}`
   }
   const parts = [hotkey.mod && "Ctrl", hotkey.alt && "Alt", hotkey.shift && "Shift", key]
   return parts.filter(Boolean).join(" ")
@@ -53,10 +57,23 @@ export function useIsMac(): boolean | null {
   )
 }
 
+/** True while focus is inside an open dialog (the ⌘K palette, a confirm dialog). */
+export function isInDialog(event: KeyboardEvent): boolean {
+  return event.target instanceof Element && event.target.closest('[role="dialog"]') !== null
+}
+
+export interface HotkeyOptions {
+  enabled?: boolean
+  /** Also keep the key from widgets under the focus (the code editor would insert a line). */
+  stopPropagation?: boolean
+  /** Leave the key alone while focus is inside a dialog. */
+  ignoreInDialogs?: boolean
+}
+
 export function useHotkey(
   hotkey: Hotkey,
   handler: (event: KeyboardEvent) => void,
-  { enabled = true }: { enabled?: boolean } = {}
+  { enabled = true, stopPropagation = false, ignoreInDialogs = false }: HotkeyOptions = {}
 ): void {
   const handlerRef = useRef(handler)
   useEffect(() => {
@@ -67,14 +84,15 @@ export function useHotkey(
     if (!enabled) return
     const mac = isMacPlatform(currentPlatform())
     const onKeyDown = (event: KeyboardEvent) => {
-      if (matchesHotkey(event, hotkey, mac)) {
-        event.preventDefault()
-        handlerRef.current(event)
-      }
+      if (!matchesHotkey(event, hotkey, mac)) return
+      if (ignoreInDialogs && isInDialog(event)) return
+      event.preventDefault()
+      if (stopPropagation) event.stopPropagation()
+      handlerRef.current(event)
     }
     // Capture phase: global shortcuts must work even where a widget (a dialog, later
     // the code editor) stops keyboard events from bubbling.
     window.addEventListener("keydown", onKeyDown, { capture: true })
     return () => window.removeEventListener("keydown", onKeyDown, { capture: true })
-  }, [enabled, hotkey])
+  }, [enabled, hotkey, stopPropagation, ignoreInDialogs])
 }
