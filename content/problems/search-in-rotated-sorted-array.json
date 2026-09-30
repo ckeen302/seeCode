@@ -1,0 +1,218 @@
+{
+  "slug": "search-in-rotated-sorted-array",
+  "title": "Search in Rotated Sorted Array",
+  "leetcodeUrl": "https://leetcode.com/problems/search-in-rotated-sorted-array/",
+  "difficulty": "medium",
+  "patternId": "binary_search",
+  "order": 127,
+  "summary": "You get a list `nums` of integers and an integer `target`. The list was sorted from smallest to largest, then possibly rotated at an index you aren't told: everything from that index to the end was moved, in order, to the front. Return the index where `target` sits, or -1 if it isn't in `nums`. The search must run in O(log n) time, where n is the length of `nums`.",
+  "examples": [
+    {
+      "input": "nums = [30, 34, 41, 2, 9, 17, 25], target = 9",
+      "output": "4",
+      "explanation": "The sorted list [2, 9, 17, 25, 30, 34, 41] was rotated to start at 30, and 9 now sits at index 4."
+    },
+    {
+      "input": "nums = [12, 19, 23, 5], target = 21",
+      "output": "-1",
+      "explanation": "21 would fall between 19 and 23, but it isn't in the list."
+    }
+  ],
+  "constraints": [
+    "1 ≤ len(nums) ≤ 5000",
+    "−10⁴ ≤ nums[i] ≤ 10⁴",
+    "−10⁴ ≤ target ≤ 10⁴",
+    "The values in nums are distinct"
+  ],
+  "targets": {"time": "O(log n)", "space": "O(1)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "binary_search",
+      "structures": ["array"],
+      "time": "O(log n)",
+      "space": "O(1)",
+      "twist": "Find the sorted half around mid, and search it only if the target falls between its ends; otherwise search the other half.",
+      "twistKeywords": [
+        [
+          "sorted half",
+          "sorted side",
+          "sorted part",
+          "sorted piece",
+          "sorted portion",
+          "sorted run",
+          "sorted subarray",
+          "sorted segment",
+          "half is sorted",
+          "side is sorted",
+          "part is sorted",
+          "piece is sorted",
+          "portion is sorted",
+          "halves is sorted",
+          "halves are sorted",
+          "sides are sorted",
+          "half is in order",
+          "side is in order",
+          "halves are in order",
+          "always sorted",
+          "still sorted",
+          "stays sorted",
+          "remains sorted",
+          "unsorted",
+          "not sorted",
+          "ascending half",
+          "ascending side",
+          "ascending part",
+          "increasing half",
+          "increasing side",
+          "increasing part",
+          "normally ordered",
+          "properly ordered"
+        ],
+        [
+          "range",
+          "between",
+          "within",
+          "inside",
+          "falls in",
+          "lies in",
+          "lie in",
+          "fall in",
+          "bounds",
+          "bracket",
+          "endpoints",
+          "first and last",
+          "both ends",
+          "two ends",
+          "its ends",
+          "<= target",
+          "<=target",
+          "≤ target",
+          "target <",
+          "target<",
+          "target ≤",
+          "target >",
+          "target>",
+          "target ≥",
+          "hold the target",
+          "holds the target",
+          "contain the target",
+          "contains the target",
+          "could hold",
+          "can hold",
+          "could contain",
+          "can contain"
+        ]
+      ]
+    },
+    {
+      "id": "find_pivot_first",
+      "patternId": "binary_search",
+      "structures": ["array"],
+      "time": "O(log n)",
+      "space": "O(1)",
+      "twist": "Binary search for the index of the smallest value first, then run a normal binary search on the sorted piece that can hold the target.",
+      "twistKeywords": [
+        [
+          "pivot",
+          "rotation point",
+          "rotation index",
+          "rotation offset",
+          "offset",
+          "smallest",
+          "minimum",
+          "min index",
+          "min element",
+          "min value",
+          "the min",
+          "lowest",
+          "drop",
+          "break point",
+          "breakpoint",
+          "inflection",
+          "where it was rotated",
+          "where the rotation",
+          "rotated by",
+          "original start",
+          "real start",
+          "true start",
+          "shift"
+        ],
+        [
+          "then",
+          "second",
+          "twice",
+          "two binary searches",
+          "two searches",
+          "two passes",
+          "2 binary searches",
+          "again",
+          "after that",
+          "afterward",
+          "normal binary search",
+          "regular binary search",
+          "standard binary search",
+          "plain binary search",
+          "usual binary search",
+          "classic binary search",
+          "ordinary binary search"
+        ]
+      ]
+    },
+    {
+      "id": "linear_scan",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Check every index from left to right and return the one whose value equals the target.",
+      "twistKeywords": [
+        [
+          "every",
+          "each",
+          "one by one",
+          "one at a time",
+          "linear",
+          "scan",
+          "iterate",
+          "loop",
+          "go through",
+          "walk through",
+          "left to right",
+          "start to end",
+          "sequential",
+          "brute",
+          "index("
+        ],
+        ["equal", "==", "match", "target", "same", "find", "found"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but it may read every number, so it takes O(n) time. The target is O(log n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "rotated",
+      "meaning": "Around any mid, at least one half is still in sorted order, and a sorted half's two ends tell you right away whether the target can be inside it.",
+      "pointsTo": "binary_search"
+    },
+    {
+      "phrase": "O(log n) time",
+      "meaning": "A scan is O(n). To reach log n, every check has to rule out half of what's left, rotation or not.",
+      "pointsTo": "binary_search"
+    },
+    {
+      "phrase": "distinct",
+      "meaning": "With no repeats, comparing a half's two ends shows whether it's sorted. With repeats, equal ends could hide where the rotation happened.",
+      "pointsTo": "binary_search"
+    }
+  ],
+  "constraintReading": "len(nums) is at most 5000, so the size alone would allow a scan: the O(log n) requirement is what rules out O(n). Halving 5000 numbers takes about 13 checks, and lo, mid and hi need only O(1) space. Finding the smallest value first and then searching the right piece is also O(log n): two searches instead of one.",
+  "related": [
+    {
+      "slug": "binary-search",
+      "relation": "The same exact-match search; the rotation only changes how you decide which half to keep."
+    }
+  ],
+  "drillOnly": true
+}

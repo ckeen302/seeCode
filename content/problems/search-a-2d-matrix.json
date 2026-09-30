@@ -1,0 +1,215 @@
+{
+  "slug": "search-a-2d-matrix",
+  "title": "Search a 2D Matrix",
+  "leetcodeUrl": "https://leetcode.com/problems/search-a-2d-matrix/",
+  "difficulty": "medium",
+  "patternId": "binary_search",
+  "order": 125,
+  "summary": "You get a grid `matrix` of integers with m rows and n columns, and an integer `target`. The numbers in each row are sorted from smallest to largest, and each row starts with a number larger than the last number of the row above it. Return true if `target` is somewhere in the grid and false if it isn't. The search must take O(log(m·n)) time.",
+  "examples": [
+    {
+      "input": "matrix = [[2, 4, 7, 9], [12, 15, 18, 21], [25, 30, 36, 41]], target = 18",
+      "output": "true",
+      "explanation": "18 is the third number in the middle row."
+    },
+    {
+      "input": "matrix = [[-6, -1, 3], [8, 10, 14]], target = 5",
+      "output": "false",
+      "explanation": "5 would come between 3 and 8, where the first row ends and the second begins, but it isn't in the grid."
+    }
+  ],
+  "constraints": ["1 ≤ m, n ≤ 100", "−10⁴ ≤ matrix[r][c] ≤ 10⁴", "−10⁴ ≤ target ≤ 10⁴"],
+  "targets": {"time": "O(log n)", "space": "O(1)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "binary_search",
+      "structures": ["grid"],
+      "time": "O(log n)",
+      "space": "O(1)",
+      "twist": "Treat the rows as one sorted list of m·n numbers, and turn each middle index into a row and a column with divmod.",
+      "twistKeywords": [
+        [
+          "one list",
+          "one sorted list",
+          "single list",
+          "single sorted list",
+          "one array",
+          "one sorted array",
+          "single array",
+          "single sorted array",
+          "one long",
+          "one big",
+          "flat",
+          "1d",
+          "1-d",
+          "one-dimensional",
+          "one dimensional",
+          "virtual",
+          "concatenat",
+          "unroll",
+          "chain",
+          "as a list",
+          "as an array",
+          "as one",
+          "as a single",
+          "m*n",
+          "m * n",
+          "m·n",
+          "m×n",
+          "m x n",
+          "rows * cols",
+          "rows*cols",
+          "row-major",
+          "row major",
+          "linear index",
+          "global index",
+          "overall index"
+        ],
+        [
+          "divmod",
+          "//",
+          "%",
+          "quotient",
+          "remainder",
+          "modulo",
+          "row and col",
+          "row and column",
+          "rows and col",
+          "row, col",
+          "row/col",
+          "row & col",
+          "(r, c)",
+          "(i, j)",
+          "r, c",
+          "row =",
+          "row=",
+          "col =",
+          "col=",
+          "column =",
+          "row index",
+          "column index",
+          "col index",
+          "coordinate",
+          "by the number of columns",
+          "by number of columns",
+          "by the column count",
+          "by the row length",
+          "by row length",
+          "by the width",
+          "by cols",
+          "by ncols"
+        ]
+      ]
+    },
+    {
+      "id": "row_then_column",
+      "patternId": "binary_search",
+      "structures": ["grid"],
+      "time": "O(log n)",
+      "space": "O(1)",
+      "twist": "Binary search the first column to find the one row that could hold the target, then binary search inside that row.",
+      "twistKeywords": [
+        [
+          "which row",
+          "the row",
+          "right row",
+          "correct row",
+          "one row",
+          "that row",
+          "a row",
+          "candidate row",
+          "target row",
+          "over the rows",
+          "over rows",
+          "on the rows",
+          "across rows",
+          "across the rows",
+          "first column",
+          "first element of each row",
+          "first number of each row",
+          "first value of each row",
+          "row range",
+          "row whose",
+          "row that"
+        ],
+        [
+          "then",
+          "inside",
+          "within",
+          "second",
+          "twice",
+          "two binary searches",
+          "two searches",
+          "two passes",
+          "again",
+          "after that",
+          "afterward",
+          "next"
+        ]
+      ]
+    },
+    {
+      "id": "scan_every_cell",
+      "patternId": "brute_force",
+      "structures": ["grid"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Check every cell, row by row, and return true as soon as one equals the target.",
+      "twistKeywords": [
+        [
+          "every",
+          "each",
+          "all cells",
+          "all the cells",
+          "all numbers",
+          "scan",
+          "linear",
+          "loop",
+          "iterate",
+          "one by one",
+          "one at a time",
+          "go through",
+          "walk through",
+          "row by row",
+          "nested",
+          "brute",
+          "any("
+        ],
+        ["equal", "==", "match", "target", "found", "find", "contains", "look for"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but it may read all m·n cells: O(m·n) time. The target is O(log(m·n))."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "sorted from smallest to largest",
+      "meaning": "In sorted order, the middle number tells you which side the target must be on, so one check rules out half of what's left.",
+      "pointsTo": "binary_search"
+    },
+    {
+      "phrase": "larger than the last number of the row above",
+      "meaning": "The rows chain into one sorted list of m·n numbers. Position i in that list is row i // n and column i % n, and divmod(i, n) gives both at once.",
+      "pointsTo": "toolkit:divmod"
+    },
+    {
+      "phrase": "O(log(m·n)) time",
+      "meaning": "Reading every cell is O(m·n). To reach log(m·n), each check has to halve all the cells still in play, not just one row.",
+      "pointsTo": "binary_search"
+    },
+    {
+      "phrase": "m rows and n columns",
+      "meaning": "The input is a 2D grid, though a little index math lets you search it as if it were one flat list.",
+      "pointsTo": "structure:grid"
+    }
+  ],
+  "constraintReading": "The grid holds at most 100·100 = 10⁴ numbers, so even reading every cell would be quick: the O(log(m·n)) requirement is what rules out O(m·n). Counting all m·n cells as the input size, that target is the Plan card's O(log n), at most 14 halvings for 10⁴ cells. Binary searching each row, O(m log n), or walking in from a corner, O(m + n), also falls short.",
+  "related": [
+    {
+      "slug": "binary-search",
+      "relation": "The same exact-match search on a sorted list; here each middle index is first turned into a row and a column."
+    }
+  ],
+  "drillOnly": true
+}

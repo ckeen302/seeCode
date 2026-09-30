@@ -1,0 +1,188 @@
+{
+  "slug": "find-minimum-in-rotated-sorted-array",
+  "title": "Find Minimum in Rotated Sorted Array",
+  "leetcodeUrl": "https://leetcode.com/problems/find-minimum-in-rotated-sorted-array/",
+  "difficulty": "medium",
+  "patternId": "binary_search",
+  "order": 126,
+  "summary": "You get a list `nums` of integers. It was sorted from smallest to largest and then rotated: split into two pieces that swapped places, so it may now start partway through the sorted order. The rotation may also have left it unchanged. Return the smallest number in `nums`. Your search must run in O(log n) time, where n is the length of `nums`.",
+  "examples": [
+    {
+      "input": "nums = [15, 22, 27, 3, 8, 11]",
+      "output": "3",
+      "explanation": "This is [3, 8, 11, 15, 22, 27] rotated so that it starts at 15."
+    },
+    {
+      "input": "nums = [2, 6, 9, 14]",
+      "output": "2",
+      "explanation": "The rotation left the list in sorted order, so the smallest number comes first."
+    }
+  ],
+  "constraints": [
+    "1 ≤ len(nums) ≤ 5000",
+    "−5000 ≤ nums[i] ≤ 5000",
+    "No value appears twice in nums"
+  ],
+  "targets": {"time": "O(log n)", "space": "O(1)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "binary_search",
+      "structures": ["array"],
+      "time": "O(log n)",
+      "space": "O(1)",
+      "twist": "Compare the middle value with the last one in the range: if it's larger, the minimum lies right of mid; if not, it's at mid or to its left.",
+      "twistKeywords": [
+        [
+          "last",
+          "right end",
+          "left end",
+          "either end",
+          "the ends",
+          "an end",
+          "endpoint",
+          "end value",
+          "end element",
+          "with the end",
+          "against the end",
+          "to the end",
+          "end of the range",
+          "end of the array",
+          "end of the list",
+          "rightmost",
+          "leftmost",
+          "right edge",
+          "left edge",
+          "right boundary",
+          "left boundary",
+          "first element",
+          "first value",
+          "first number",
+          "first item",
+          "[r]",
+          "[hi]",
+          "[high]",
+          "[right]",
+          "[end]",
+          "[-1]",
+          "[l]",
+          "[lo]",
+          "[low]",
+          "[left]",
+          "[0]",
+          "[n-1]",
+          "[n - 1]",
+          "[len",
+          "sorted half",
+          "sorted side",
+          "sorted part",
+          "sorted piece",
+          "sorted run",
+          "half is sorted",
+          "side is sorted",
+          "part is sorted",
+          "halves is sorted",
+          "unsorted",
+          "not sorted",
+          "out of order"
+        ],
+        [
+          "drop",
+          "pivot",
+          "rotation point",
+          "rotation index",
+          "inflection",
+          "break",
+          "minimum",
+          "smallest",
+          "smaller",
+          "the min",
+          "min is",
+          "min lies",
+          "min must",
+          "lowest",
+          "wrap",
+          "reset",
+          "step down",
+          "descent",
+          "decrease",
+          "fall",
+          "cliff",
+          "right half",
+          "left half",
+          "right side",
+          "left side",
+          "go right",
+          "go left",
+          "search right",
+          "search left",
+          "move right",
+          "move left",
+          "lo =",
+          "lo=",
+          "hi =",
+          "hi="
+        ]
+      ]
+    },
+    {
+      "id": "scan_for_min",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Scan every number and keep the smallest one you've seen.",
+      "twistKeywords": [
+        [
+          "every",
+          "each",
+          "scan",
+          "linear",
+          "loop",
+          "iterate",
+          "one by one",
+          "one at a time",
+          "go through",
+          "walk through",
+          "brute",
+          "whole list",
+          "entire list",
+          "whole array",
+          "entire array",
+          "all numbers",
+          "all the numbers",
+          "all values",
+          "all elements"
+        ],
+        ["smallest", "minimum", "the min", "min(", "lowest", "least", "min so far", "running min"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but it reads every number: O(n) time. The target is O(log n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "rotated",
+      "meaning": "A rotated sorted list is two sorted runs, and the smallest number starts the second one. Comparing the middle with the end of the range tells you which run mid is in.",
+      "pointsTo": "binary_search"
+    },
+    {
+      "phrase": "sorted from smallest to largest",
+      "meaning": "Both pieces are still sorted, and every number in the first piece is larger than every number in the second, so one comparison places mid.",
+      "pointsTo": "binary_search"
+    },
+    {
+      "phrase": "O(log n) time",
+      "meaning": "Scanning for the minimum is O(n). To reach log n, each step has to rule out half of the range.",
+      "pointsTo": "binary_search"
+    }
+  ],
+  "constraintReading": "len(nums) is at most 5000, so a scan would be quick: the O(log n) requirement is what rules out O(n). Halving 5000 numbers takes about 13 steps, and lo and hi need only O(1) extra space.",
+  "related": [
+    {
+      "slug": "binary-search",
+      "relation": "Halves the list the same way, but there's no target: the middle is compared with the end of the range instead."
+    }
+  ],
+  "drillOnly": true
+}
