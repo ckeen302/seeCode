@@ -70,9 +70,9 @@ unknown keys, duplicate keys, `NaN` and type coercion (`"4"` for `4`) are errors
 - **Problems.** `order` is unique across all problems. A Workspace problem's `order` is
   its number in the Section 24.2 table (1-15); drill-only problems are numbered from 101
   in the order of the 24.2 drill-only table (Contains Duplicate 101, Ransom Note 102, ...,
-  Capacity To Ship Packages Within D Days 130). `difficulty` is `easy`, `medium` or `hard`. Complexities
-  (`targets`, approach `time`/`space`) are one of `O(1)`, `O(log n)`, `O(n)`,
-  `O(n log n)`, `O(n²)`, `O(2ⁿ)` (Unicode ² and ⁿ).
+  Capacity To Ship Packages Within D Days 130). `difficulty` is `easy`, `medium` or
+  `hard`. Complexities (`targets`, approach `time`/`space`) are one of `O(1)`,
+  `O(log n)`, `O(n)`, `O(n log n)`, `O(n²)`, `O(2ⁿ)` (Unicode ² and ⁿ).
 - **Approaches.** 1 to 3; exactly one has `id: "optimal"`. `patternId` is a pattern id or
   `brute_force`; `structures` (1 to 4) are structure ids. `acceptedAs: "suboptimal"`
   needs a `note` and is not allowed on the optimal approach.

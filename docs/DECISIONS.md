@@ -121,6 +121,8 @@ Anything that departs from or fills a gap in `docs/SPEC.md` is recorded here.
 - 2026-09-30 · `isalpha_isdigit` is tagged `two_pointers_opposite` only (not `stack`), and the stack pattern lists the `.isdigit()` trap among its mistakes · No v1 stack problem needs it, and in Evaluate RPN `"-4".isdigit()` is False.
 - 2026-09-30 · Note for M7: keywords cannot separate some twists. valid-palindrome's clean-and-reverse twist also matches the optimal approach (through "only") and wins the tie, and two-sum's "Store numbers in a set and check if the difference exists" grades correct though a set cannot return the index · The AI twist check (12.2) has to catch these; without `LLM_API_KEY` they stay correct.
 - 2026-09-30 · Note for M4: 8.4 takes an `index`/`value` predict answer from the variable's next change; when the next value equals the current one (equal neighbors), the answer is missing or belongs to a later step · Consider the next assignment instead; content avoids such predict points for now.
+- 2026-09-30 · Rule 4 ignores case letter by letter (`re.IGNORECASE` on the original text), not with `casefold()`; the M3 highlight can use `(?<![\p{L}\p{N}_])` ... `(?![\p{L}\p{N}_])` with the `iu` flags · `casefold()` turns "İ" into "i" plus a combining dot, so "stanbul" matched inside "İstanbul"; JavaScript's `\w` is ASCII-only, even with `u`.
+- 2026-09-30 · valid-palindrome: "letter and" also leaves the optimal twist keywords ("letter or" stays) · It matched "non-letter and", so "Skip every non-letter and lowercase", which drops digits, graded correct; "digit" and "number" still cover the correct phrasings.
 
 ## Open questions (waiting on the owner)
 

@@ -48,6 +48,13 @@ def new_namespace() -> dict[str, Any]:
     return namespace
 
 
+class _Output(io.StringIO):
+    """Captured stdout. The code may call `sys.stdout.close()`; what it printed is kept."""
+
+    def close(self) -> None:
+        pass
+
+
 def _normalize(value: Any) -> Any:
     """Make a result comparable with JSON: tuples and deques become lists, sets sorted lists."""
     if isinstance(value, list | tuple | deque):
@@ -143,7 +150,7 @@ def _elapsed_ms(start: float) -> float:
 def _run_one(
     solution_class: type, entry: str, test: dict[str, Any], mode: str, stdout: str
 ) -> dict[str, Any]:
-    buffer = io.StringIO()
+    buffer = _Output()
     buffer.write(stdout)
     start = time.perf_counter()
 
@@ -196,7 +203,7 @@ def run_tests(code: str, entry: str, tests_json: str, mode: str = "exact") -> st
     # Lets tracebacks show the offending line of the user's code.
     linecache.cache[SOLUTION_FILE] = (len(code), None, code.splitlines(True), SOLUTION_FILE)
     namespace = new_namespace()
-    module_stdout = io.StringIO()
+    module_stdout = _Output()
     try:
         with contextlib.redirect_stdout(module_stdout):
             exec(compile(code, SOLUTION_FILE, "exec"), namespace)

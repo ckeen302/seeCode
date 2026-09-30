@@ -328,6 +328,9 @@ def test_signal_phrase_match_ignores_case_and_accepts_constraints() -> None:
         ("every value is listed", "value is li"),  # stops inside a word
         ("the values repeat", "values rep"),
         ("indices_only", "indices"),  # an underscore is part of a word
+        ("at most 10⁴ values", "10"),  # a superscript digit is part of the number
+        ("visit İstanbul", "stanbul"),  # casefolding "İ" would leave a combining dot here
+        ("the Straße", "strasse"),  # case is ignored, but letters are not rewritten
     ],
 )
 def test_signal_phrase_must_match_whole_words(constraint: str, phrase: str) -> None:
@@ -347,6 +350,7 @@ def test_signal_phrase_must_match_whole_words(constraint: str, phrase: str) -> N
         ("(values may repeat)", "values may repeat"),  # punctuation may touch a phrase
         ("it runs in O(log n) time.", "O(log n) time"),
         ("find `target`, then stop", "`target`,"),
+        ("1 ≤ LEN(NUMS) ≤ 10⁴", "len(nums) ≤ 10⁴"),
     ],
 )
 def test_signal_phrase_may_touch_punctuation(constraint: str, phrase: str) -> None:

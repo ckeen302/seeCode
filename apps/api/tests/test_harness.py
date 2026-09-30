@@ -323,6 +323,30 @@ def test_stdout_is_kept_when_the_code_raises() -> None:
     assert result["stdout"] == "before\n"
 
 
+def test_closing_stdout_keeps_the_output_and_the_results() -> None:
+    code = (
+        "import sys\n"
+        "print('loading')\n"
+        "sys.stdout.close()\n"
+        "class Solution:\n"
+        "    def f(self, x):\n"
+        "        print('x is', x)\n"
+        "        sys.stdout.close()\n"
+        "        print('still here')\n"
+        "        return x\n"
+    )
+    results = run(code, [_test([1], 1, id="a"), _test([2], 3, id="b")])
+    assert [(r["id"], r["status"], r["stdout"]) for r in results] == [
+        ("a", "pass", "loading\nx is 1\nstill here\n"),
+        ("b", "fail", "x is 2\nstill here\n"),
+    ]
+    broken = "import sys\nprint('x')\nsys.stdout.close()\nraise ValueError('boom')\n"
+    [failed] = run(broken, [_test([], 1)])
+    assert failed["status"] == "error"
+    assert failed["stdout"] == "x\n"
+    assert failed["error"].rstrip().endswith("ValueError: boom")
+
+
 # ---------------------------------------------------------------- errors and line numbers
 
 

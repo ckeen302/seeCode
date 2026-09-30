@@ -267,9 +267,14 @@ def traced_lines(compiled: CodeType) -> set[int]:
 
 def phrase_in_text(phrase: str, text: str) -> bool:
     """Rule 4: `phrase` appears in `text` as whole words, ignoring case. Punctuation may
-    touch it, but not a letter, digit or underscore ("sorted" is not in "unsorted")."""
-    pattern = rf"(?<!\w){re.escape(phrase.casefold())}(?!\w)"
-    return re.search(pattern, text.casefold()) is not None
+    touch it, but not a letter, digit or underscore ("sorted" is not in "unsorted").
+
+    Case is ignored letter by letter (`re.IGNORECASE`). Casefolding would change the text
+    itself: `casefold()` turns "İ" into "i" plus a combining dot, which is not a word
+    character, so "stanbul" would match inside "İstanbul".
+    """
+    pattern = rf"(?<!\w){re.escape(phrase)}(?!\w)"
+    return re.search(pattern, text, re.IGNORECASE) is not None
 
 
 def _duplicates(values: Iterable[str]) -> list[str]:

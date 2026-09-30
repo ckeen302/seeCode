@@ -276,3 +276,46 @@ def test_workspace_problems_are_the_section_24_2_problems_in_its_order() -> None
     assert set(_workspace_slugs()) <= set(SECTION_24_2)
     for slug in _workspace_slugs():
         assert problems[slug]["order"] == SECTION_24_2[slug], slug
+
+
+# ---------------------------------------------------------------- twist keywords (11.1)
+
+
+def _twist_result(approach: dict[str, Any], twist: str) -> str:
+    """Section 11.1's keyword check: a group matches when any of its words appears in the
+    twist, ignoring case; every group gives correct, some give close."""
+    groups = approach["twistKeywords"]
+    matched = sum(any(word in twist.lower() for word in group) for group in groups)
+    return "correct" if matched == len(groups) else "close" if matched else "wrong"
+
+
+def _optimal(slug: str) -> dict[str, Any]:
+    [optimal] = [a for a in _problems()[slug]["approaches"] if a["id"] == "optimal"]
+    return optimal
+
+
+@pytest.mark.parametrize("slug", M1_PROBLEMS)
+def test_every_approach_grades_its_own_twist_correct(slug: str) -> None:
+    for approach in _problems()[slug]["approaches"]:
+        assert _twist_result(approach, approach["twist"]) == "correct", approach["id"]
+
+
+@pytest.mark.parametrize(
+    ("slug", "twist", "expected"),
+    [
+        ("valid-palindrome", "Only letters and digits count, case doesn't matter", "correct"),
+        ("valid-palindrome", "Skip what isn't a letter or number; compare lowercased", "correct"),
+        # Half the twist, or a tool that drops digits or keeps punctuation.
+        ("valid-palindrome", "Ignore uppercase letters", "close"),
+        ("valid-palindrome", "Use isalpha to skip and lower to compare", "close"),
+        ("valid-palindrome", "Skip every non-letter and lowercase", "close"),
+        ("valid-palindrome", "Remove spaces and lowercase the string", "close"),
+        ("two-sum", "Look up the number that completes the pair in a dict", "correct"),
+        ("two-sum", "Check if the other number I need is in a dict before adding x", "correct"),
+        # Vague: says what to store, not what to look up.
+        ("two-sum", "I need to store numbers in a hash map", "close"),
+        ("two-sum", "Use a dict; we need the index", "close"),
+    ],
+)
+def test_optimal_twist_keywords_separate_real_twists(slug: str, twist: str, expected: str) -> None:
+    assert _twist_result(_optimal(slug), twist) == expected
