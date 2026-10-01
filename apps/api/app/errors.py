@@ -82,7 +82,10 @@ async def _validation_error(_: Request, exc: Exception) -> JSONResponse:
     message = "Invalid request."
     if errors:
         first = errors[0]
-        location = ".".join(str(part) for part in first.get("loc", ()) if part != "body")
+        parts = list(first.get("loc", ()))
+        if parts and parts[0] == "body":  # the request body itself, not a field named "body"
+            parts = parts[1:]
+        location = ".".join(str(part) for part in parts)
         message = f"{location}: {first.get('msg', 'invalid value')}" if location else message
     return error_response(422, "validation_error", message)
 

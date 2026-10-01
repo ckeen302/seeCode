@@ -18,7 +18,7 @@ from app.middleware import (
     UnhandledErrorMiddleware,
 )
 from app.ratelimit import TokenBucketLimiter, rate_limit
-from app.routers import content, health, me
+from app.routers import attempts, content, guest, health, me, problems
 
 API_PREFIX = "/api/v1"
 logger = logging.getLogger("seecode.api")
@@ -74,6 +74,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     api.include_router(health.router)  # not rate limited: host health checks poll it
     api.include_router(me.router, dependencies=[Depends(rate_limit)])
     api.include_router(content.router, dependencies=[Depends(rate_limit)])
+    api.include_router(attempts.router, dependencies=[Depends(rate_limit)])
+    api.include_router(problems.router, dependencies=[Depends(rate_limit)])
+    api.include_router(guest.router, dependencies=[Depends(rate_limit)])
     app.include_router(api)
 
     logger.info(

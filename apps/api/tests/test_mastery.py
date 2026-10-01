@@ -2,7 +2,13 @@
 
 import pytest
 
-from app.learning.mastery import PatternProgress, is_solved, pattern_progress, problem_status
+from app.learning.mastery import (
+    PatternProgress,
+    is_solved,
+    next_problem,
+    pattern_progress,
+    problem_status,
+)
 
 # a -> b -> d, a -> c -> d (d needs both b and c)
 PREREQS = {"a": [], "b": ["a"], "c": ["a"], "d": ["b", "c"]}
@@ -109,3 +115,45 @@ def test_is_solved() -> None:
     assert not is_solved("attempted")
     assert not is_solved("new")
     assert not is_solved(None)
+
+
+# ---------------------------------------------------------------- next problem (roadmap order)
+
+ORDERED = [("a1", "a"), ("a2", "a"), ("a3", "a"), ("b1", "b"), ("b2", "b"), ("c1", "c")]
+
+
+def _next(statuses: dict[str, str], exclude: str | None = None) -> str | None:
+    states = pattern_progress(PROBLEMS, PREREQS, statuses, 2)
+    return next_problem(ORDERED, states, statuses, exclude=exclude)
+
+
+def test_next_problem_is_the_first_unsolved_in_an_unlocked_pattern() -> None:
+    assert _next({}) == "a1"
+    assert _next({"a1": "solved"}) == "a2"
+    assert _next({"a1": "solved", "a2": "attempted"}) == "a2"  # attempted is not solved
+
+
+def test_next_problem_skips_the_current_problem() -> None:
+    assert _next({}, exclude="a1") == "a2"
+
+
+def test_next_problem_moves_on_once_a_pattern_unlocks() -> None:
+    statuses = {"a1": "solved", "a2": "mastered", "a3": "solved"}
+    assert _next(statuses) == "b1"
+    # a3 still unsolved: it comes first, in roadmap order.
+    assert _next({"a1": "solved", "a2": "solved"}, exclude="a2") == "a3"
+
+
+def test_next_problem_skips_locked_patterns() -> None:
+    statuses = {"a1": "solved", "a2": "solved", "a3": "solved", "b1": "solved", "b2": "solved"}
+    assert _next(statuses) == "c1"
+    only_b = {"a1": "solved", "a2": "solved", "a3": "solved"}
+    states = pattern_progress(PROBLEMS, PREREQS, only_b, 2)
+    assert next_problem([("c1", "c"), ("d1", "d")], states, only_b) == "c1"
+    assert next_problem([("d1", "d")], states, only_b) is None  # d is locked
+    assert next_problem([("x1", "unknown")], states, only_b) is None
+
+
+def test_no_next_problem_when_everything_is_solved() -> None:
+    everything = dict.fromkeys([slug for slug, _ in ORDERED], "solved")
+    assert _next(everything) is None

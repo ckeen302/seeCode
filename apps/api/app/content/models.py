@@ -218,7 +218,7 @@ class Approach(ContentModel):
     structures: list[Id] = Field(min_length=1, max_length=4)  # a Plan card holds at most 4
     time: Complexity
     space: Complexity
-    twist: Text
+    twist: Annotated[Text, Field(max_length=140)]  # the Plan card's twist limit (7.3)
     twist_keywords: list[Annotated[list[Text], Field(min_length=1)]] = Field(min_length=1)
     accepted_as: Literal["suboptimal"] | None = None
     note: Text | None = None

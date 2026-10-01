@@ -26,7 +26,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
-from app.config import API_DIR, Settings, normalize_database_url
+from app.config import API_DIR, REPO_ROOT, Settings, normalize_database_url
 from app.content.validation import read_content_files
 from app.main import create_app
 
@@ -38,6 +38,7 @@ ISSUER = f"{SUPABASE_URL}/auth/v1"
 JWT_SECRET = "test-only-hs256-secret-of-at-least-32-bytes"
 DEV_USER = "00000000-0000-4000-8000-000000000001"
 FIXTURE_CONTENT = Path(__file__).resolve().parent / "fixtures" / "content"
+REAL_CONTENT = REPO_ROOT / "content"
 
 
 def make_settings(**overrides: Any) -> Settings:
@@ -116,6 +117,22 @@ async def app(engine: AsyncEngine) -> AsyncIterator[FastAPI]:
 @pytest.fixture
 async def client(app: FastAPI) -> AsyncIterator[AsyncClient]:
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as test_client:
+        yield test_client
+
+
+@pytest.fixture
+async def real_app(engine: AsyncEngine) -> AsyncIterator[FastAPI]:
+    """An app serving the real content/ folder (attempt and guest tests)."""
+    application = create_app(make_settings(content_dir=REAL_CONTENT))
+    yield application
+    await application.state.engine.dispose()
+
+
+@pytest.fixture
+async def real_client(real_app: FastAPI) -> AsyncIterator[AsyncClient]:
+    async with AsyncClient(
+        transport=ASGITransport(app=real_app), base_url="http://test"
+    ) as test_client:
         yield test_client
 
 

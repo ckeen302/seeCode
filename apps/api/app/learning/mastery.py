@@ -79,3 +79,23 @@ def pattern_progress(
             state = "locked"
         progress[pattern_id] = PatternProgress(state, solved, mastered, total)
     return progress
+
+
+def next_problem(
+    problems: Sequence[tuple[str, str]],
+    states: Mapping[str, PatternProgress],
+    statuses: Mapping[str, str],
+    exclude: str | None = None,
+) -> str | None:
+    """The first problem in roadmap order that the user has not solved, in an unlocked
+    pattern ("Next problem" in the wrap-up; Today's roadmap card uses the same rule).
+
+    `problems` lists (slug, pattern id) of the Workspace problems by `order`.
+    """
+    for slug, pattern_id in problems:
+        if slug == exclude or is_solved(statuses.get(slug)):
+            continue
+        state = states.get(pattern_id)
+        if state is not None and state.state != "locked":
+            return slug
+    return None

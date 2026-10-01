@@ -108,8 +108,10 @@ class ContentStore:
         by_id = {pattern.id: pattern for pattern in content.patterns}
         self.patterns: list[Pattern] = [by_id[node.id] for node in self.roadmap.patterns]
         self.patterns_by_id: dict[str, Pattern] = {p.id: p for p in self.patterns}
+        self.pattern_families: dict[str, str] = {p.id: p.family for p in self.patterns}
         self.structures: list[Structure] = list(content.structures)
         self.structures_by_id: dict[str, Structure] = {s.id: s for s in self.structures}
+        self.structure_labels: dict[str, str] = {s.id: s.label for s in self.structures}
         self.toolkit: list[ToolkitCard] = list(content.toolkit)
         self.toolkit_by_id: dict[str, ToolkitCard] = {t.id: t for t in self.toolkit}
 

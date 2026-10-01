@@ -188,6 +188,14 @@ def test_approaches_are_limited_to_three() -> None:
     assert _errors(Problem, data)[0][0] == "approaches"
 
 
+def test_twist_fits_the_plan_card() -> None:
+    approach = _problem()["approaches"][0]
+    approach["twist"] = "x" * 140
+    assert Approach.model_validate(approach).twist == "x" * 140
+    approach["twist"] = "x" * 141
+    assert _errors(Approach, approach)[0][0] == "twist"
+
+
 def test_suboptimal_approach_needs_a_note() -> None:
     approach = _problem()["approaches"][1]
     del approach["note"]

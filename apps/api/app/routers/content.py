@@ -8,14 +8,12 @@ user solved it. Drill-only problems have no public page.
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request
-from sqlalchemy import select
 
-from app.auth import AuthUser, OptionalUser
+from app.auth import OptionalUser
 from app.content.models import Structure, ToolkitCard
 from app.content.store import ContentStore, UserProblem
 from app.db import DbSession
 from app.errors import ApiError
-from app.models import ProblemProgress
 from app.schemas.content import (
     PatternSummary,
     PatternView,
@@ -23,6 +21,7 @@ from app.schemas.content import (
     ProblemPublic,
     RoadmapView,
 )
+from app.services.progress import load_progress
 
 router = APIRouter(prefix="/content", tags=["content"])
 
@@ -39,22 +38,7 @@ async def user_progress(session: DbSession, user: OptionalUser) -> dict[str, Use
     """The user's problem_progress rows by slug; None when signed out."""
     if user is None:
         return None
-    return await load_user_progress(session, user)
-
-
-async def load_user_progress(session: DbSession, user: AuthUser) -> dict[str, UserProblem]:
-    rows = await session.execute(
-        select(
-            ProblemProgress.problem_slug,
-            ProblemProgress.status,
-            ProblemProgress.best_rung,
-            ProblemProgress.last_attempt_at,
-        ).where(ProblemProgress.user_id == user.id)
-    )
-    return {
-        slug: UserProblem(status=status, best_rung=best_rung, last_attempt_at=last_attempt_at)
-        for slug, status, best_rung, last_attempt_at in rows
-    }
+    return await load_progress(session, user.id)
 
 
 Progress = Annotated[dict[str, UserProblem] | None, Depends(user_progress)]

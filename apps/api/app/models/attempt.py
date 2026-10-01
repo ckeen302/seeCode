@@ -35,6 +35,9 @@ class Attempt(Base):
     plan: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     plan_checks: Mapped[int] = mapped_column(Integer, server_default=text("0"))
     plan_grade: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    # Migration 002: the first check's `correct`, and active seconds at the first correct check.
+    plan_first_correct: Mapped[bool | None] = mapped_column(Boolean)
+    plan_correct_seconds: Mapped[int | None] = mapped_column(Integer)
     planned_first: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     plan_skipped: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     max_rung: Mapped[int] = mapped_column(Integer, server_default=text("0"))

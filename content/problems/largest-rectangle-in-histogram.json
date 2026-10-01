@@ -28,7 +28,7 @@
       "structures": ["stack"],
       "time": "O(n)",
       "space": "O(n)",
-      "twist": "Keep indexes of rising heights on a stack; when a shorter bar pops one, that bar's rectangle fills the gap between the new top and the shorter bar.",
+      "twist": "Keep indexes of rising bars on a stack; when a shorter bar pops one, its rectangle spans the gap between the new top and that bar.",
       "twistKeywords": [
         [
           "increasing",
