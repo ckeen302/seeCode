@@ -63,7 +63,7 @@ async def test_a_new_users_stats(real_app: FastAPI, real_client: AsyncClient) ->
         "state": "available",
         "solved": 0,
         "mastered": 0,
-        "total": 3,
+        "total": 7,
         "medianFirstRung": None,
         "drillAccuracy": None,
         "drillAnswers": 0,
@@ -109,7 +109,7 @@ async def test_stats_after_some_work(
 
     view = await stats(real_client)
     hashing = view["patterns"][0]
-    assert (hashing["state"], hashing["solved"], hashing["total"]) == ("in_progress", 2, 3)
+    assert (hashing["state"], hashing["solved"], hashing["total"]) == ("in_progress", 2, 7)
     assert hashing["medianFirstRung"] == 2.0  # first attempts: 0, 4 and 2 (given up)
     assert view["patterns"][1]["state"] == "available"  # two pointers unlocked
     results: dict[str, list[bool]] = {}

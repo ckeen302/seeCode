@@ -110,9 +110,9 @@ async def test_a_new_users_pool_is_the_first_pattern(
     slugs = [card["slug"] for card in body["cards"]]
     # Only hashing is unlocked: its Workspace and drill-only problems, each once.
     assert set(slugs) == pool_of(real_app, "hashing")
-    assert len(slugs) == len(set(slugs)) == 9
+    assert len(slugs) == len(set(slugs)) == 10
     assert {card["slug"] for card in body["cards"]} & {"reverse-string", "two-sum-ii"} == set()
-    assert [card["id"] for card in body["cards"]] == [f"c{n}" for n in range(1, 10)]
+    assert [card["id"] for card in body["cards"]] == [f"c{n}" for n in range(1, 11)]
 
 
 async def test_recognition_cards_never_carry_answers(
@@ -187,7 +187,7 @@ async def test_a_pattern_with_solved_problems_is_drillable_before_it_unlocks(
     await solve(real_client, "koko-eating-bananas")  # binary search, opened directly
     cards = (await start_drill(real_client, size=30, pattern_filter="binary_search"))["cards"]
     assert {pattern_of(real_app, c["slug"]) for c in cards} == {"binary_search", "hashing"}
-    assert len(cards) == 18
+    assert len(cards) == 19
 
 
 async def test_session_row_records_the_cards(real_client: AsyncClient, engine: AsyncEngine) -> None:

@@ -177,7 +177,7 @@ async def test_queue_cards(
     real_app: FastAPI, real_client: AsyncClient, engine: AsyncEngine
 ) -> None:
     await sign_in(real_client)
-    problem_id = await add_item(engine, "problem_plan", "contains-duplicate", _ago(5))
+    problem_id = await add_item(engine, "problem_plan", "ransom-note", _ago(5))
     toolkit_id = await add_item(engine, "toolkit", "counter", _ago(4))
     cards = await queue(real_client)
     assert [card["itemId"] for card in cards] == [str(problem_id), str(toolkit_id)]
@@ -187,8 +187,8 @@ async def test_queue_cards(
     assert (problem_card["kind"], problem_card["resolve"]) == ("problem_plan", False)
     assert problem_card["hasWorkspace"] is False  # drill-only: nowhere to re-solve it
     assert set(problem_card["problem"]) == CARD_KEYS
-    statement = problem_json("contains-duplicate")
-    assert problem_card["problem"]["slug"] == "contains-duplicate"
+    statement = problem_json("ransom-note")
+    assert problem_card["problem"]["slug"] == "ransom-note"
     assert problem_card["problem"]["summary"] == statement["summary"]
     assert problem_card["problem"]["targets"] == statement["targets"]
     assert statement["title"] not in str(problem_card)

@@ -209,5 +209,12 @@
     "phrases": ["division truncating toward zero", "round toward zero", "drop the fractional part"],
     "example": "int(-7 / 2), -7 // 2  # -3, -4",
     "patterns": ["stack"]
+  },
+  {
+    "id": "accumulate",
+    "tool": "itertools.accumulate()",
+    "phrases": ["running total", "prefix sums", "the total of every prefix"],
+    "example": "list(accumulate([3, 1, 4]))  # [3, 4, 8]",
+    "patterns": ["prefix_scan"]
   }
 ]
