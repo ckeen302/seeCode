@@ -292,6 +292,11 @@ WORKSPACE_ORDER = {
     "sliding-window-maximum": 27,
     "car-fleet": 28,
     "largest-rectangle-in-histogram": 29,
+    "search-a-2d-matrix": 30,
+    "find-minimum-in-rotated-sorted-array": 31,
+    "search-in-rotated-sorted-array": 32,
+    "time-based-key-value-store": 33,
+    "median-of-two-sorted-arrays": 34,
 }
 
 
@@ -362,6 +367,11 @@ def _optimal(slug: str) -> dict[str, Any]:
         "sliding-window-maximum",
         "car-fleet",
         "largest-rectangle-in-histogram",
+        "search-a-2d-matrix",
+        "find-minimum-in-rotated-sorted-array",
+        "search-in-rotated-sorted-array",
+        "time-based-key-value-store",
+        "median-of-two-sorted-arrays",
     ],
 )
 def test_every_approach_grades_its_own_twist_correct(slug: str) -> None:

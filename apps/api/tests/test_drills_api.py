@@ -187,7 +187,7 @@ async def test_a_pattern_with_solved_problems_is_drillable_before_it_unlocks(
     await solve(real_client, "koko-eating-bananas")  # binary search, opened directly
     cards = (await start_drill(real_client, size=30, pattern_filter="binary_search"))["cards"]
     assert {pattern_of(real_app, c["slug"]) for c in cards} == {"binary_search", "hashing"}
-    assert len(cards) == 19
+    assert len(cards) == 21
 
 
 async def test_session_row_records_the_cards(real_client: AsyncClient, engine: AsyncEngine) -> None:

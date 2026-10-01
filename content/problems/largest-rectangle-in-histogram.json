@@ -194,7 +194,7 @@
     {"id": "h4", "args": [[1, 2, 3, 4, 5]], "expected": 9, "hidden": true},
     {"id": "h5", "args": [[5, 4, 3, 2, 1]], "expected": 9, "hidden": true},
     {"id": "h6", "args": [[2, 0, 2]], "expected": 2, "hidden": true},
-    {"id": "h7", "args": [[4, 2, 0, 3, 2, 5]], "expected": 6, "hidden": true},
+    {"id": "h7", "args": [[4, 2, 0, 3, 2, 6]], "expected": 6, "hidden": true},
     {
       "id": "h8",
       "args": [[10000, 10000, 1, 10000, 10000, 10000]],
