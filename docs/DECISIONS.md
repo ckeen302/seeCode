@@ -181,6 +181,12 @@ Anything that departs from or fills a gap in `docs/SPEC.md` is recorded here.
 - 2026-09-30 · Run/Submit/⌘K hotkeys stop the key event before Monaco (which would insert a line or start a chord) and are ignored inside dialogs; on a Mac Enter shows as ↵; the top bar's ⚙ is the theme toggle until Settings (M6) exists · Keyboard-first without fighting the editor.
 - 2026-09-30 · E2E runs fetch jsDelivr through Node when both `HTTPS_PROXY` and `NODE_EXTRA_CA_CERTS` are set (`PW_CDN_VIA_NODE` forces it) · The cloud dev box's test browser rejects its TLS proxy; CI loads the CDN directly.
 - 2026-10-01 · Approach twists are at most 140 characters (content model) · A learner types the twist into the Plan card, which caps it at 140 (7.3); largest-rectangle-in-histogram's was 147.
+- 2026-10-01 · Tests panel: Expected and Output side by side when the panel is ≥ 480 px wide; values cut at 20,000 characters; compare hints "any order", "any order, inside each list too", "within 10⁻⁶"; overflowing value boxes become focusable, labelled regions · Fits a 1280×800 screen, keeps huge wrong answers from freezing the tab, and keeps long hidden inputs reachable by keyboard.
+- 2026-10-01 · After a Run a selected custom case stays selected (otherwise the first failing case, then a custom case with an error, then Case 1); editing a custom case clears its old output; Run and Submit switch to the Tests tab and expand a collapsed panel · The result the learner is looking at always matches the code that ran.
+- 2026-10-01 · Runner errors carry a kind (load, crash, internal) that sets the Tests panel wording, and "Try again" repeats the failed action; a Monaco CDN failure shows a Reload message; the runner badge does not announce each busy/ready flip · Honest error messages without screen-reader noise.
+- 2026-10-01 · Code over 50 KB (UTF-8) gets an editor warning and only the last code within the limit is stored; the store refuses custom cases over 10 KB · Section 20 limits; a guest import never carries code the API refuses.
+- 2026-10-01 · The editor wraps long lines; Markdown emphasis needs markers touching their text (CommonMark-like); example inputs split into one `name = value` per line; `?` opens the list of shortcuts that work today · Readable statements and code at 1280 px.
+- 2026-10-01 · Between 900 and 960 px the Workspace columns shrink proportionally below Section 7.1's minimum widths (which add up to 960 px) · The spec's 900 px cutoff and its minimum widths disagree; no overflow either way.
 
 ## Open questions (waiting on the owner)
 
