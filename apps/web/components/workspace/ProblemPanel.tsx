@@ -5,10 +5,25 @@ import { ArrowUpRightIcon, CircleCheckIcon } from "lucide-react"
 import { DifficultyChip } from "@/components/problems/DifficultyChip"
 import { InlineMarkdown, Markdown } from "@/components/workspace/Markdown"
 import type { ProblemPublic } from "@/lib/api/schemas"
+import { splitExampleInput } from "@/lib/workspace/format"
 import { useWorkspace } from "@/stores/workspace"
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return <h2 className="text-xs font-medium tracking-wide text-muted uppercase">{children}</h2>
+}
+
+/** `nums = [5, 11], target = 10` as one `name = value` line per argument, as in the Tests panel. */
+function ExampleInput({ input }: { input: string }) {
+  return (
+    <>
+      {splitExampleInput(input).map((part, index) => (
+        <span key={index} className="block">
+          {part.name ? <span className="text-muted">{part.name} = </span> : null}
+          {part.value}
+        </span>
+      ))}
+    </>
+  )
 }
 
 /** Section 7.2: the statement, examples, constraints and targets. Signals arrive in M3. */
@@ -53,7 +68,9 @@ export function ProblemPanel({ problem }: { problem: ProblemPublic }) {
               <p className="text-xs font-medium text-muted">Example {index + 1}</p>
               <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 font-mono text-sm">
                 <dt className="text-muted">Input</dt>
-                <dd className="min-w-0 break-words whitespace-pre-wrap">{example.input}</dd>
+                <dd className="min-w-0 break-words whitespace-pre-wrap">
+                  <ExampleInput input={example.input} />
+                </dd>
                 <dt className="text-muted">Output</dt>
                 <dd className="min-w-0 break-words whitespace-pre-wrap">{example.output}</dd>
               </dl>
@@ -69,7 +86,7 @@ export function ProblemPanel({ problem }: { problem: ProblemPublic }) {
 
       <div className="mt-6 flex flex-col gap-3">
         <SectionTitle>Constraints</SectionTitle>
-        <ul className="flex list-disc flex-col gap-1 pl-5 text-sm">
+        <ul aria-label="Constraints" className="flex list-disc flex-col gap-1 pl-5 text-sm">
           {problem.constraints.map((constraint, index) => (
             <li key={index}>
               <InlineMarkdown text={constraint} />

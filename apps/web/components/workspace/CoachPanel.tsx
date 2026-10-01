@@ -38,9 +38,11 @@ function SolvedCard({ slug }: { slug: string }) {
       </p>
       <div className="flex flex-wrap gap-2">
         {next ? (
-          <Button asChild size="sm">
-            <ProblemLink slug={next.slug}>
-              Next: {next.title}
+          // A long title ("Longest Substring Without Repeating Characters") is cut short
+          // instead of pushing the button out of the card; the link text keeps it whole.
+          <Button asChild size="sm" className="max-w-full min-w-0">
+            <ProblemLink slug={next.slug} title={`Next: ${next.title}`}>
+              <span className="truncate">Next: {next.title}</span>
               <ArrowRightIcon />
             </ProblemLink>
           </Button>

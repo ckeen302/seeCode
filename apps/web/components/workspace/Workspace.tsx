@@ -86,6 +86,12 @@ function WorkspaceColumns({ problem }: { problem: ProblemPublic }) {
     { stopPropagation: true, ignoreInDialogs: true }
   )
 
+  // A Run or Submit (button or shortcut) brings back a collapsed panel: its results show there.
+  const running = useWorkspace((state) => state.running)
+  useEffect(() => {
+    if (running !== "idle" && bottomRef.current?.isCollapsed()) setBottomCollapsed(false)
+  }, [running, bottomRef, setBottomCollapsed])
+
   return (
     <Group
       orientation="horizontal"

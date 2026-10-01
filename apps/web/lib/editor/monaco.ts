@@ -212,11 +212,17 @@ export function editorFontFamily(): string {
 export const EDITOR_FONT_SIZE = 14
 export const EDITOR_LINE_HEIGHT = 22
 
+/** Monaco's "Tab moves focus" toggle: Ctrl+M, or Ctrl+Shift+M on a Mac (Section 18.8). */
+export function tabFocusKeys(mac: boolean): string {
+  return mac ? "Control+Shift+M" : "Ctrl+M"
+}
+
 export function editorOptions(
-  reducedMotion: boolean
+  reducedMotion: boolean,
+  mac = false
 ): Monaco.editor.IStandaloneEditorConstructionOptions {
   return {
-    ariaLabel: "Code editor (Python). Press Ctrl+M to let Tab move focus.",
+    ariaLabel: `Code editor (Python). Press ${tabFocusKeys(mac)} to let Tab move focus.`,
     fontFamily: editorFontFamily(),
     fontSize: EDITOR_FONT_SIZE,
     lineHeight: EDITOR_LINE_HEIGHT,
@@ -226,6 +232,11 @@ export function editorOptions(
     detectIndentation: false,
     automaticLayout: true,
     minimap: { enabled: false },
+    // The editor column is narrow (46% of the screen): long lines wrap instead of hiding
+    // behind a horizontal scroll. At 1280 px, Daily Temperatures' starter signature is wider
+    // than the column.
+    wordWrap: "on",
+    wrappingIndent: "indent",
     scrollBeyondLastLine: false,
     padding: { top: 12, bottom: 12 },
     glyphMargin: false,

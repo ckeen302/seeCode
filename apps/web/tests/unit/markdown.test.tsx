@@ -16,6 +16,21 @@ describe("problem Markdown (Section 7.2)", () => {
     expect(screen.getByText("any").tagName).toBe("EM")
   })
 
+  it("keeps a lone * as written (arithmetic, operators)", () => {
+    // evaluate-rpn's second example: the old rule turned `"* ... 3 *` into italics.
+    const text = 'Then "*" multiplies the two: 3 * 4 = 12. Also 2*3*4, x ** 2 and (+, -, * or /).'
+    const { container } = render(<Markdown text={text} />)
+    expect(container.querySelector("em")).toBeNull()
+    expect(container.querySelector("strong")).toBeNull()
+    expect(container.textContent).toBe(text)
+  })
+
+  it("needs emphasis markers to hug their text", () => {
+    const { container } = render(<Markdown text={"a * b * c, ** d **, *e*, **f**"} />)
+    expect([...container.querySelectorAll("em")].map((node) => node.textContent)).toEqual(["e"])
+    expect([...container.querySelectorAll("strong")].map((node) => node.textContent)).toEqual(["f"])
+  })
+
   it("renders dash lists", () => {
     const { container } = render(<Markdown text={"- one `a`\n- two"} />)
     expect(container.querySelectorAll("li")).toHaveLength(2)

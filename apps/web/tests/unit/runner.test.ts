@@ -157,6 +157,7 @@ describe("runner", () => {
     await settle()
     w.respond({ id: w.last("runTests").id, ok: false, error: "boom" })
     await expect(done).rejects.toThrow("boom")
+    await expect(done).rejects.toMatchObject({ name: "RunnerError", kind: "internal" })
     expect(runner.status).toBe("ready")
   })
 
@@ -210,7 +211,10 @@ describe("runner", () => {
       ok: false,
       error: "Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.",
     })
-    await expect(done).rejects.toThrow("Python crashed (out of memory?) and was restarted.")
+    await expect(done).rejects.toMatchObject({
+      kind: "crash",
+      message: expect.stringMatching(/fatal error/),
+    })
     expect(w.terminated).toBe(true)
     expect(FakeWorker.instances).toHaveLength(2)
     expect(runner.status).toBe("loading")
@@ -235,7 +239,11 @@ describe("runner", () => {
   it("reports a crash, fails the pending run, and restarts on the next call", async () => {
     const runner = makeRunner()
     const done = runner.runTests(REQUEST)
-    const assertion = expect(done).rejects.toThrow("Pyodide failed to load")
+    // The worker died while loading: the run fails as a load failure (the network, mostly).
+    const assertion = expect(done).rejects.toMatchObject({
+      kind: "load",
+      message: "Pyodide failed to load",
+    })
     const w = await worker()
     w.crash("Pyodide failed to load")
     await assertion
@@ -252,10 +260,39 @@ describe("runner", () => {
   it("gives up on a worker that takes too long to load", async () => {
     const runner = makeRunner({ initTimeoutMs: 1_000 })
     const ready = runner.ready()
-    const assertion = expect(ready).rejects.toThrow("Python took too long to load.")
+    const assertion = expect(ready).rejects.toMatchObject({
+      kind: "load",
+      message: "Python took too long to load.",
+    })
     await vi.advanceTimersByTimeAsync(1_000)
     await assertion
     expect(runner.status).toBe("crashed")
+  })
+
+  it("reports a worker that dies during a run as a crash, then starts a new one", async () => {
+    const runner = makeRunner()
+    const done = runner.runTests(REQUEST)
+    const w = await worker()
+    w.reply("init", {})
+    await settle()
+    const assertion = expect(done).rejects.toMatchObject({ kind: "crash" })
+    w.crash("Uncaught RangeError: Maximum call stack size exceeded")
+    await assertion
+    expect(runner.status).toBe("crashed")
+    expect(w.terminated).toBe(true)
+
+    const again = runner.runTests(REQUEST)
+    await settle()
+    expect(FakeWorker.instances).toHaveLength(2)
+    const fresh = FakeWorker.instances[1]
+    fresh.reply("init", {})
+    await settle()
+    fresh.reply("runTests", [
+      { id: "a", status: "pass" },
+      { id: "b", status: "pass" },
+    ])
+    await expect(again).resolves.toHaveLength(2)
+    expect(runner.status).toBe("ready")
   })
 
   it("does not trace until M4", async () => {

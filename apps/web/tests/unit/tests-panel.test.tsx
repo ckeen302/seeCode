@@ -11,7 +11,7 @@ import type { TestResult } from "@/lib/runner/types"
 import { registerEditor } from "@/lib/workspace/editorBridge"
 import { workspaceStore } from "@/stores/workspace"
 
-import { PALINDROME } from "./fixtures"
+import { PALINDROME, TWO_SUM } from "./fixtures"
 
 // Tests panel (Section 7.5).
 
@@ -63,12 +63,28 @@ describe("Tests panel", () => {
     const panel = selectedPanel()
     expect(within(panel).getByText("Expected").nextSibling).toHaveTextContent("true")
     expect(within(panel).getByText("Output").nextSibling).toHaveTextContent("false")
-    // Printed output is open; an empty one stays collapsed.
+    // Printed output is open; an empty one is a single quiet line.
     expect(within(panel).getByText("checking")).toBeVisible()
     expect(panel.querySelector("details")).toHaveAttribute("open")
+    expect(within(panel).getByText("Ran in 0.3 ms")).toBeInTheDocument()
     fireEvent.click(second)
-    expect(selectedPanel().querySelector("details")).not.toHaveAttribute("open")
-    expect(within(selectedPanel()).getByText("Stdout (nothing printed)")).toBeInTheDocument()
+    expect(selectedPanel().querySelector("details")).toBeNull()
+    expect(within(selectedPanel()).getByText("Stdout: nothing printed")).toBeInTheDocument()
+  })
+
+  it("says how a test compares when order does not matter", () => {
+    view({ problem: TWO_SUM })
+    expect(within(selectedPanel()).getByText("(any order)")).toBeInTheDocument()
+    expect(within(selectedPanel()).getByText(/^Expected/)).toHaveTextContent("Expected (any order)")
+  })
+
+  it("cuts a huge output short instead of rendering all of it", () => {
+    const huge = Array.from({ length: 200_000 }, (_, i) => i)
+    view({ results: [{ id: "e1", status: "fail", got: huge }], resultsKind: "run" })
+    const output = within(selectedPanel()).getByText("Output").nextSibling as HTMLElement
+    expect(output).toHaveTextContent(/^\[0, 1, 2, /)
+    expect(output).toHaveTextContent("too long to show in full")
+    expect(output.textContent?.length).toBeLessThan(20_100)
   })
 
   it("links traceback lines to the editor", async () => {
@@ -98,7 +114,9 @@ describe("Tests panel", () => {
       resultsKind: "run",
     })
     expect(screen.getByTestId("tests-summary")).toHaveTextContent("Error")
-    expect(screen.getByText(/SyntaxError: invalid syntax \(line 3\)/)).toBeInTheDocument()
+    expect(screen.getByRole("status")).toHaveTextContent(
+      /^Error SyntaxError: invalid syntax Show line 3$/
+    )
     await userEvent.click(screen.getByRole("button", { name: "Show line 3" }))
     expect(goToLine).toHaveBeenCalledWith(3)
     unregister()
@@ -151,10 +169,32 @@ describe("Tests panel", () => {
     expect(screen.getByText(/Loading Python/)).toBeInTheDocument()
   })
 
-  it("offers a retry when Python could not run the code", () => {
-    view({ runError: "Python took too long to load." })
-    expect(screen.getByRole("alert")).toHaveTextContent("Python couldn't run your code.")
-    expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument()
+  it("says why Python could not run the code, and retries the same action", async () => {
+    const { rerender } = view({
+      runError: { kind: "submit", reason: "load", message: "Python took too long to load." },
+    })
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Python couldn't load. Check your connection, then try again."
+    )
+    const submit = vi.spyOn(workspaceStore.getState(), "submit").mockResolvedValue()
+    await userEvent.click(screen.getByRole("button", { name: "Try again" }))
+    expect(submit).toHaveBeenCalledOnce()
+    submit.mockRestore()
+
+    rerender(
+      <TestsPanelView
+        problem={PALINDROME}
+        results={null}
+        resultsKind={null}
+        running="idle"
+        runError={{ kind: "run", reason: "crash", message: "Aborted(OOM)" }}
+        customCases={[]}
+        pythonLoading={false}
+      />
+    )
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Python stopped while running your code. It may have run out of memory."
+    )
   })
 
   it("moves between cases with the arrow keys", async () => {
@@ -196,6 +236,37 @@ describe("custom cases", () => {
     await userEvent.click(screen.getByRole("button", { name: "Remove case" }))
     expect(workspaceStore.getState().customCases).toEqual([])
     expect(screen.queryByRole("tab", { name: /Custom 1/ })).not.toBeInTheDocument()
+  })
+
+  it("keeps the custom case in view after a Run, with no output left from its old input", async () => {
+    act(() => {
+      workspaceStore.getState().open(PALINDROME)
+      workspaceStore.getState().addCustomCase(["abc"])
+    })
+    render(<TestsPanel />)
+    await userEvent.click(screen.getByRole("tab", { name: "Custom 1, not run yet" }))
+    act(() =>
+      workspaceStore.setState({
+        results: [
+          { id: "e1", status: "fail", got: true },
+          { id: "e2", status: "pass", got: false },
+          { id: "custom-1", status: "pass", got: false, stdout: "" },
+        ],
+        resultsKind: "run",
+      })
+    )
+    // The run's failing Case 1 does not pull the view away from the case being edited.
+    expect(screen.getByRole("tab", { name: "Custom 1, ran" })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    )
+    expect(within(selectedPanel()).getByText("Output")).toBeInTheDocument()
+
+    const input = screen.getByLabelText("s =")
+    await userEvent.clear(input)
+    await userEvent.type(input, '"xyz"')
+    expect(within(selectedPanel()).queryByText("Output")).not.toBeInTheDocument()
+    expect(screen.getByRole("tab", { name: "Custom 1, not run yet" })).toBeInTheDocument()
   })
 
   it("shows a custom case's output without pass or fail", () => {

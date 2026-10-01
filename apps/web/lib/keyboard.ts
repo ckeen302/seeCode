@@ -15,6 +15,29 @@ export const HOTKEYS = {
   toggleBottomPanel: { key: "j", mod: true },
 } as const satisfies Record<string, Hotkey>
 
+/** `?` opens the shortcut help (Section 17.4). Matched on the character, whatever the layout. */
+export const HELP_KEY = "?"
+
+/** Whether a key press is typing text: in a field, an editable element or the code editor. */
+export function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false
+  if (target.closest(".monaco-editor")) return true
+  if (target instanceof HTMLElement && target.isContentEditable) return true
+  return ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)
+}
+
+/** `?` pressed outside text fields and dialogs, with no modifier but Shift. */
+export function isHelpKey(event: KeyboardEvent): boolean {
+  return (
+    event.key === HELP_KEY &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.altKey &&
+    !isTypingTarget(event.target) &&
+    !isInDialog(event)
+  )
+}
+
 export function isMacPlatform(platform: string): boolean {
   return /mac|iphone|ipad|ipod/i.test(platform)
 }

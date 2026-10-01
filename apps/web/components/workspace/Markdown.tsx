@@ -2,8 +2,12 @@ import { Fragment } from "react"
 
 // A small, safe Markdown subset for problem text (Section 7.2): paragraphs, "- " lists,
 // `inline code`, **bold** and *italic*. It builds React nodes, never HTML strings.
-
-const INLINE = /(`[^`\n]+`)|(\*\*[^*\n]+\*\*)|(\*[^*\s][^*\n]*\*)/g
+//
+// As in CommonMark, an emphasis marker must hug its text: no space just inside either
+// `*`. Italic also needs no letter or digit just outside, so arithmetic stays as written:
+// `"*" multiplies the two: 3 * 4` or `2*3*4` are not italic.
+const INLINE =
+  /(`[^`\n]+`)|(\*\*(?![\s*])[^*\n]*?[^\s*]\*\*)|((?<![\p{L}\p{N}_*])\*(?![\s*])[^*\n]*?[^\s*]\*(?![\p{L}\p{N}_*]))/gu
 
 export function renderInline(text: string): React.ReactNode[] {
   const nodes: React.ReactNode[] = []

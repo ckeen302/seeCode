@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+import { RunnerError } from "@/lib/runner/runner"
 import type { RunTestsRequest, TestResult } from "@/lib/runner/types"
 import {
   GUEST_ATTEMPTS_KEY,
@@ -197,15 +198,38 @@ describe("workspace store", () => {
     expect(store.getState()).toMatchObject({ slug: "two-sum", results: null, running: "idle" })
   })
 
-  it("keeps the runner's error for the Tests panel", async () => {
-    const { store } = setup(() => Promise.reject(new Error("Python took too long to load.")))
+  it("keeps the runner's error, and which action failed, for the Tests panel", async () => {
+    const { store } = setup(() =>
+      Promise.reject(new RunnerError("Python took too long to load.", "load"))
+    )
     store.getState().open(PALINDROME)
-    await store.getState().run()
+    await store.getState().submit()
     expect(store.getState()).toMatchObject({
       running: "idle",
-      runError: "Python took too long to load.",
+      runError: { kind: "submit", reason: "load", message: "Python took too long to load." },
       results: null,
     })
+    await store.getState().run()
+    expect(store.getState().runError).toMatchObject({ kind: "run", reason: "load" })
+  })
+
+  it("treats an unexpected error as internal", async () => {
+    const { store } = setup(() => Promise.reject(new TypeError("x is undefined")))
+    store.getState().open(PALINDROME)
+    await store.getState().run()
+    expect(store.getState().runError).toEqual({
+      kind: "run",
+      reason: "internal",
+      message: "x is undefined",
+    })
+  })
+
+  it("switches to the Tests tab when a run starts", async () => {
+    const { store } = setup()
+    store.getState().open(PALINDROME)
+    store.getState().setBottomTab("walkthrough")
+    await store.getState().run()
+    expect(store.getState().bottomTab).toBe("tests")
   })
 
   it("keeps guest attempts in seecode:guest:attempts", async () => {
@@ -255,6 +279,47 @@ describe("workspace store", () => {
     store.getState().removeCustomCase(id)
     expect(store.getState().customCases).toEqual([])
     expect(store.getState().results?.map((result) => result.id)).not.toContain(id)
+  })
+
+  it("drops a custom case's output once its input changes", async () => {
+    const { store } = setup()
+    store.getState().open(PALINDROME)
+    const id = store.getState().addCustomCase(["a"]) as string
+    await store.getState().run()
+    const before = store.getState().results
+    store.getState().updateCustomCase(id, ["a"]) // the same input: the output still holds
+    expect(store.getState().results).toBe(before)
+    store.getState().updateCustomCase(id, ["b"])
+    expect(store.getState().results?.map((result) => result.id)).toEqual(["e1", "e2"])
+  })
+
+  it("never stores code over 50 KB (Section 20), keeping the last code within it", () => {
+    const { store, storage } = setup()
+    store.getState().setGuest(true)
+    store.getState().open(PALINDROME)
+    store.getState().setCode("small = 1")
+    store.getState().flush()
+    store.getState().setCode(`# ${"é".repeat(26 * 1024)}`) // 52 KB in UTF-8, 26 K characters
+    store.getState().addCustomCase(["kept"])
+    store.getState().flush()
+    expect(readAttempt(storage, "valid-palindrome")).toMatchObject({
+      code: "small = 1",
+      customCases: [{ id: "custom-1", args: ["kept"] }],
+    })
+    expect(readGuestAttempts(storage)[0].code).toBe("small = 1")
+    store.getState().setCode("small = 2")
+    store.getState().flush()
+    expect(readAttempt(storage, "valid-palindrome")?.code).toBe("small = 2")
+  })
+
+  it("refuses custom case arguments over 10 KB (Section 20)", () => {
+    const { store } = setup()
+    store.getState().open(PALINDROME)
+    const big = ["x".repeat(10 * 1024)]
+    expect(store.getState().addCustomCase(big)).toBeNull()
+    const id = store.getState().addCustomCase(["a"]) as string
+    store.getState().updateCustomCase(id, big)
+    expect(store.getState().customCases).toEqual([{ id, args: ["a"] }])
   })
 
   it("allows at most 10 custom cases", () => {

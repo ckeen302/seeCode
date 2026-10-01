@@ -1,10 +1,14 @@
-import { render } from "@testing-library/react"
+import { act, render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 
+import { ShortcutsHelp } from "@/components/shell/ShortcutsHelp"
 import {
   HOTKEYS,
   formatHotkey,
+  isHelpKey,
   isMacPlatform,
+  isTypingTarget,
   matchesHotkey,
   useHotkey,
   type HotkeyOptions,
@@ -97,5 +101,60 @@ describe("useHotkey", () => {
     )
     expect(onKey).toHaveBeenCalledOnce()
     dialog.remove()
+  })
+})
+
+describe("shortcut help (Section 17.4: ? anywhere)", () => {
+  function press(target: Element, init: KeyboardEventInit = {}) {
+    const event = new KeyboardEvent("keydown", {
+      key: "?",
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true,
+      ...init,
+    })
+    act(() => {
+      target.dispatchEvent(event)
+    })
+    return event
+  }
+
+  it("knows when a key press is typing", () => {
+    const input = document.createElement("input")
+    const editable = document.createElement("div")
+    editable.contentEditable = "true"
+    const editor = document.createElement("div")
+    editor.className = "monaco-editor"
+    const inEditor = document.createElement("div")
+    editor.append(inEditor)
+    expect(isTypingTarget(input)).toBe(true)
+    expect(isTypingTarget(document.createElement("textarea"))).toBe(true)
+    expect(isTypingTarget(inEditor)).toBe(true)
+    expect(isTypingTarget(document.body)).toBe(false)
+    expect(isTypingTarget(null)).toBe(false)
+    // jsdom has no isContentEditable; a browser reports it on the element.
+    Object.defineProperty(editable, "isContentEditable", { value: true })
+    expect(isTypingTarget(editable)).toBe(true)
+  })
+
+  it("opens on ? outside text fields, and lists the Workspace keys", async () => {
+    render(<ShortcutsHelp />)
+    const input = document.createElement("input")
+    document.body.append(input)
+    expect(press(input).defaultPrevented).toBe(false)
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    expect(press(document.body, { ctrlKey: true }).defaultPrevented).toBe(false)
+
+    expect(press(document.body).defaultPrevented).toBe(true)
+    const dialog = await screen.findByRole("dialog", { name: "Keyboard shortcuts" })
+    expect(dialog).toHaveTextContent("Run the examples")
+    expect(dialog).toHaveTextContent("Submit (every test)")
+    expect(dialog).toHaveTextContent("Show or hide the tests panel")
+    expect(dialog).toHaveTextContent("Search problems and patterns")
+    // A second ? inside the open dialog leaves it alone.
+    expect(isHelpKey(new KeyboardEvent("keydown", { key: "?" }))).toBe(true)
+    await userEvent.keyboard("{Escape}")
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    input.remove()
   })
 })

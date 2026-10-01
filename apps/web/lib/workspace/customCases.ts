@@ -80,15 +80,18 @@ export function parseArgument(text: string): ArgParse {
 export type CustomArgsResult =
   { ok: true; args: unknown[] } | { ok: false; errors: (string | null)[]; tooLarge: boolean }
 
+/** Section 20: custom case arguments are at most 10 KB (as JSON, in UTF-8). */
+export function customArgsTooLarge(args: readonly unknown[]): boolean {
+  return new TextEncoder().encode(JSON.stringify(args)).length > MAX_CUSTOM_ARGS_BYTES
+}
+
 /** Validates every argument of a custom case, and the 10 KB size cap. */
 export function parseCustomArgs(texts: readonly string[]): CustomArgsResult {
   const parsed = texts.map(parseArgument)
   const errors = parsed.map((result) => (result.ok ? null : result.error))
   if (errors.some(Boolean)) return { ok: false, errors, tooLarge: false }
   const args = parsed.map((result) => (result.ok ? result.value : null))
-  if (new TextEncoder().encode(JSON.stringify(args)).length > MAX_CUSTOM_ARGS_BYTES) {
-    return { ok: false, errors: texts.map(() => null), tooLarge: true }
-  }
+  if (customArgsTooLarge(args)) return { ok: false, errors: texts.map(() => null), tooLarge: true }
   return { ok: true, args }
 }
 

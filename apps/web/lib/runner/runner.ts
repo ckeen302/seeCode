@@ -6,7 +6,8 @@
 //   timeout the worker is terminated, the tests come back as "timeout", and a fresh
 //   worker starts loading at once so the next Run works.
 // - A worker that fails (Pyodide could not load, or it crashed) leaves the runner
-//   "crashed"; the next call starts a new worker.
+//   "crashed"; the next call starts a new worker. Failures reject with a RunnerError whose
+//   `kind` says which it was, so the Tests panel can say what to do.
 import { z } from "zod"
 
 import { env, pyodideIndexUrl } from "@/lib/env"
@@ -44,8 +45,18 @@ export interface RunnerOptions {
   initTimeoutMs?: number
 }
 
+/**
+ * Why Python could not run the code: "load" (Pyodide or the harness did not load: the
+ * network, most likely), "crash" (the worker died while running it, e.g. out of memory; the
+ * next request starts a fresh one) or "internal" (the harness itself failed).
+ */
+export type RunnerErrorKind = "load" | "crash" | "internal"
+
 export class RunnerError extends Error {
-  constructor(message: string) {
+  constructor(
+    message: string,
+    readonly kind: RunnerErrorKind = "internal"
+  ) {
     super(message)
     this.name = "RunnerError"
   }
@@ -184,7 +195,9 @@ export class PyodideRunner implements Runner {
     timeoutMs: number
   ): Promise<unknown> {
     await this.ready()
-    const worker = this.#worker as WorkerLike
+    const worker = this.#worker
+    // It can die between loading and this request (an error event in between).
+    if (!worker) throw new RunnerError("Python stopped before the run started.", "crash")
     this.#setStatus("busy")
     try {
       return await this.#send(worker, type, payload, timeoutMs)
@@ -195,10 +208,11 @@ export class PyodideRunner implements Runner {
         this.#start()
         return TIMED_OUT
       }
-      if (error instanceof RunnerError && FATAL.test(error.message)) {
+      if (error instanceof RunnerError && error.kind === "internal" && FATAL.test(error.message)) {
         // Pyodide cannot recover from a fatal error (e.g. out of memory): start over.
+        console.warn(`Python stopped: ${error.message}`)
         this.#start()
-        throw new RunnerError("Python crashed (out of memory?) and was restarted.")
+        throw new RunnerError(error.message, "crash")
       }
       throw error
     } finally {
@@ -207,7 +221,7 @@ export class PyodideRunner implements Runner {
   }
 
   #start(): void {
-    this.#stopWorker(new RunnerError("Python restarted."))
+    this.#stopWorker(new RunnerError("Python restarted.", "crash"))
     const worker = this.#options.createWorker()
     this.#worker = worker
     this.#setStatus("loading")
@@ -229,7 +243,7 @@ export class PyodideRunner implements Runner {
       },
       (error: Error) => {
         this.#crash(worker, error.message)
-        throw error
+        throw new RunnerError(error.message, "load")
       }
     )
     ready.catch(() => undefined) // a warm-up nobody awaits must not report an unhandled rejection
@@ -268,7 +282,7 @@ export class PyodideRunner implements Runner {
   #crash(worker: WorkerLike, message: string): void {
     if (this.#worker !== worker) return
     console.warn(`Python stopped: ${message}`)
-    this.#stopWorker(new RunnerError(message))
+    this.#stopWorker(new RunnerError(message, "crash"))
     this.#setStatus("crashed")
   }
 

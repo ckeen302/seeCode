@@ -7,9 +7,10 @@ import { useStore } from "zustand"
 import { createStore, type StoreApi } from "zustand/vanilla"
 
 import type { ProblemPublic } from "@/lib/api/schemas"
-import { getRunner } from "@/lib/runner/runner"
+import { RunnerError, getRunner, type RunnerErrorKind } from "@/lib/runner/runner"
 import type { Runner, TestCase, TestResult } from "@/lib/runner/types"
-import { MAX_CUSTOM_CASES, nextCustomCaseId } from "@/lib/workspace/customCases"
+import { MAX_CUSTOM_CASES, customArgsTooLarge, nextCustomCaseId } from "@/lib/workspace/customCases"
+import { codeTooLarge } from "@/lib/workspace/limits"
 import {
   browserStorage,
   readAttempt,
@@ -22,6 +23,13 @@ import {
 export type RunKind = "run" | "submit"
 export type BottomTab = "tests" | "walkthrough" | "trace"
 
+/** Python could not run the code at all: which action failed, and why. */
+export interface RunFailure {
+  kind: RunKind
+  reason: RunnerErrorKind
+  message: string
+}
+
 export interface WorkspaceState {
   slug: string
   problem: ProblemPublic | null
@@ -32,7 +40,7 @@ export interface WorkspaceState {
   /** What produced `results`. */
   resultsKind: RunKind | null
   /** Set when Python could not run the code at all (e.g. it failed to load). */
-  runError: string | null
+  runError: RunFailure | null
   running: "idle" | RunKind
   bottomTab: BottomTab
   customCases: CustomCase[]
@@ -73,14 +81,25 @@ function toTestCase(test: ProblemPublic["tests"][number]): TestCase {
   }
 }
 
+/** `results` without the one for `id`; the same array when there is none (the Tests panel
+ * picks a case to show whenever `results` changes). */
+function withoutResult(results: TestResult[] | null, id: string): TestResult[] | null {
+  if (!results?.some((result) => result.id === id)) return results
+  return results.filter((result) => result.id !== id)
+}
+
 /** Section 16.2: every visible and hidden test id has a result with status pass. */
 export function allTestsPassed(problem: ProblemPublic, results: readonly TestResult[]): boolean {
   const passed = new Set(results.filter((r) => r.status === "pass").map((r) => r.id))
   return problem.tests.length > 0 && problem.tests.every((test) => passed.has(test.id))
 }
 
-function describeError(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
+function runFailure(kind: RunKind, error: unknown): RunFailure {
+  return {
+    kind,
+    reason: error instanceof RunnerError ? error.kind : "internal",
+    message: error instanceof Error ? error.message : String(error),
+  }
 }
 
 export function createWorkspaceStore(deps: Partial<WorkspaceDeps> = {}): StoreApi<WorkspaceState> {
@@ -93,6 +112,9 @@ export function createWorkspaceStore(deps: Partial<WorkspaceDeps> = {}): StoreAp
   // Bumped whenever a problem is opened, so a run that finishes after the user moved on
   // cannot write its results into the wrong problem.
   let session = 0
+  // The latest code within the 50 KB limit (Section 20): only that is stored, so a guest
+  // import never carries code the API refuses. The editor warns while the code is over.
+  let storableCode = ""
 
   return createStore<WorkspaceState>()((set, get) => {
     function save(): void {
@@ -101,9 +123,10 @@ export function createWorkspaceStore(deps: Partial<WorkspaceDeps> = {}): StoreAp
       const state = get()
       if (!state.slug || !state.startedAt) return
       const updatedAt = now().toISOString()
+      if (!codeTooLarge(state.code)) storableCode = state.code
       writeAttempt(storage(), state.slug, {
         v: 1,
-        code: state.code,
+        code: storableCode,
         customCases: state.customCases,
         solved: state.solved,
         startedAt: state.startedAt,
@@ -113,7 +136,7 @@ export function createWorkspaceStore(deps: Partial<WorkspaceDeps> = {}): StoreAp
       if (state.guest) {
         upsertGuestAttempt(storage(), {
           slug: state.slug,
-          code: state.code,
+          code: storableCode,
           solved: state.solved,
           startedAt: state.startedAt,
           updatedAt,
@@ -137,7 +160,8 @@ export function createWorkspaceStore(deps: Partial<WorkspaceDeps> = {}): StoreAp
       const { problem, running, code } = get()
       if (!problem || running !== "idle") return
       const mine = session
-      set({ running: kind, runError: null })
+      // The results show in the Tests tab (the Workspace also expands a collapsed panel).
+      set({ running: kind, runError: null, bottomTab: "tests" })
       touch()
       try {
         const results = await runner().runTests({ code, entry: problem.entry, tests })
@@ -153,7 +177,7 @@ export function createWorkspaceStore(deps: Partial<WorkspaceDeps> = {}): StoreAp
         save()
       } catch (error) {
         if (mine !== session) return
-        set({ running: "idle", runError: describeError(error) })
+        set({ running: "idle", runError: runFailure(kind, error) })
       }
     }
 
@@ -182,6 +206,7 @@ export function createWorkspaceStore(deps: Partial<WorkspaceDeps> = {}): StoreAp
         if (saveTimer) save() // the previous problem's pending changes
         session++
         const saved = readAttempt(storage(), problem.slug)
+        storableCode = saved?.code ?? problem.starterCode
         set({
           slug: problem.slug,
           problem,
@@ -215,7 +240,7 @@ export function createWorkspaceStore(deps: Partial<WorkspaceDeps> = {}): StoreAp
 
       addCustomCase(args) {
         const { customCases } = get()
-        if (customCases.length >= MAX_CUSTOM_CASES) return null
+        if (customCases.length >= MAX_CUSTOM_CASES || customArgsTooLarge(args)) return null
         const id = nextCustomCaseId(customCases)
         set({ customCases: [...customCases, { id, args }] })
         touch()
@@ -223,8 +248,13 @@ export function createWorkspaceStore(deps: Partial<WorkspaceDeps> = {}): StoreAp
       },
 
       updateCustomCase(id, args) {
+        const current = get().customCases.find((item) => item.id === id)
+        if (!current || customArgsTooLarge(args)) return
+        if (JSON.stringify(current.args) === JSON.stringify(args)) return
         set((state) => ({
           customCases: state.customCases.map((item) => (item.id === id ? { id, args } : item)),
+          // The case's last output belongs to its old input.
+          results: withoutResult(state.results, id),
         }))
         touch()
       },
@@ -232,7 +262,7 @@ export function createWorkspaceStore(deps: Partial<WorkspaceDeps> = {}): StoreAp
       removeCustomCase(id) {
         set((state) => ({
           customCases: state.customCases.filter((item) => item.id !== id),
-          results: state.results?.filter((result) => result.id !== id) ?? null,
+          results: withoutResult(state.results, id),
         }))
         touch()
       },

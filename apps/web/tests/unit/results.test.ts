@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { buildCases, firstInterestingCase, summarize } from "@/lib/workspace/results"
+import { buildCases, caseAfterRun, firstInterestingCase, summarize } from "@/lib/workspace/results"
 
 import { PALINDROME } from "./fixtures"
 
@@ -51,9 +51,31 @@ describe("Tests panel summary (Section 7.5)", () => {
     expect(summarize(PALINDROME, results, "run")).toEqual({
       tone: "error",
       title: "Error",
-      detail: "SyntaxError: invalid syntax (line 3)",
+      detail: "SyntaxError: invalid syntax",
       line: 3,
     })
+  })
+
+  it("mentions custom cases that raised an error on a Run", () => {
+    const custom = [
+      { id: "custom-1", args: ["a"] },
+      { id: "custom-4", args: ["b"] },
+    ]
+    const results = [
+      pass("e1"),
+      pass("e2"),
+      { id: "custom-1", status: "pass" as const, got: true },
+      { id: "custom-4", status: "error" as const, error: "IndexError: x" },
+    ]
+    expect(summarize(PALINDROME, results, "run", custom)).toEqual({
+      tone: "pass",
+      title: "All 2 cases passed",
+      detail: "Custom 2 raised an error. Submit to run the hidden tests too.",
+    })
+    const failing = [{ ...results[0], status: "fail" as const }, ...results.slice(1)]
+    expect(summarize(PALINDROME, failing, "run", custom).detail).toBe(
+      "1 of 2 cases passed. Custom 2 raised an error."
+    )
   })
 
   it("treats errors in some cases as a partial pass", () => {
@@ -91,5 +113,21 @@ describe("case list", () => {
   it("starts on the first case when everything passed", () => {
     const cases = buildCases(PALINDROME, [pass("e1"), pass("e2")], [])
     expect(firstInterestingCase(cases)).toBe("e1")
+  })
+
+  it("shows a custom case that raised an error when every test passed", () => {
+    const custom = [{ id: "custom-1", args: ["x"] }]
+    const results = [pass("e1"), pass("e2"), { id: "custom-1", status: "error" as const }]
+    expect(firstInterestingCase(buildCases(PALINDROME, results, custom))).toBe("custom-1")
+  })
+
+  it("stays on the custom case being edited after a Run, not after a Submit", () => {
+    const custom = [{ id: "custom-1", args: ["x"] }]
+    const results = [{ id: "e1", status: "fail" as const, got: false }, pass("e2")]
+    const cases = buildCases(PALINDROME, results, custom)
+    expect(caseAfterRun(cases, "custom-1", "run")).toBe("custom-1")
+    expect(caseAfterRun(cases, "custom-1", "submit")).toBe("e1")
+    expect(caseAfterRun(cases, "e2", "run")).toBe("e1")
+    expect(caseAfterRun(cases, "custom-9", "run")).toBe("e1")
   })
 })

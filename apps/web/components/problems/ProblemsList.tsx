@@ -43,7 +43,8 @@ function ProblemRow({ item, status }: { item: ProblemListItem; status: ProblemSt
   return (
     <tr className="group relative border-t border-border first:border-t-0 hover:bg-surface-2">
       <td className="w-12 py-3 pl-4">
-        <ProblemStatusIcon status={status} />
+        {/* A block, so the cell centers it on the title (inline, it sat on the baseline). */}
+        <ProblemStatusIcon status={status} className="flex" />
       </td>
       <td className="py-3 pr-3">
         <ProblemLink

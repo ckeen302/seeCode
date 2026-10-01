@@ -69,11 +69,28 @@ function plural(count: number, one: string, many: string): string {
   return `${count} ${count === 1 ? one : many}`
 }
 
+/** "Custom 2 raised an error." for custom cases that errored or ran out of time on a Run. */
+function customCaseNote(
+  results: readonly TestResult[],
+  customCases: readonly CustomCase[]
+): string | null {
+  const byId = new Map(results.map((result) => [result.id, result]))
+  const broken = customCases
+    .map((custom, index) => ({ label: `Custom ${index + 1}`, result: byId.get(custom.id) }))
+    .filter(({ result }) => result?.status === "error" || result?.status === "timeout")
+    .map(({ label }) => label)
+  if (broken.length === 0) return null
+  const names =
+    broken.length === 1 ? broken[0] : `${broken.slice(0, -1).join(", ")} and ${broken.at(-1)}`
+  return `${names} raised an error.`
+}
+
 /** One line on top of the Tests panel: how the last Run or Submit went. */
 export function summarize(
   problem: ProblemPublic,
   results: readonly TestResult[] | null,
-  kind: "run" | "submit" | null
+  kind: "run" | "submit" | null,
+  customCases: readonly CustomCase[] = []
 ): Summary {
   if (!results || !kind) {
     return { tone: "idle", title: "Run your code to check it against the examples." }
@@ -89,7 +106,8 @@ export function summarize(
     return {
       tone: "timeout",
       title: "Time limit exceeded",
-      detail: "Your code ran for more than 5 seconds. Look for a loop that never ends.",
+      detail:
+        "Your code ran for more than 5 seconds. Look for a loop that never ends, or work that grows too fast.",
     }
   }
 
@@ -98,12 +116,7 @@ export function summarize(
   if (errors.length === own.length && new Set(errors.map((e) => e.error)).size === 1) {
     const text = errors[0].error ?? ""
     const line = errorLine(text)
-    return {
-      tone: "error",
-      title: "Error",
-      detail: `${errorSummary(text)}${line ? ` (line ${line})` : ""}`,
-      line,
-    }
+    return { tone: "error", title: "Error", detail: errorSummary(text), line }
   }
 
   const passed = own.filter((result) => result.status === "pass").length
@@ -123,24 +136,49 @@ export function summarize(
       detail: `${passed} of ${plural(tests.length, "test", "tests")} passed (hidden: ${hiddenPassed} of ${hidden.length}).`,
     }
   }
+  const custom = customCaseNote(results, customCases)
   if (passed === tests.length) {
     return {
       tone: "pass",
       title: `All ${plural(tests.length, "case", "cases")} passed`,
-      detail: "Submit to run the hidden tests too.",
+      detail: custom
+        ? `${custom} Submit to run the hidden tests too.`
+        : "Submit to run the hidden tests too.",
     }
   }
   return {
     tone: "fail",
     title: "Not quite",
-    detail: `${passed} of ${plural(tests.length, "case", "cases")} passed.`,
+    detail: `${passed} of ${plural(tests.length, "case", "cases")} passed.${custom ? ` ${custom}` : ""}`,
   }
 }
 
-/** The case to show after a run: the first one that did not pass, else the first case. */
+/**
+ * The case to show after a run: the first test that did not pass, else the first custom case
+ * that raised an error, else the first case.
+ */
 export function firstInterestingCase(cases: readonly CaseView[]): string | null {
   const failing = cases.find(
     (item) => item.kind !== "custom" && item.result && item.result.status !== "pass"
   )
-  return failing?.id ?? cases[0]?.id ?? null
+  const broken = cases.find(
+    (item) =>
+      item.kind === "custom" &&
+      (item.result?.status === "error" || item.result?.status === "timeout")
+  )
+  return failing?.id ?? broken?.id ?? cases[0]?.id ?? null
+}
+
+/**
+ * The case to select when new results arrive. A custom case the user is working on stays
+ * selected after a Run (they ran it to see its output); otherwise the first interesting one.
+ */
+export function caseAfterRun(
+  cases: readonly CaseView[],
+  selectedId: string | null,
+  kind: "run" | "submit" | null
+): string | null {
+  const selected = cases.find((item) => item.id === selectedId)
+  if (kind === "run" && selected?.kind === "custom") return selected.id
+  return firstInterestingCase(cases)
 }

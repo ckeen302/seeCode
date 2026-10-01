@@ -8,25 +8,28 @@ import {
   ClockIcon,
   EyeOffIcon,
   PlusIcon,
+  RotateCwIcon,
   Trash2Icon,
 } from "lucide-react"
-import { useId, useMemo, useState } from "react"
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react"
 
 import { useRunnerStatus } from "@/components/workspace/RunnerStatusBadge"
 import { Traceback } from "@/components/workspace/Traceback"
 import { Button } from "@/components/ui/button"
 import type { ProblemPublic } from "@/lib/api/schemas"
-import type { TestResult } from "@/lib/runner/types"
+import type { CompareMode, TestResult } from "@/lib/runner/types"
 import {
   MAX_CUSTOM_CASES,
   argumentNames,
   argumentText,
+  customArgsTooLarge,
   parseCustomArgs,
 } from "@/lib/workspace/customCases"
 import { goToLine } from "@/lib/workspace/editorBridge"
-import { formatMs, formatValue } from "@/lib/workspace/format"
+import { formatMs, formatValueForDisplay } from "@/lib/workspace/format"
 import {
   buildCases,
+  caseAfterRun,
   firstInterestingCase,
   summarize,
   type CaseView,
@@ -34,7 +37,7 @@ import {
 } from "@/lib/workspace/results"
 import type { CustomCase } from "@/lib/workspace/storage"
 import { cn } from "@/lib/utils"
-import { useWorkspace, workspaceStore } from "@/stores/workspace"
+import { useWorkspace, workspaceStore, type RunFailure } from "@/stores/workspace"
 
 // ---------------------------------------------------------------- status
 
@@ -43,6 +46,13 @@ const STATUS_TEXT: Record<TestResult["status"], string> = {
   fail: "Not quite",
   error: "Error",
   timeout: "Time limit exceeded",
+}
+
+/** How a test compares its answer (Section 9.2), when that is not plain equality. */
+export const COMPARE_HINTS: Partial<Record<CompareMode, string>> = {
+  unordered: "any order",
+  unordered_nested: "any order, inside each list too",
+  float: "within 10⁻⁶",
 }
 
 function CaseStatusIcon({ item }: { item: CaseView }) {
@@ -108,16 +118,16 @@ function SummaryLine({ summary, busy }: { summary: Summary; busy: string | null 
             )}
           >
             {summary.title}
-          </span>
+          </span>{" "}
           {summary.detail ? (
-            <span className="text-sm text-muted">
+            <span className="min-w-0 text-sm wrap-anywhere text-muted">
               {summary.detail}
               {summary.line ? (
                 <>
                   {" "}
                   <button
                     type="button"
-                    className="rounded-sm text-accent underline decoration-dotted underline-offset-2 hover:decoration-solid"
+                    className="rounded-sm whitespace-nowrap text-accent underline decoration-dotted underline-offset-2 hover:decoration-solid"
                     onClick={() => goToLine(summary.line as number)}
                   >
                     Show line {summary.line}
@@ -132,22 +142,109 @@ function SummaryLine({ summary, busy }: { summary: Summary; busy: string | null 
   )
 }
 
+const FAILURE_COPY: Record<RunFailure["reason"], { title: string; detail: string }> = {
+  load: {
+    title: "Python couldn't load.",
+    detail: "Check your connection, then try again.",
+  },
+  crash: {
+    title: "Python stopped while running your code.",
+    detail: "It may have run out of memory. Try again: Python restarts first.",
+  },
+  internal: {
+    title: "Python couldn't run your code.",
+    detail: "Something went wrong inside the test runner. Try again.",
+  },
+}
+
+function RunFailureNotice({ failure }: { failure: RunFailure }) {
+  const copy = FAILURE_COPY[failure.reason]
+  const retry = () => {
+    const store = workspaceStore.getState()
+    void (failure.kind === "submit" ? store.submit() : store.run())
+  }
+  return (
+    <div role="alert" className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+      <CircleAlertIcon aria-hidden className="size-4 shrink-0 text-error" />
+      <span className="font-semibold">{copy.title}</span>{" "}
+      <span className="text-muted">{copy.detail}</span>{" "}
+      <Button size="sm" variant="secondary" className="h-7" onClick={retry}>
+        <RotateCwIcon />
+        Try again
+      </Button>
+    </div>
+  )
+}
+
 // ---------------------------------------------------------------- details
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string
+  hint?: string
+  children: React.ReactNode
+}) {
   return (
-    <div className="flex flex-col gap-1">
-      <span className="text-xs font-medium text-muted">{label}</span>
+    <div className="flex min-w-0 flex-col gap-1">
+      <span className="text-xs font-medium text-muted">
+        {label}
+        {hint ? <span className="font-normal"> ({hint})</span> : null}
+      </span>
       {children}
     </div>
   )
 }
 
-function ValueBlock({ children, tone }: { children: React.ReactNode; tone?: "fail" }) {
+/** Whether an element's content overflows it (so it scrolls). */
+function useOverflows(ref: React.RefObject<HTMLElement | null>): boolean {
+  const [overflows, setOverflows] = useState(false)
+  const check = () => {
+    const element = ref.current
+    if (!element) return
+    setOverflows(
+      element.scrollHeight > element.clientHeight + 1 ||
+        element.scrollWidth > element.clientWidth + 1
+    )
+  }
+  // After every render (the content may have changed) and whenever the box is resized.
+  useLayoutEffect(check)
+  useEffect(() => {
+    const element = ref.current
+    if (!element || typeof ResizeObserver === "undefined") return
+    const observer = new ResizeObserver(() => check())
+    observer.observe(element)
+    return () => observer.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `check` reads the ref only
+  }, [])
+  return overflows
+}
+
+/**
+ * A value in a box that scrolls past 10 lines. A box that scrolls is a named, focusable
+ * region, so keyboard users can scroll it too (Section 18.8).
+ */
+function ValueBlock({
+  children,
+  label,
+  tone,
+}: {
+  children: React.ReactNode
+  label: string
+  tone?: "fail"
+}) {
+  const ref = useRef<HTMLPreElement>(null)
+  const scrolls = useOverflows(ref)
   return (
     <pre
+      ref={ref}
+      tabIndex={scrolls ? 0 : undefined}
+      role={scrolls ? "region" : undefined}
+      aria-label={scrolls ? label : undefined}
       className={cn(
-        "max-h-40 overflow-auto rounded-md border border-border bg-bg px-3 py-2 font-mono text-sm break-all whitespace-pre-wrap",
+        "max-h-40 overflow-auto rounded-md border border-border bg-bg px-3 py-2 font-mono text-sm wrap-anywhere whitespace-pre-wrap",
         tone === "fail" && "border-l-2 border-l-error"
       )}
     >
@@ -156,31 +253,41 @@ function ValueBlock({ children, tone }: { children: React.ReactNode; tone?: "fai
   )
 }
 
+/** A JSON value, cut short when it is too long to show (a huge wrong answer). */
+function ShownValue({ value }: { value: unknown }) {
+  const { text, truncated } = formatValueForDisplay(value)
+  return (
+    <>
+      {text}
+      {truncated ? <span className="text-muted"> … (too long to show in full)</span> : null}
+    </>
+  )
+}
+
 function InputBlock({ names, args }: { names: string[]; args: unknown[] }) {
   return (
-    <ValueBlock>
+    <ValueBlock label="Input">
       {args.map((arg, index) => (
         <span key={index} className="block">
           <span className="text-muted">{names[index]} = </span>
-          {formatValue(arg)}
+          <ShownValue value={arg} />
         </span>
       ))}
     </ValueBlock>
   )
 }
 
+/** What the code printed: open when there is something, one quiet line when there is not. */
 function Stdout({ text }: { text: string | undefined }) {
-  const hasOutput = Boolean(text)
+  if (!text) return <p className="text-xs font-medium text-muted">Stdout: nothing printed</p>
   return (
-    <details open={hasOutput} className="group">
+    <details open className="group">
       <summary className="w-fit cursor-pointer rounded-sm text-xs font-medium text-muted select-none hover:text-text">
-        Stdout{hasOutput ? "" : " (nothing printed)"}
+        Stdout
       </summary>
-      {hasOutput ? (
-        <div className="mt-1">
-          <ValueBlock>{text}</ValueBlock>
-        </div>
-      ) : null}
+      <div className="mt-1">
+        <ValueBlock label="Stdout">{text}</ValueBlock>
+      </div>
     </details>
   )
 }
@@ -195,29 +302,30 @@ function ErrorField({ result }: { result: TestResult | null }) {
   )
 }
 
-function ResultFields({ result, showExpected }: { result: TestResult; showExpected: boolean }) {
-  if (result.status === "timeout") {
-    return (
-      <p className="text-sm">
-        Stopped after 5 seconds. The code may be stuck in a loop that never ends.
-      </p>
-    )
-  }
+function TimeoutNote() {
+  return (
+    <p className="text-sm">
+      Stopped after 5 seconds. The code may be stuck in a loop that never ends.
+    </p>
+  )
+}
+
+/** Stdout and timing, under the values. */
+function RunDetails({ result }: { result: TestResult }) {
+  if (result.status === "timeout") return null
   return (
     <>
-      {result.status === "error" ? null : (
-        <Field label="Output">
-          <ValueBlock tone={showExpected && result.status === "fail" ? "fail" : undefined}>
-            {formatValue(result.got)}
-          </ValueBlock>
-        </Field>
-      )}
       <Stdout text={result.stdout} />
       {result.ms !== undefined ? (
         <p className="text-xs text-muted">Ran in {formatMs(result.ms)}</p>
       ) : null}
     </>
   )
+}
+
+/** A result with a returned value to show (not an error or a timeout). */
+function hasOutput(result: TestResult | null): result is TestResult {
+  return result !== null && (result.status === "pass" || result.status === "fail")
 }
 
 function TestCaseDetail({
@@ -227,6 +335,8 @@ function TestCaseDetail({
   item: Extract<CaseView, { kind: "visible" | "hidden" }>
   names: string[]
 }) {
+  const result = item.result
+  const withOutput = hasOutput(result)
   return (
     <div className="flex flex-col gap-3">
       {item.kind === "hidden" ? (
@@ -234,14 +344,27 @@ function TestCaseDetail({
           One of the hidden tests did not pass. Here is its input, so you can find the bug.
         </p>
       ) : null}
-      <ErrorField result={item.result} />
+      <ErrorField result={result} />
       <Field label="Input">
         <InputBlock names={names} args={item.test.args} />
       </Field>
-      <Field label="Expected">
-        <ValueBlock>{formatValue(item.test.expected)}</ValueBlock>
-      </Field>
-      {item.result ? <ResultFields result={item.result} showExpected /> : null}
+      {/* Expected and the output side by side when there is room, so they compare at a glance. */}
+      <div className={cn("grid gap-3", withOutput && "@min-[480px]:grid-cols-2")}>
+        <Field label="Expected" hint={item.test.compare && COMPARE_HINTS[item.test.compare]}>
+          <ValueBlock label="Expected">
+            <ShownValue value={item.test.expected} />
+          </ValueBlock>
+        </Field>
+        {withOutput ? (
+          <Field label="Output">
+            <ValueBlock label="Output" tone={result.status === "fail" ? "fail" : undefined}>
+              <ShownValue value={result.got} />
+            </ValueBlock>
+          </Field>
+        ) : null}
+      </div>
+      {result?.status === "timeout" ? <TimeoutNote /> : null}
+      {result ? <RunDetails result={result} /> : null}
     </div>
   )
 }
@@ -258,12 +381,13 @@ function CustomCaseDetail({
   const baseId = useId()
   const [texts, setTexts] = useState(() => item.custom.args.map(argumentText))
   const parsed = parseCustomArgs(texts)
+  const result = item.result
 
   function change(index: number, value: string) {
     const next = texts.map((text, i) => (i === index ? value : text))
     setTexts(next)
-    const result = parseCustomArgs(next)
-    if (result.ok) workspaceStore.getState().updateCustomCase(item.id, result.args)
+    const nextParsed = parseCustomArgs(next)
+    if (nextParsed.ok) workspaceStore.getState().updateCustomCase(item.id, nextParsed.args)
   }
 
   return (
@@ -316,8 +440,16 @@ function CustomCaseDetail({
       <p className="text-xs text-muted">
         Custom cases show your output only; there is no expected value to compare with yet.
       </p>
-      <ErrorField result={item.result} />
-      {item.result ? <ResultFields result={item.result} showExpected={false} /> : null}
+      <ErrorField result={result} />
+      {hasOutput(result) ? (
+        <Field label="Output">
+          <ValueBlock label="Output">
+            <ShownValue value={result.got} />
+          </ValueBlock>
+        </Field>
+      ) : null}
+      {result?.status === "timeout" ? <TimeoutNote /> : null}
+      {result ? <RunDetails result={result} /> : null}
       <div>
         <Button variant="ghost" size="sm" className="text-muted hover:text-text" onClick={onRemove}>
           <Trash2Icon />
@@ -330,15 +462,17 @@ function CustomCaseDetail({
 
 // ---------------------------------------------------------------- panel
 
+/** Arguments for a new custom case: the selected case's, or the first example's. */
 function argsForNewCase(
   selected: CaseView | undefined,
   problem: ProblemPublic,
   names: string[]
 ): unknown[] {
-  if (selected?.kind === "custom") return selected.custom.args
-  if (selected) return selected.test.args
-  const first = problem.tests.find((test) => !test.hidden)
-  return first?.args ?? names.map(() => null)
+  const first = problem.tests.find((test) => !test.hidden)?.args ?? names.map(() => null)
+  const fromSelected =
+    selected?.kind === "custom" ? selected.custom.args : selected ? selected.test.args : first
+  // A big hidden input may not fit a custom case (10 KB, Section 20): start from an example.
+  return customArgsTooLarge(fromSelected) ? first : fromSelected
 }
 
 /** Section 7.5: cases with input, expected, output, stdout and status; custom cases. */
@@ -370,7 +504,7 @@ export interface TestsPanelViewProps {
   results: TestResult[] | null
   resultsKind: "run" | "submit" | null
   running: "idle" | "run" | "submit"
-  runError: string | null
+  runError: RunFailure | null
   customCases: CustomCase[]
   pythonLoading: boolean
 }
@@ -393,15 +527,15 @@ export function TestsPanelView({
     results ? firstInterestingCase(cases) : null
   )
   const [shownResults, setShownResults] = useState(results)
-  const summary = summarize(problem, results, resultsKind)
+  const summary = summarize(problem, results, resultsKind, customCases)
   const firstArgs = problem.tests.find((test) => !test.hidden)?.args ?? []
   const names = argumentNames(problem.starterCode, problem.entry, firstArgs.length)
   const tablistId = useId()
 
-  // New results: show the first case that did not pass (state adjusted while rendering).
+  // New results: pick the case to show (state adjusted while rendering).
   if (results !== shownResults) {
     setShownResults(results)
-    if (results) setSelectedId(firstInterestingCase(cases))
+    if (results) setSelectedId(caseAfterRun(cases, selectedId, resultsKind))
   }
 
   const selected = cases.find((item) => item.id === selectedId) ?? cases[0]
@@ -442,18 +576,7 @@ export function TestsPanelView({
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto px-4 pt-3 pb-4">
       {runError && running === "idle" ? (
-        <div role="alert" className="flex flex-wrap items-center gap-2 text-sm">
-          <CircleAlertIcon aria-hidden className="size-4 text-error" />
-          <span className="font-semibold">Python couldn&apos;t run your code.</span>
-          <span className="text-muted">Check your connection, then try again.</span>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => void workspaceStore.getState().run()}
-          >
-            Try again
-          </Button>
-        </div>
+        <RunFailureNotice failure={runError} />
       ) : (
         <SummaryLine summary={summary} busy={busy} />
       )}
@@ -482,7 +605,7 @@ export function TestsPanelView({
                   "inline-flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-sm transition-colors [&_svg]:size-3.5",
                   isSelected
                     ? "border-border bg-surface-2 text-text"
-                    : "border-transparent text-muted hover:bg-surface-2 hover:text-text"
+                    : "border-transparent text-muted hover:bg-surface-2/50 hover:text-text"
                 )}
               >
                 {item.kind === "hidden" ? <EyeOffIcon aria-hidden className="text-muted" /> : null}
