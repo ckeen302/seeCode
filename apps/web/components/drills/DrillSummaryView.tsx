@@ -202,7 +202,7 @@ export function DrillSummaryView({
               {summary.missed.map((miss) => (
                 <li
                   key={miss.cardId}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-surface-2 px-3 py-2 text-sm"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-bg px-3 py-2 text-sm"
                 >
                   <span>
                     {miss.title ?? (

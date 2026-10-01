@@ -290,7 +290,7 @@ function StartCard({ start }: { start: NonNullable<TodayData["start"]> }) {
         </div>
         <ol className="grid grid-cols-1 gap-3 min-[640px]:grid-cols-3">
           {steps.map((step, index) => (
-            <li key={step.title} className="flex gap-3 rounded-md bg-surface-2 p-3">
+            <li key={step.title} className="flex gap-3 rounded-md border border-border bg-bg p-3">
               <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-border font-mono text-xs">
                 {index + 1}
               </span>

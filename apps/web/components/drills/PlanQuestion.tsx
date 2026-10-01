@@ -39,7 +39,7 @@ function RevealPanel({
       <div
         className={cn(
           "flex items-start gap-3 rounded-lg border p-4 animate-in duration-200 zoom-in-[0.98]",
-          feedback.correct ? "border-good/50 bg-confirmed" : "border-border bg-surface-2"
+          feedback.correct ? "border-good/50 bg-confirmed" : "border-border bg-bg"
         )}
         role="status"
       >

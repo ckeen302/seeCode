@@ -102,6 +102,20 @@ test.describe("Signed in", () => {
     expect(errors).toEqual([])
   })
 
+  test("drill feedback and the end screen stay accessible in the light theme", async ({ page }) => {
+    await signInAsNewDevUser(page)
+    await page.evaluate(() => localStorage.setItem("seecode:theme", "light"))
+    await page.goto("/drills/session?mode=recognition")
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light")
+    await page.getByText("Hash map and counting", { exact: true }).first().click()
+    await page.getByRole("button", { name: /Check plan/ }).click()
+    await expect(page.getByRole("button", { name: /Next card/ })).toBeFocused()
+    await expectNoSeriousA11yViolations(page)
+    await page.getByRole("button", { name: /End session/ }).click()
+    await expect(page.getByText(/1 card answered/)).toBeVisible()
+    await expectNoSeriousA11yViolations(page)
+  })
+
   test("a toolkit drill takes a typed tool and number keys", async ({ page }) => {
     await signInAsNewDevUser(page)
     await page.goto("/drills/session?mode=toolkit")
