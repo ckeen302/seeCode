@@ -556,5 +556,113 @@
       }
     },
     "toolkit": ["bisect_left", "ceil", "divmod"]
+  },
+  {
+    "id": "prefix_scan",
+    "family": "arrays",
+    "name": "Prefix scan",
+    "idea": "Carry a running total (or product, or max) through one pass, so each position reads its answer from what came before it.",
+    "explanation": "Reach for a prefix scan when the answer at a position depends on everything before it, or on everything before and after it: the product of all the other values, the sum of a stretch of the array, the tallest bar to the left. Instead of recomputing that from scratch at every index, carry it along: a running value that each step updates with one more item.\n\nOne left-to-right pass gives every position what lies to its left. When a position also needs what lies to its right, run a second pass from the right end and combine the two. Prefix sums go one step further: store the running total after every item in an array one longer than the input, and the sum of any stretch `nums[i..j-1]` is `prefix[j] - prefix[i]`, a single subtraction.\n\nEach pass is O(n), so the whole scan is O(n) time, against O(n²) for recomputing at every index. A running value is O(1) space; a stored prefix array is O(n). The order of updates matters: read the running value before folding the current item in when the item must not count toward its own answer.",
+    "signals": [
+      {
+        "phrase": "except itself",
+        "meaning": "Split the answer into what lies left of i and what lies right of i, and carry each as a running value."
+      },
+      {
+        "phrase": "without using division",
+        "meaning": "You can't divide a total back out, so build the answer from both sides instead."
+      },
+      {
+        "phrase": "sum of a subarray",
+        "meaning": "Store running totals; any stretch is the difference of two of them."
+      },
+      {
+        "phrase": "running total",
+        "meaning": "Carry one value through the pass and update it with each item."
+      },
+      {
+        "phrase": "everything to its left",
+        "meaning": "One left-to-right pass delivers it to every position; add a right-to-left pass for the other side."
+      }
+    ],
+    "template": "def solve(nums):\n    answer = [0] * len(nums)\n    running = 0  # SETUP: the running value before the first item\n    for i in range(len(nums)):  # LOOP: left to right; a second loop may run right to left\n        answer[i] = running  # RECORD: position i reads what came before it\n        running += nums[i]  # UPDATE: fold nums[i] into the running value\n    return answer  # RETURN\n",
+    "slots": [
+      {
+        "id": "setup",
+        "label": "Running value",
+        "prompt": "What do you carry through the scan, and what is it before the first item?"
+      },
+      {
+        "id": "loop",
+        "label": "Scan direction",
+        "prompt": "Which way do you scan, and do you need a second pass from the other end?"
+      },
+      {
+        "id": "update",
+        "label": "Fold in",
+        "prompt": "How does each item change the running value?"
+      },
+      {
+        "id": "record",
+        "label": "Read the prefix",
+        "prompt": "What does each position take from the running value, and before or after its own item is folded in?"
+      },
+      {
+        "id": "return",
+        "label": "Answer",
+        "prompt": "What do you return: the filled array, or a value built from the passes?"
+      }
+    ],
+    "variations": [
+      {
+        "name": "Prefix sums",
+        "line": "Store the total after every item; prefix[j] - prefix[i] is the sum of nums[i..j-1]."
+      },
+      {
+        "name": "Left and right passes",
+        "line": "Combine what lies left of i with what lies right of i, from one pass in each direction."
+      },
+      {
+        "name": "Running best",
+        "line": "Carry the max or min so far instead of a sum, such as the tallest bar to the left."
+      },
+      {
+        "name": "Length headers",
+        "line": "Write each piece's length in front of it, so a reader's position is the running total of the pieces before it."
+      }
+    ],
+    "mistakes": [
+      "Folding nums[i] into the running value before position i reads it, so the item counts toward its own answer.",
+      "Making the prefix array as long as nums: one extra slot, prefix[0] = 0 for the empty prefix, avoids special cases.",
+      "Dividing a total by nums[i] to remove it, which breaks as soon as a value is 0.",
+      "Recomputing each prefix with sum() or a loop inside the main loop, which brings back O(n²)."
+    ],
+    "demo": {
+      "code": "class Solution:\n    def demo(self, nums):\n        prefix = [0] * (len(nums) + 1)\n        for i, x in enumerate(nums):\n            prefix[i + 1] = prefix[i] + x  # viz:add\n        return prefix  # viz:done\n",
+      "entry": "demo",
+      "args": [[3, 1, 4, 1, 5]],
+      "viz": {
+        "primary": "nums",
+        "pointers": [
+          {"var": "i", "into": "nums", "label": "i", "color": "a"},
+          {"var": "i", "into": "prefix", "label": "i", "color": "a"}
+        ],
+        "events": [
+          {
+            "id": "add",
+            "at": "add",
+            "label": "add",
+            "say": "prefix[{i + 1}] = prefix[{i}] + {x} = {prefix[i] + x}: the sum of the first {i + 1} values"
+          },
+          {
+            "id": "done",
+            "at": "done",
+            "label": "return",
+            "say": "Now any stretch has a one-step sum: nums[1..3] adds up to prefix[4] - prefix[1] = {prefix[4] - prefix[1]}"
+          }
+        ]
+      }
+    },
+    "toolkit": ["accumulate"]
   }
 ]

@@ -15,7 +15,8 @@ from app.content.validation import validate_content_dir
 from tests.test_tracer import tracer
 
 SCRIPT = REPO_ROOT / "scripts" / "viz_trace.py"
-# Section 8.7 asks for < 300 ms in the browser; CPython here is several times faster.
+# Section 8.7 asks for < 300 ms in the browser; CPython here is several times faster. Measured
+# as this process's CPU time, so a busy machine (CI, parallel jobs) cannot fail it.
 BUDGET_MS = 300
 
 
@@ -69,9 +70,9 @@ def test_walkthroughs_trace_cleanly(problem: Problem) -> None:
     job = _job(problem)
     fired: set[str] = set()
     for given in job["inputs"]:
-        start = time.perf_counter()
+        start = time.process_time()
         result = tracer.trace(job["code"], job["entry"], given, job["viz"], job["spec"])
-        elapsed = (time.perf_counter() - start) * 1000
+        elapsed = (time.process_time() - start) * 1000
         assert result["error"] is None, (given["id"], result["error"])
         assert not result["truncated"]
         assert elapsed < BUDGET_MS

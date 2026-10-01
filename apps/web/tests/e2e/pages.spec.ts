@@ -127,7 +127,16 @@ test.describe("Signed in", () => {
     await expectNoSeriousA11yViolations(page)
   })
 
-  test("roadmap and a pattern page show progress, slots and hidden twists", async ({ page }) => {
+  test("roadmap and a pattern page show progress, slots and hidden twists", async ({
+    page,
+    request,
+  }) => {
+    // The number of hashing problems grows with the content, so it comes from the API.
+    const hashing = await (
+      await request.get("http://localhost:8000/api/v1/content/patterns/hashing")
+    ).json()
+    const count: number = hashing.problems.length
+    expect(count).toBeGreaterThan(0)
     await signInAsNewDevUser(page)
     await page.goto("/roadmap")
     const graph = page.getByTestId("roadmap-graph")
@@ -146,10 +155,10 @@ test.describe("Signed in", () => {
     await expect(
       page.getByRole("heading", { level: 1, name: "Hash map and counting" })
     ).toBeVisible()
-    await expect(page.getByText("0 of 3 solved")).toBeVisible()
+    await expect(page.getByText(`0 of ${count} solved`)).toBeVisible()
     await expect(page.getByRole("button", { name: /Pick the map/ })).toBeVisible()
     // M6 acceptance: twists stay hidden until the problem is solved.
-    await expect(page.getByText("Solve it to see the twist")).toHaveCount(3)
+    await expect(page.getByText("Solve it to see the twist")).toHaveCount(count)
     await expect(page.getByRole("button", { name: /Show twist/ })).toHaveCount(0)
     await expectNoSeriousA11yViolations(page)
   })

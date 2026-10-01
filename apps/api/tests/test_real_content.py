@@ -151,7 +151,10 @@ async def test_no_answer_text_in_any_problem_detail(real_client: AsyncClient, sl
     response = await real_client.get(f"{API}/problems/{slug}")
     assert response.status_code == 200
     body = response.json()
-    assert set(body) == PROBLEM_PUBLIC_KEYS
+    # `io` and `checker` are served when the problem has them: the browser's harness needs
+    # them to run the tests.
+    optional = {key for key in ("io", "checker") if key in _problems()[slug]}
+    assert set(body) == PROBLEM_PUBLIC_KEYS | optional
     # Search the parsed strings: in the raw JSON, newlines and quotes are escaped.
     served = _strings(body)
     for answer in _answers(_problems()[slug]):
@@ -182,6 +185,7 @@ async def test_every_content_page_loads_without_answers(real_client: AsyncClient
         "stack",
         "sliding_window",
         "binary_search",
+        "prefix_scan",
     ]
 
 
@@ -193,13 +197,15 @@ def _read(name: str) -> Any:
 
 
 def test_pattern_ids_and_families_follow_section_24_1() -> None:
-    """D2: the ids and families, in the table's order."""
+    """D2: the ids and families, in the table's order, then the parity plan's (P1 adds
+    prefix_scan in the arrays family)."""
     assert [(p["id"], p["family"]) for p in _read("patterns.json")] == [
         ("hashing", "hashing"),
         ("two_pointers_opposite", "two_pointers"),
         ("stack", "stack"),
         ("sliding_window", "two_pointers"),
         ("binary_search", "binary_search"),
+        ("prefix_scan", "arrays"),
     ]
 
 
@@ -221,8 +227,9 @@ def test_structure_ids_are_the_twelve_of_section_10_4() -> None:
     ]
 
 
-def test_toolkit_ids_are_the_25_of_section_24_3() -> None:
-    """D3: the toolkit cards, in the table's order."""
+def test_toolkit_ids_are_the_25_of_section_24_3_then_the_parity_cards() -> None:
+    """D3: the toolkit cards, in the table's order, then the cards the parity phases add
+    (P1: accumulate, for prefix_scan)."""
     assert [card["id"] for card in _read("toolkit.json")] == [
         "lower",
         "isalnum",
@@ -249,6 +256,7 @@ def test_toolkit_ids_are_the_25_of_section_24_3() -> None:
         "min_max_key",
         "any_all",
         "int_trunc",
+        "accumulate",
     ]
 
 
@@ -271,6 +279,24 @@ WORKSPACE_ORDER = {
     "search-insert-position": 14,
     "koko-eating-bananas": 15,
     "min-stack": 16,
+    "contains-duplicate": 17,
+    "top-k-frequent-elements": 18,
+    "encode-and-decode-strings": 19,
+    "product-of-array-except-self": 20,
+    "valid-sudoku": 21,
+    "longest-consecutive-sequence": 22,
+    "container-with-most-water": 23,
+    "trapping-rain-water": 24,
+    "permutation-in-string": 25,
+    "minimum-window-substring": 26,
+    "sliding-window-maximum": 27,
+    "car-fleet": 28,
+    "largest-rectangle-in-histogram": 29,
+    "search-a-2d-matrix": 30,
+    "find-minimum-in-rotated-sorted-array": 31,
+    "search-in-rotated-sorted-array": 32,
+    "time-based-key-value-store": 33,
+    "median-of-two-sorted-arrays": 34,
 }
 
 
@@ -328,6 +354,24 @@ def _optimal(slug: str) -> dict[str, Any]:
         "top-k-frequent-elements",
         "sqrt-x",
         "min-stack",
+        # P1
+        "contains-duplicate",
+        "encode-and-decode-strings",
+        "product-of-array-except-self",
+        "valid-sudoku",
+        "longest-consecutive-sequence",
+        "container-with-most-water",
+        "trapping-rain-water",
+        "permutation-in-string",
+        "minimum-window-substring",
+        "sliding-window-maximum",
+        "car-fleet",
+        "largest-rectangle-in-histogram",
+        "search-a-2d-matrix",
+        "find-minimum-in-rotated-sorted-array",
+        "search-in-rotated-sorted-array",
+        "time-based-key-value-store",
+        "median-of-two-sorted-arrays",
     ],
 )
 def test_every_approach_grades_its_own_twist_correct(slug: str) -> None:
