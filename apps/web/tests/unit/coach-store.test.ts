@@ -614,3 +614,41 @@ describe("guest mode (16.2)", () => {
     expect(guest.store.getState().code).toBe(PALINDROME.starterCode)
   })
 })
+
+describe("predict-mode answers (8.6)", () => {
+  it("sends each predict point's first answer with the signed-in attempt, once", async () => {
+    const { store, api } = await signedIn()
+    store.getState().recordPrediction({ id: "predict:0", correct: true })
+    store.getState().recordPrediction({ id: "predict:0", correct: false })
+    store.getState().recordPrediction({ id: "predict:1", correct: false })
+    expect(api.recordPredictions).toHaveBeenCalledTimes(2)
+    expect(api.recordPredictions).toHaveBeenNthCalledWith(1, ATTEMPT_ID, [
+      { id: "predict:0", correct: true },
+    ])
+    expect(api.recordPredictions).toHaveBeenNthCalledWith(2, ATTEMPT_ID, [
+      { id: "predict:1", correct: false },
+    ])
+  })
+
+  it("tries again on a replay when sending failed, and never tells the user", async () => {
+    const api = fakeApi({
+      recordPredictions: vi
+        .fn()
+        .mockRejectedValueOnce(new Error("offline"))
+        .mockResolvedValue({ ok: true }),
+    })
+    const { store, notify } = await signedIn({ api })
+    store.getState().recordPrediction({ id: "predict:0", correct: true })
+    await vi.waitFor(() => expect(api.recordPredictions).toHaveBeenCalledTimes(1))
+    await Promise.resolve()
+    store.getState().recordPrediction({ id: "predict:0", correct: true })
+    expect(api.recordPredictions).toHaveBeenCalledTimes(2)
+    expect(notify).not.toHaveBeenCalled()
+  })
+
+  it("keeps nothing for guests (they have no attempt to send it with)", () => {
+    const { store, api } = setup({ mode: "guest" })
+    store.getState().recordPrediction({ id: "predict:0", correct: true })
+    expect(api.recordPredictions).not.toHaveBeenCalled()
+  })
+})

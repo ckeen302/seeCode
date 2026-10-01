@@ -7,8 +7,8 @@ import { Kbd } from "@/components/ui/kbd"
 import { HELP_KEY, HOTKEYS, formatHotkey, isHelpKey, useIsMac } from "@/lib/keyboard"
 import { COACH_HOTKEYS } from "@/lib/workspace/hotkeys"
 
-// Section 17.4: `?` anywhere opens a list of the keyboard shortcuts. It lists only what works
-// today; the walkthrough keys join when the player arrives (M4).
+// Section 17.4: `?` anywhere opens a list of the keyboard shortcuts, including the
+// walkthrough player's keys (they work while the player has focus).
 
 interface Row {
   label: string
@@ -43,6 +43,15 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
       { label: "Open the next hint", keys: (mac) => formatHotkey(COACH_HOTKEYS.nextHint, mac) },
       // Monaco's own binding: Tab indents until this is turned on (Section 18.8).
       { label: "Let Tab leave the code editor", keys: (mac) => (mac ? "⌃⇧M" : "Ctrl M") },
+    ],
+  },
+  {
+    title: "Walkthroughs",
+    rows: [
+      { label: "Step back or forward", keys: () => "← →" },
+      { label: "Play or pause", keys: () => "Space" },
+      { label: "First or last step", keys: () => "Home End" },
+      { label: "Continue after a prediction", keys: () => "Enter" },
     ],
   },
 ]

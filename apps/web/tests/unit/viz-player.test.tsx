@@ -114,6 +114,11 @@ describe("WalkthroughPlayer", () => {
     }
   })
 
+  it("starts playing by itself with autoPlay (pattern demos)", async () => {
+    await renderPlayer("valid-palindrome", { autoPlay: true, loop: true })
+    expect(await screen.findByRole("button", { name: "Pause" })).toBeVisible()
+  })
+
   it("asks predict questions, grades a clicked cell and records the first answer", async () => {
     const onPrediction = vi.fn()
     const { player } = await renderPlayer("valid-palindrome", {

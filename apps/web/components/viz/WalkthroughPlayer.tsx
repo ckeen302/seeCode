@@ -62,6 +62,10 @@ export interface WalkthroughPlayerProps {
   onPrediction?: (prediction: Prediction) => void
   /** Start with predict mode on or off; by default it is on for a problem's first walkthrough. */
   predictDefault?: boolean
+  /** Start playing once the trace is ready (not under reduced motion). */
+  autoPlay?: boolean
+  /** Start over after the last step (the pattern page's looping demo, 6.4). */
+  loop?: boolean
   /** Tests pass a fake; the app uses the shared Pyodide runner. */
   runner?: Pick<Runner, "trace">
   className?: string
@@ -124,6 +128,7 @@ export function WalkthroughPlayer(props: WalkthroughPlayerProps) {
     createPlayerStore({
       predictOn: props.predictDefault ?? false,
       mode: props.userCode !== undefined ? "all" : "key",
+      loop: props.loop,
     })
   )
   // Each predict point's first answer goes to the attempt (8.6).
@@ -184,6 +189,7 @@ function PlayerBody({
   userCode,
   extraInputs,
   predictDefault,
+  autoPlay,
   runner,
   className,
   store,
@@ -238,7 +244,10 @@ function PlayerBody({
           if (cancelled) return
           // The memo answers an equal request with the same trace: keep the current step
           // when a parent re-renders with an equal payload.
-          if (store.getState().trace !== trace) store.getState().load(trace, playerViz)
+          if (store.getState().trace !== trace) {
+            store.getState().load(trace, playerViz)
+            if (autoPlay && !reduced) store.getState().play()
+          }
           setResult({ key: requestKey, state: { kind: "ready", trace } })
         },
         (error: unknown) => {
@@ -250,7 +259,7 @@ function PlayerBody({
     return () => {
       cancelled = true
     }
-  }, [request, requestKey, playerViz, runner, store])
+  }, [request, requestKey, playerViz, runner, store, autoPlay, reduced])
   const state: TraceState = result && result.key === requestKey ? result.state : { kind: "loading" }
 
   // Playback clock: one step every 700 ms / speed (17.3).

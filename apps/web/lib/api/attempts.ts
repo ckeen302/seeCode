@@ -8,6 +8,7 @@ import {
   GuestPlanResultSchema,
   HintContentSchema,
   NoteViewSchema,
+  OkSchema,
   PatchResultSchema,
   PlanCheckResultSchema,
   SubmitResultSchema,
@@ -23,6 +24,7 @@ import {
   type Outcome,
 } from "@/lib/api/schemas"
 import type { TestResult } from "@/lib/runner/types"
+import type { Prediction } from "@/lib/viz/types"
 import type { GuestAttempt } from "@/lib/workspace/storage"
 
 /** `PATCH /attempts/{id}`: only what changed since the last sync. */
@@ -46,6 +48,9 @@ export interface AttemptApi {
   end(id: string): Promise<{ outcome: Outcome }>
   restart(id: string): Promise<AttemptView>
   walkthrough(slug: string): Promise<WalkthroughPayload>
+  /** `POST /attempts/{id}/predictions`: predict-mode answers (8.6); the API keeps the first
+   * answer per id, also on a finished attempt (See it run after a solve). */
+  recordPredictions(id: string, predictions: Prediction[]): Promise<unknown>
   guestCheckPlan(
     slug: string,
     plan: PlanCard,
@@ -69,6 +74,8 @@ export function createAttemptApi(api: ApiClient): AttemptApi {
     end: (id) => api.post(`/attempts/${id}/end`, EndResultSchema, { reason: "gave_up" }),
     restart: (id) => api.post(`/attempts/${id}/restart`, AttemptViewSchema),
     walkthrough: (slug) => api.get(`/problems/${path(slug)}/walkthrough`, WalkthroughPayloadSchema),
+    recordPredictions: (id, predictions) =>
+      api.post(`/attempts/${id}/predictions`, OkSchema, { predictions }),
     guestCheckPlan: (slug, plan, checkNumber, openedRung) =>
       api.post(`/guest/problems/${path(slug)}/plan`, GuestPlanResultSchema, {
         plan,

@@ -1,27 +1,24 @@
 "use client"
 
-import {
-  ChevronDownIcon,
-  ChevronUpIcon,
-  FootprintsIcon,
-  RotateCwIcon,
-  ScanSearchIcon,
-} from "lucide-react"
-import { useEffect, useRef } from "react"
+import { ChevronDownIcon, ChevronUpIcon, FootprintsIcon, RotateCwIcon } from "lucide-react"
+import { useEffect, useMemo, useRef } from "react"
 
 import { TestsPanel } from "@/components/workspace/TestsPanel"
+import { TraceMyCode } from "@/components/workspace/TraceMyCode"
 import { WalkthroughSlot } from "@/components/workspace/WalkthroughSlot"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { HOTKEYS, formatHotkey, useIsMac } from "@/lib/keyboard"
+import { customInputs } from "@/lib/viz/payloads"
+import type { Prediction } from "@/lib/viz/types"
 import { useWorkspace, workspaceStore, type BottomTab } from "@/stores/workspace"
 
 /** Height of the tab row, which stays visible while the panel is collapsed. */
 export const BOTTOM_HEADER_PX = 41
 
-function ComingSoon({
+function EmptyTab({
   icon: Icon,
   title,
   children,
@@ -43,6 +40,10 @@ function ComingSoon({
   )
 }
 
+// Stable, so the player's subscription does not churn.
+const recordPrediction = (prediction: Prediction) =>
+  workspaceStore.getState().recordPrediction(prediction)
+
 /**
  * The Walkthrough tab (7.6): the payload of rung 5, or of "See it run" after a solve. Before
  * either, it says how to get there without giving anything away.
@@ -51,10 +52,20 @@ function WalkthroughTab() {
   const payload = useWorkspace((state) => state.walkthrough)
   const loading = useWorkspace((state) => state.walkthroughLoading)
   const error = useWorkspace((state) => state.walkthroughError)
+  const problem = useWorkspace((state) => state.problem)
+  const customCases = useWorkspace((state) => state.customCases)
+  const extraInputs = useMemo(
+    () => (problem ? customInputs(problem, customCases) : []),
+    [problem, customCases]
+  )
   if (payload) {
     return (
       <div className="h-full overflow-y-auto px-4 py-4">
-        <WalkthroughSlot payload={payload} />
+        <WalkthroughSlot
+          payload={payload}
+          extraInputs={extraInputs}
+          onPrediction={recordPrediction}
+        />
       </div>
     )
   }
@@ -82,10 +93,10 @@ function WalkthroughTab() {
     )
   }
   return (
-    <ComingSoon icon={FootprintsIcon} title="Walkthrough">
+    <EmptyTab icon={FootprintsIcon} title="Walkthrough">
       Watch the reference solution run on real data, step by step. It opens with hint rung 5, or any
       time after you solve the problem (See it run).
-    </ComingSoon>
+    </EmptyTab>
   )
 }
 
@@ -198,10 +209,9 @@ export function BottomPanel({
               <WalkthroughTab />
             </TabsContent>
             <TabsContent value="trace" className="min-h-0">
-              <ComingSoon icon={ScanSearchIcon} title="Trace my code">
-                Run your own code step by step and watch every variable change. It arrives in
-                milestone M4.
-              </ComingSoon>
+              <div className="h-full overflow-y-auto px-4 py-4">
+                <TraceMyCode />
+              </div>
             </TabsContent>
           </>
         )}

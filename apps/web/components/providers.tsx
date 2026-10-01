@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useState } from "react"
 
+import { SettingsSync } from "@/components/settings/SettingsSync"
 import { CommandPaletteProvider } from "@/components/shell/CommandPalette"
 import { PreferencesSync } from "@/components/shell/Preferences"
 import { ShortcutsHelp } from "@/components/shell/ShortcutsHelp"
@@ -26,6 +27,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <TooltipProvider>
         <CommandPaletteProvider>
           <PreferencesSync />
+          <SettingsSync />
           <ShortcutsHelp />
           {children}
           <GuestImport />

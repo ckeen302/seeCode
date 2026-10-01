@@ -32,6 +32,28 @@ vi.mock("@/lib/auth/session", async (importOriginal) => ({
   refreshSession: async () => false,
   signOut: auth.signOut,
 }))
+const trace = vi.hoisted(() =>
+  vi.fn(async () => ({
+    steps: [
+      {
+        line: 3,
+        event: "line",
+        func: "demo",
+        depth: 1,
+        locals: {
+          nums: { t: "list", cls: "list", n: 3, v: [4, 7, 1].map((v) => ({ t: "prim", v })) },
+        },
+        tags: [],
+      },
+    ],
+    result: { t: "list", cls: "list", n: 0, v: [] },
+    error: null,
+    truncated: false,
+  }))
+)
+vi.mock("@/lib/runner/runner", () => ({
+  getRunner: () => ({ trace, subscribe: () => () => {}, getStatus: () => "ready" }),
+}))
 vi.mock("next/navigation", () => ({
   usePathname: () => "/today",
   useRouter: () => nav.router,
@@ -42,7 +64,13 @@ import { DrillSession } from "@/components/drills/DrillSession"
 import { PatternPage } from "@/components/patterns/PatternPage"
 import { ReviewSession } from "@/components/review/ReviewSession"
 import { RoadmapView } from "@/components/roadmap/RoadmapView"
+import { SettingsSync } from "@/components/settings/SettingsSync"
 import { SettingsView } from "@/components/settings/SettingsView"
+import {
+  DEFAULT_EDITOR_SETTINGS,
+  getEditorSettings,
+  setEditorSettings,
+} from "@/lib/editor/settings"
 import { StatsView } from "@/components/stats/StatsView"
 import { TodayView } from "@/components/today/TodayView"
 import { LiveDemo } from "@/components/landing/LiveDemo"
@@ -284,10 +312,19 @@ describe("Pattern page (Section 6.4)", () => {
     expect(screen.getByText("Look up the partner first.")).toBeInTheDocument()
     expect(screen.getByText("Solve it to see the twist")).toBeInTheDocument()
     expect(screen.getByText("Storing x before looking up its partner.")).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: /Watch it run/ })).toHaveAttribute(
-      "href",
-      "/viz?pattern=hashing"
-    )
+    // See it move: the demo plays inline, Python loading only once asked (6.4).
+    expect(trace).not.toHaveBeenCalled()
+    await userEvent.click(screen.getByRole("button", { name: /Watch it run/ }))
+    expect(await screen.findByTestId("viz-canvas")).toBeInTheDocument()
+    expect(trace).toHaveBeenCalledWith({
+      code: PATTERN_VIEW.demo.code,
+      entry: "demo",
+      args: [[4, 7, 1]],
+      viz: expect.objectContaining({ primary: "nums" }),
+    })
+    const player = screen.getByTestId("walkthrough-player")
+    expect(player).toHaveFocus()
+    expect(within(player).getByRole("list", { name: "nums, 3 items" })).toBeInTheDocument()
   })
 
   it("says so when the pattern does not exist", async () => {
@@ -638,6 +675,33 @@ describe("Settings (Section 6.9)", () => {
     await waitFor(() => expect(auth.signOut).toHaveBeenCalled())
     expect(calls.some((c) => c.method === "DELETE" && c.path === "/me")).toBe(true)
     expect(nav.router.replace).toHaveBeenCalledWith("/")
+  })
+
+  it("applies the editor font size and screen-reader mode to the Workspace editor", async () => {
+    setEditorSettings(DEFAULT_EDITOR_SETTINGS)
+    stubApi({
+      "GET /me": { ...PROFILE, settings: { editorFontSize: 16 } },
+      "PATCH /me": ({ body }: { body: unknown }) => ({
+        ...PROFILE,
+        settings: { editorFontSize: 16, ...(body as { settings?: object }).settings },
+      }),
+    })
+    renderWithClient(
+      <>
+        <SettingsSync />
+        <SettingsView />
+      </>
+    )
+    // Saved settings apply on load…
+    await waitFor(() => expect(getEditorSettings().fontSize).toBe(16))
+    expect(getEditorSettings().accessibility).toBe("auto")
+    // …and changes apply at once.
+    await userEvent.click(await screen.findByRole("radio", { name: "18 px" }))
+    await waitFor(() => expect(getEditorSettings().fontSize).toBe(18))
+    const screenReader = screen.getByRole("group", { name: "Screen reader mode" })
+    await userEvent.click(within(screenReader).getByRole("radio", { name: "On" }))
+    await waitFor(() => expect(getEditorSettings().accessibility).toBe("on"))
+    setEditorSettings(DEFAULT_EDITOR_SETTINGS)
   })
 
   it("saves the display name", async () => {

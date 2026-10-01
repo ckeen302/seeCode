@@ -3,6 +3,7 @@
 import {
   CalendarDaysIcon,
   ChartLineIcon,
+  FootprintsIcon,
   ListChecksIcon,
   MapIcon,
   PanelLeftCloseIcon,
@@ -34,10 +35,12 @@ interface NavItem {
 }
 
 // Section 5: Today, Roadmap, Problems, Drills, Review (due badge), Stats; Settings at the bottom.
+// Walkthroughs (/viz, the public gallery) sits after Problems (docs/DECISIONS.md).
 export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/today", label: "Today", icon: CalendarDaysIcon },
   { href: "/roadmap", label: "Roadmap", icon: MapIcon },
   { href: "/problems", label: "Problems", icon: ListChecksIcon },
+  { href: "/viz", label: "Walkthroughs", icon: FootprintsIcon },
   { href: "/drills", label: "Drills", icon: ZapIcon },
   { href: "/review", label: "Review", icon: RotateCcwIcon },
   { href: "/stats", label: "Stats", icon: ChartLineIcon },

@@ -86,6 +86,8 @@ export interface PlayerOptions {
   predictOn?: boolean
   /** Called once per predict point, with the learner's first answer. */
   onPrediction?: (prediction: Prediction) => void
+  /** Playback starts over from the first step after the last (pattern demos, 6.4). */
+  loop?: boolean
 }
 
 export type PlayerStore = StoreApi<PlayerState>
@@ -268,8 +270,13 @@ export function createPlayerStore(options: PlayerOptions = {}): PlayerStore {
       tick() {
         const state = get()
         if (!state.playing) return
+        if (options.loop && state.index >= lastIndex(state)) {
+          // A looping demo rests on its last step for one tick, then starts over.
+          set({ index: 0, prevIndex: state.index, pendingPredict: null, feedback: null })
+          return
+        }
         get().step(1)
-        if (get().index >= lastIndex(get())) set({ playing: false })
+        if (!options.loop && get().index >= lastIndex(get())) set({ playing: false })
       },
 
       setSpeed(speed) {

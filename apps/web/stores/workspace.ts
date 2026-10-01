@@ -27,6 +27,7 @@ import type {
 import { RunnerError, getRunner, type RunnerErrorKind } from "@/lib/runner/runner"
 import type { Runner, TestCase, TestResult } from "@/lib/runner/types"
 import { toast } from "@/lib/toast"
+import type { Prediction } from "@/lib/viz/types"
 import { MAX_CUSTOM_CASES, customArgsTooLarge, nextCustomCaseId } from "@/lib/workspace/customCases"
 import {
   REVEAL_RUNG,
@@ -182,6 +183,8 @@ export interface WorkspaceState {
   restart(): Promise<boolean>
   /** See it run: the walkthrough of a solved problem (or rung 5's), in the bottom panel. */
   showWalkthrough(): Promise<void>
+  /** A predict-mode answer (8.6): sent with the signed-in attempt; guests have none to keep. */
+  recordPrediction(prediction: Prediction): void
   setWrapUpOpen(open: boolean): void
   /** Writes pending changes now (page hide, leaving the problem). */
   flush(): void
@@ -472,6 +475,8 @@ export function createWorkspaceStore(deps: Partial<WorkspaceDeps> = {}): StoreAp
   let unsentSubmit: { code: string; results: TestResult[]; session: number } | null = null
   // The session whose `POST /attempts` is in flight (React may run effects twice).
   let loadingSession: number | null = null
+  // Predictions already sent, as "<attempt id>:<predict id>" (the API keeps the first anyway).
+  const sentPredictions = new Set<string>()
 
   return createStore<WorkspaceState>()((set, get) => {
     // ------------------------------------------------------------ localStorage
@@ -1422,6 +1427,21 @@ export function createWorkspaceStore(deps: Partial<WorkspaceDeps> = {}): StoreAp
           if (mine !== session) return
           set({ walkthroughLoading: false, walkthroughError: attemptErrorMessage(error) })
         }
+      },
+
+      recordPrediction(prediction) {
+        const { mode, attemptId } = get()
+        if (mode !== "user" || !attemptId) return
+        const key = `${attemptId}:${prediction.id}`
+        if (sentPredictions.has(key)) return
+        sentPredictions.add(key)
+        api()
+          .recordPredictions(attemptId, [{ id: prediction.id, correct: prediction.correct }])
+          .catch(() => {
+            // A learning signal, not the user's work: never bother them about it. A replay
+            // may try again.
+            sentPredictions.delete(key)
+          })
       },
 
       setWrapUpOpen(open) {

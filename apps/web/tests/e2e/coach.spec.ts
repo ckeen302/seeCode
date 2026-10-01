@@ -153,10 +153,17 @@ test.describe("Coach", () => {
     )
     await expectNoSeriousA11yViolations(page)
 
-    // See it run: the walkthrough tab shows what it will run.
+    // See it run: the real player traces the reference solution and steps through it.
     await wrapUp.getByRole("button", { name: "See it run" }).click()
-    await expect(page.getByRole("region", { name: "Step-through walkthrough" })).toBeVisible()
     await expect(page.getByRole("tab", { name: "Walkthrough" })).toBeFocused()
+    const player = page.getByRole("region", { name: "Walkthrough" })
+    await expect(player.getByTestId("viz-canvas")).toBeVisible({ timeout: 60_000 })
+    await expect(player.getByTestId("step-counter")).toHaveText(/^1 \/ \d+$/)
+    // Predict mode is on for a first walkthrough; this run is about stepping, so turn it off.
+    await player.getByRole("switch", { name: "Predict mode" }).click()
+    await player.getByRole("button", { name: "Next step" }).click()
+    await expect(player.getByTestId("step-counter")).not.toHaveText(/^1 \//)
+    await expect(player.getByTestId("narration")).not.toBeEmpty()
     expect(errors).toEqual([])
   })
 

@@ -16,6 +16,7 @@ import {
   defineEditorThemes,
   editorOptions,
 } from "@/lib/editor/monaco"
+import { editorSettingsOptions, useEditorSettings } from "@/lib/editor/settings"
 import { useIsMac } from "@/lib/keyboard"
 import { errorLine } from "@/lib/runner/traceback"
 import { indentedBlock, registerEditor } from "@/lib/workspace/editorBridge"
@@ -87,7 +88,12 @@ export function EditorPanel() {
   const theme = useResolvedTheme()
   const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)") ?? false
   const mac = useIsMac() ?? false
-  const options = useMemo(() => editorOptions(reducedMotion, mac), [reducedMotion, mac])
+  // Settings → Code editor: font size and screen-reader mode (Section 6.9).
+  const settings = useEditorSettings()
+  const options = useMemo(
+    () => ({ ...editorOptions(reducedMotion, mac), ...editorSettingsOptions(settings) }),
+    [reducedMotion, mac, settings]
+  )
   const editorRef = useRef<CodeEditor | null>(null)
   const monacoRef = useRef<MonacoApi | null>(null)
   const [initialCode] = useState(() => workspaceStore.getState().code)
@@ -238,7 +244,12 @@ export function EditorPanel() {
           <TooltipContent side="bottom">Reset to the starter code</TooltipContent>
         </Tooltip>
       </div>
-      <div className="min-h-0 flex-1" data-testid="code-editor">
+      <div
+        className="min-h-0 flex-1"
+        data-testid="code-editor"
+        data-font-size={settings.fontSize}
+        data-accessibility={settings.accessibility}
+      >
         {loadFailed ? (
           <EditorLoadError />
         ) : (

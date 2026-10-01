@@ -2,6 +2,7 @@ import { act, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { DEFAULT_EDITOR_SETTINGS, setEditorSettings } from "@/lib/editor/settings"
 import { workspaceStore } from "@/stores/workspace"
 
 import { PALINDROME } from "./fixtures"
@@ -15,7 +16,14 @@ vi.mock("@monaco-editor/react", () => {
     return Object.assign(promise, { cancel: () => undefined })
   }
   return {
-    default: () => <div data-testid="monaco" />,
+    default: ({ options }: { options: Record<string, unknown> }) => (
+      <div
+        data-testid="monaco"
+        data-font-size={String(options.fontSize)}
+        data-line-height={String(options.lineHeight)}
+        data-accessibility={String(options.accessibilitySupport)}
+      />
+    ),
     loader: {
       config: () => undefined,
       init: () =>
@@ -39,6 +47,7 @@ function renderPanel() {
 }
 
 afterEach(() => {
+  setEditorSettings(DEFAULT_EDITOR_SETTINGS)
   loaderState.fail = false
   act(() => workspaceStore.setState({ slug: "", problem: null, code: "" }))
 })
@@ -69,5 +78,18 @@ describe("code editor panel", () => {
     expect(screen.getByText("Over 50 KB: shorten it to save your changes")).toBeInTheDocument()
     act(() => workspaceStore.getState().setCode("x = 1"))
     expect(screen.queryByText(/Over 50 KB/)).not.toBeInTheDocument()
+  })
+
+  it("uses the saved font size and screen-reader mode (Settings → Code editor)", () => {
+    act(() => workspaceStore.getState().open(PALINDROME))
+    renderPanel()
+    const editor = screen.getByTestId("monaco")
+    expect(editor).toHaveAttribute("data-font-size", "14")
+    expect(editor).toHaveAttribute("data-line-height", "22")
+    expect(editor).toHaveAttribute("data-accessibility", "auto")
+    act(() => setEditorSettings({ fontSize: 18, accessibility: "on" }))
+    expect(editor).toHaveAttribute("data-font-size", "18")
+    expect(editor).toHaveAttribute("data-line-height", "28")
+    expect(editor).toHaveAttribute("data-accessibility", "on")
   })
 })

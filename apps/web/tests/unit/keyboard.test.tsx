@@ -151,6 +151,8 @@ describe("shortcut help (Section 17.4: ? anywhere)", () => {
     expect(dialog).toHaveTextContent("Submit (every test)")
     expect(dialog).toHaveTextContent("Show or hide the tests panel")
     expect(dialog).toHaveTextContent("Search problems and patterns")
+    expect(dialog).toHaveTextContent("Step back or forward")
+    expect(dialog).toHaveTextContent("Play or pause")
     // A second ? inside the open dialog leaves it alone.
     expect(isHelpKey(new KeyboardEvent("keydown", { key: "?" }))).toBe(true)
     await userEvent.keyboard("{Escape}")

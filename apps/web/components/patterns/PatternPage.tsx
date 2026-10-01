@@ -12,7 +12,7 @@ import {
   WrenchIcon,
 } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { CodeBlock, HighlightedLine } from "@/components/patterns/CodeBlock"
 import { PatternStateBadge, ProgressRing } from "@/components/patterns/PatternChip"
@@ -24,11 +24,13 @@ import { SignInBanner } from "@/components/roadmap/RoadmapView"
 import { ErrorState, LoadingState } from "@/components/today/PageStates"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { WalkthroughPlayer } from "@/components/viz/WalkthroughPlayer"
 import { Markdown } from "@/components/workspace/Markdown"
 import { ApiError } from "@/lib/api/client"
 import { useRoadmap, usePattern, type PatternProblem, type PatternView } from "@/lib/api/patterns"
 import { useAuth } from "@/lib/auth/session"
 import { cn } from "@/lib/utils"
+import { demoPayload } from "@/lib/viz/payloads"
 import { familyColor } from "@/lib/workspace/plan"
 
 const FAMILY_NAMES: Record<string, string> = {
@@ -250,6 +252,17 @@ function formatArg(value: unknown): string {
 function Demo({ pattern }: { pattern: PatternView }) {
   const names = /def\s+\w+\(self,\s*([^)]*)\)/.exec(pattern.demo.code)?.[1].split(",") ?? []
   const events = pattern.demo.viz.events
+  // The player loads Python only when asked: the page stays light until then.
+  const [watching, setWatching] = useState(false)
+  const payload = useMemo(() => demoPayload(pattern.demo), [pattern.demo])
+  const playerRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!watching) return
+    // The button that started it is gone; the player takes focus, so its keys work at once.
+    playerRef.current
+      ?.querySelector<HTMLElement>("[data-testid=walkthrough-player]")
+      ?.focus({ preventScroll: true })
+  }, [watching])
   return (
     <Card className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -261,30 +274,38 @@ function Demo({ pattern }: { pattern: PatternView }) {
               .join(", ")}
           </p>
         </div>
-        <Button asChild>
-          <Link href={`/viz?pattern=${encodeURIComponent(pattern.id)}`}>
+        {watching ? null : (
+          <Button onClick={() => setWatching(true)}>
             <PlayIcon />
             Watch it run
-          </Link>
-        </Button>
+          </Button>
+        )}
       </div>
-      <CodeBlock code={pattern.demo.code} label="Demo code" />
-      {events.length ? (
-        <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium">What to watch</p>
-          <ul className="flex flex-wrap gap-2">
-            {events.map((event) => (
-              <li
-                key={event.id}
-                className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1 text-xs"
-              >
-                <span aria-hidden className="size-2 rotate-45 bg-accent" />
-                <span className="font-medium">{event.label}</span>
-              </li>
-            ))}
-          </ul>
+      {watching ? (
+        <div ref={playerRef}>
+          <WalkthroughPlayer payload={payload} predictDefault={false} autoPlay loop />
         </div>
-      ) : null}
+      ) : (
+        <>
+          <CodeBlock code={pattern.demo.code} label="Demo code" />
+          {events.length ? (
+            <div className="flex flex-col gap-2">
+              <p className="text-sm font-medium">What to watch</p>
+              <ul className="flex flex-wrap gap-2">
+                {events.map((event) => (
+                  <li
+                    key={event.id}
+                    className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1 text-xs"
+                  >
+                    <span aria-hidden className="size-2 rotate-45 bg-accent" />
+                    <span className="font-medium">{event.label}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </>
+      )}
     </Card>
   )
 }

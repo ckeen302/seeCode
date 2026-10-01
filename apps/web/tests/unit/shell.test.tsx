@@ -83,10 +83,12 @@ describe("sidebar", () => {
       "Today",
       "Roadmap",
       "Problems",
+      "Walkthroughs",
       "Drills",
       "Review",
       "Stats",
     ])
+    expect(NAV_ITEMS.find((item) => item.label === "Walkthroughs")?.href).toBe("/viz")
   })
 
   it("marks the current section, including nested pages", () => {

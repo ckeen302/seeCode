@@ -3,19 +3,15 @@ import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { CoachPanel } from "@/components/workspace/CoachPanel"
-import {
-  WalkthroughSlot,
-  describe as describeWalkthrough,
-} from "@/components/workspace/WalkthroughSlot"
 import { WrapUpPanel, nextInOrder } from "@/components/workspace/WrapUpPanel"
 import type { ProblemListItem } from "@/lib/api/schemas"
 import { formatDuration, hintsUsed, reviewLine } from "@/lib/workspace/wrapup"
 import type { WrapUpView } from "@/stores/workspace"
 
-import { WALKTHROUGH, WRAP_UP, stubApi } from "./coach-fixtures"
+import { WRAP_UP, stubApi } from "./coach-fixtures"
 import { renderWithProviders, resetWorkspace, setWorkspace } from "./coach-render"
 
-// The coach column (7.1), the wrap-up (7.8) and the walkthrough slot (rung 5, 7.6).
+// The coach column (7.1) and the wrap-up (7.8). The walkthrough slot: walkthrough-tabs.test.tsx.
 
 const NOW = new Date("2026-09-30T12:00:00Z")
 
@@ -231,38 +227,6 @@ describe("wrap-up panel (7.8)", () => {
     expect(nextInOrder(list, "a")?.slug).toBe("b")
     expect(nextInOrder(list, "c")).toBeNull()
     expect(nextInOrder(undefined, "a")).toBeNull()
-  })
-})
-
-describe("walkthrough slot (rung 5)", () => {
-  it("lists the inputs it will run, and none of the solution", () => {
-    renderWithProviders(<WalkthroughSlot payload={WALKTHROUGH} />)
-    const slot = screen.getByRole("region", { name: "Step-through walkthrough" })
-    const inputs = within(slot).getAllByRole("listitem")
-    expect(inputs.map((item) => item.textContent)).toEqual([
-      'Example 1s = "Top spot!"',
-      'Example 2s = "Top 2 spot"',
-    ])
-    expect(slot).toHaveTextContent("1 key moment marked on the timeline")
-    expect(slot).not.toHaveTextContent("return True")
-  })
-
-  it("names a design problem's calls", () => {
-    renderWithProviders(
-      <WalkthroughSlot
-        payload={{
-          ...WALKTHROUGH,
-          kind: "design",
-          entry: "MinStack",
-          inputs: [{ label: "Example 1", ops: [["MinStack"], ["push", 3], ["getMin"]] }],
-        }}
-      />
-    )
-    expect(screen.getByRole("listitem")).toHaveTextContent("3 calls: MinStack, push, getMin")
-  })
-
-  it("mentions predictions when there are any", () => {
-    expect(describeWalkthrough(0, 2)).toMatch(/every step\. Before some steps .*\(2 questions\)\.$/)
   })
 })
 

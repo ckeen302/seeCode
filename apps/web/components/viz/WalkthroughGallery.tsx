@@ -3,9 +3,12 @@
 // The public walkthrough gallery (/viz): every Workspace problem, each playable as its
 // walkthrough. Signed out works: the list is `GET /content/problems` and each walkthrough is
 // the guest hint rung 5 (`GET /guest/problems/{slug}/hints/5`), both public.
+// `?p=<slug>` (or `?problem=<slug>`) picks a problem; `?pattern=<id>` plays that pattern's demo
+// (`GET /content/patterns/{id}`, public) instead.
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
+import { useMemo } from "react"
 import { ArrowRightIcon, RotateCwIcon } from "lucide-react"
 
 import { DifficultyChip } from "@/components/problems/DifficultyChip"
@@ -13,8 +16,10 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { WalkthroughPlayer } from "@/components/viz/WalkthroughPlayer"
 import { api, shouldRetry, useProblems } from "@/lib/api/hooks"
+import { usePattern } from "@/lib/api/patterns"
 import { WalkthroughHintSchema, type ProblemListItem } from "@/lib/api/schemas"
 import { cn } from "@/lib/utils"
+import { demoPayload } from "@/lib/viz/payloads"
 
 const CONTENT_STALE_MS = 60 * 60_000
 
@@ -97,14 +102,63 @@ function Player({ item }: { item: ProblemListItem }) {
   )
 }
 
+/** The problem a gallery URL asks for: `?p=` or `?problem=` (null: the first problem). */
+export function selectedSlug(params: Pick<URLSearchParams, "get">): string | null {
+  return params.get("p") ?? params.get("problem")
+}
+
+function PatternDemo({ patternId }: { patternId: string }) {
+  const pattern = usePattern(patternId)
+  const demo = pattern.data?.demo
+  const payload = useMemo(() => (demo ? demoPayload(demo) : null), [demo])
+  return (
+    <section aria-labelledby="walkthrough-title" className="flex min-w-0 flex-col gap-4">
+      {pattern.isError ? (
+        <div
+          role="alert"
+          className="flex items-center gap-3 rounded-lg border border-border p-4 text-sm"
+        >
+          <span className="flex-1">Could not load this pattern&apos;s demo.</span>
+          <Button size="sm" variant="secondary" onClick={() => void pattern.refetch()}>
+            <RotateCwIcon /> Try again
+          </Button>
+        </div>
+      ) : !pattern.data || !payload ? (
+        <div className="flex flex-col gap-3" aria-label="Loading the demo" role="status">
+          <Skeleton className="h-8 w-2/3" />
+          <Skeleton className="h-40 w-full" />
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 id="walkthrough-title" className="truncate text-xl font-semibold">
+              {pattern.data.name}: the template at work
+            </h2>
+            <Button asChild size="sm" variant="secondary">
+              <Link href={`/patterns/${encodeURIComponent(patternId)}`}>
+                Pattern page <ArrowRightIcon />
+              </Link>
+            </Button>
+          </div>
+          <WalkthroughPlayer key={patternId} payload={payload} predictDefault={false} />
+        </>
+      )}
+    </section>
+  )
+}
+
 export function WalkthroughGallery() {
   const problems = useProblems()
   const params = useSearchParams()
   const pathname = usePathname()
   const router = useRouter()
   const items = problems.data ?? []
-  const slug = params.get("p")
-  const current = items.find((item) => item.slug === slug) ?? items[0] ?? null
+  const slug = selectedSlug(params)
+  const patternId = params.get("pattern")
+  const found = items.find((item) => item.slug === slug) ?? null
+  // A pattern demo takes the stage unless a problem was asked for too.
+  const showPattern = patternId !== null && found === null
+  const current = found ?? (showPattern ? null : (items[0] ?? null))
   const hrefOf = (item: ProblemListItem) => `${pathname}?p=${encodeURIComponent(item.slug)}`
 
   return (
@@ -150,6 +204,11 @@ export function WalkthroughGallery() {
                 }}
                 className="h-9 rounded-md border border-border bg-surface-2 px-2 text-sm text-text"
               >
+                {current ? null : (
+                  <option value="" disabled>
+                    Choose a problem
+                  </option>
+                )}
                 {items.map((item) => (
                   <option key={item.slug} value={item.slug}>
                     {item.title}
@@ -169,7 +228,13 @@ export function WalkthroughGallery() {
               ))}
             </ul>
           </nav>
-          {current ? <Player item={current} /> : <p className="text-muted">No problems yet.</p>}
+          {showPattern ? (
+            <PatternDemo patternId={patternId} />
+          ) : current ? (
+            <Player item={current} />
+          ) : (
+            <p className="text-muted">No problems yet.</p>
+          )}
         </div>
       )}
     </div>

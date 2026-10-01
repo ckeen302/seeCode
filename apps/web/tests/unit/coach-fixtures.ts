@@ -183,6 +183,7 @@ export function fakeApi<O extends Partial<AttemptApi>>(overrides: O = {} as O) {
       attemptView({ id: "7b1e0000-0000-4000-8000-000000000002", startedAt: "2026-09-30T12:00:00Z" })
     ),
     walkthrough: vi.fn(async () => WALKTHROUGH),
+    recordPredictions: vi.fn(async () => ({ ok: true as const })),
     guestCheckPlan: vi.fn(async () => ({ grade: grade() })),
     guestHint: vi.fn(async (_slug: string, rung: number) => HINTS[rung as 1]),
     ...overrides,

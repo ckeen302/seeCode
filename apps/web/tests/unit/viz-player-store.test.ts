@@ -73,6 +73,20 @@ describe("player store", () => {
     expect(store.getState().playing).toBe(false)
   })
 
+  it("loops when asked: rests on the last step for one tick, then starts over", () => {
+    const store = loaded({ loop: true })
+    store.getState().play()
+    for (let i = 0; i < 100 && store.getState().index < last; i++) store.getState().tick()
+    expect(store.getState().index).toBe(last)
+    expect(store.getState().playing).toBe(true)
+    store.getState().tick()
+    expect(store.getState().index).toBe(0)
+    expect(store.getState().playing).toBe(true)
+    store.getState().pause()
+    store.getState().tick()
+    expect(store.getState().index).toBe(0)
+  })
+
   it("plays at 700 ms / speed", () => {
     expect(intervalMs(1)).toBe(700)
     expect(intervalMs(2)).toBe(350)
