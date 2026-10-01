@@ -96,6 +96,7 @@ MAX_STDOUT = 4000
 # JavaScript reads larger integers inexactly, so they are shown as text.
 MAX_SAFE_INT = 2**53 - 1
 MARKER_RE = re.compile(r"#\s*viz:([a-zA-Z0-9_]+)")
+ADDRESS_RE = re.compile(r" at 0x[0-9a-fA-F]+")
 # The only builtins narration and conditions get (answerWhen is a condition).
 SAY_BUILTINS: dict[str, Any] = {"repr": repr, "len": len}
 CONDITION_BUILTINS: dict[str, Any] = {"len": len}
@@ -131,7 +132,8 @@ def _safe_repr(value: Any) -> str:
 
 
 def _short_repr(value: Any) -> str:
-    text = _safe_repr(value)
+    # Memory addresses ("<function go at 0x7f…>") change on every run and mean nothing.
+    text = ADDRESS_RE.sub("", _safe_repr(value))
     return text if len(text) <= MAX_REPR else text[: MAX_REPR - 1] + "…"
 
 

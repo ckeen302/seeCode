@@ -58,7 +58,7 @@ function StackColumnImpl({ block, reduced }: { block: SeqBlock; reduced: boolean
       ) : (
         <ol
           aria-label={`${block.name}, a stack of ${plural(block.total, "item")}, top first`}
-          className="flex flex-col gap-1 border-b-2 border-border pb-1"
+          className="relative flex flex-col gap-1 border-b-2 border-border pb-1"
         >
           <AnimatePresence initial={false} mode="popLayout">
             {items.map((item, i) => (
@@ -96,7 +96,7 @@ function QueueStripImpl({ block, reduced }: { block: SeqBlock; reduced: boolean 
       ) : (
         <ol
           aria-label={`${block.name}, a queue of ${plural(block.total, "item")}, front first`}
-          className="flex flex-wrap items-center gap-1"
+          className="relative flex flex-wrap items-center gap-1"
         >
           <AnimatePresence initial={false} mode="popLayout">
             {block.items.map((item) => (

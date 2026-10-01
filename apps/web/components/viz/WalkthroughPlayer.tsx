@@ -312,9 +312,15 @@ function PlayerBody({
     <MotionConfig reducedMotion={reduced ? "always" : "never"}>
       <section
         aria-label={traceMine ? "Trace my code" : "Walkthrough"}
-        className={cn("@container flex min-w-0 flex-col gap-3", className)}
+        // Focusable, so its shortcuts (17.4: Space, ←, →) work once it has focus.
+        tabIndex={0}
+        className={cn(
+          "@container flex min-w-0 flex-col gap-3 rounded-lg focus-visible:outline-offset-4",
+          className
+        )}
         onKeyDown={onKeyDown}
         data-testid="walkthrough-player"
+        data-reduced-motion={reduced}
       >
         <Toolbar
           inputs={inputs}
@@ -550,8 +556,8 @@ function Stage({
   const prev =
     prevIndex !== null && prevIndex < steps.length && prevIndex !== index ? steps[prevIndex] : null
   const scene = useMemo(
-    () => (steps.length ? layoutFrame(steps, index, viz, prev, { ghostEnd }) : null),
-    [steps, index, viz, prev, ghostEnd]
+    () => (steps.length ? layoutFrame(steps, index, viz, prev, { ghostEnd, code }) : null),
+    [steps, index, viz, prev, ghostEnd, code]
   )
   const onPick = useCallback((value: number) => store.getState().answerPredict(value), [store])
   const pick = useMemo(() => {
@@ -560,7 +566,7 @@ function Stage({
       return {
         array: feedback.array,
         onPick,
-        picked: Number(feedback.given),
+        picked: Number(feedback.value),
         answer: intValue(feedback.answer),
       }
     }
@@ -618,7 +624,7 @@ function Stage({
         aria-atomic="true"
         className={cn(
           "min-h-6 text-base transition-opacity duration-150",
-          narration.stale ? "text-muted opacity-70" : "text-text"
+          narration.stale ? "text-muted" : "text-text"
         )}
         data-testid="narration"
       >

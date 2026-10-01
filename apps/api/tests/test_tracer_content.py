@@ -129,7 +129,58 @@ def web_fixture() -> str:
             for given in job["inputs"][: 2 if slug in TWO_INPUTS else 1]
         ]
         out[slug] = {"payload": payload, "traces": traces}
+    # Trace my code (M4 acceptance): learners' own solutions, written differently from the
+    # reference, traced with no viz config.
+    out["user"] = {
+        slug: {
+            "code": code,
+            "traces": [
+                tracer.trace(code, by_slug[slug].entry or "", given)
+                for given in _job(by_slug[slug])["inputs"]
+            ],
+        }
+        for slug, code in USER_SOLUTIONS.items()
+    }
     return json.dumps(out, separators=(",", ":"), sort_keys=True) + "\n"
+
+
+USER_SOLUTIONS = {
+    "two-sum": (
+        "class Solution:\n"
+        "    def twoSum(self, nums, target):\n"
+        "        for i in range(len(nums)):\n"
+        "            for j in range(i + 1, len(nums)):\n"
+        "                if nums[i] + nums[j] == target:\n"
+        "                    return [i, j]\n"
+        "        return []\n"
+    ),
+    "valid-palindrome": (
+        "class Solution:\n"
+        "    def isPalindrome(self, s):\n"
+        "        cleaned = [c.lower() for c in s if c.isalnum()]\n"
+        "        left, right = 0, len(cleaned) - 1\n"
+        "        while left < right:\n"
+        "            if cleaned[left] != cleaned[right]:\n"
+        "                return False\n"
+        "            left += 1\n"
+        "            right -= 1\n"
+        "        return True\n"
+    ),
+    "binary-search": (
+        "class Solution:\n"
+        "    def search(self, nums, target):\n"
+        "        def go(lo, hi):\n"
+        "            if lo > hi:\n"
+        "                return -1\n"
+        "            mid = (lo + hi) // 2\n"
+        "            if nums[mid] == target:\n"
+        "                return mid\n"
+        "            if nums[mid] < target:\n"
+        "                return go(mid + 1, hi)\n"
+        "            return go(lo, mid - 1)\n"
+        "        return go(0, len(nums) - 1)\n"
+    ),
+}
 
 
 def test_the_web_trace_fixture_is_current() -> None:

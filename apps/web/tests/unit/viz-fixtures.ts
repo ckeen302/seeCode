@@ -19,7 +19,16 @@ interface Fixture {
   traces: Trace[]
 }
 
-const fixtures = data as unknown as Record<FixtureSlug, Fixture>
+const fixtures = data as unknown as Record<FixtureSlug, Fixture> & {
+  user: Record<UserSlug, { code: string; traces: Trace[] }>
+}
+
+export type UserSlug = "two-sum" | "valid-palindrome" | "binary-search"
+
+/** Learners' own solutions (not the reference), traced with no viz config. */
+export function userFixture(slug: UserSlug): { code: string; traces: Trace[] } {
+  return fixtures.user[slug]
+}
 
 export function fixture(slug: FixtureSlug): Fixture & { viz: VizConfig } {
   const found = fixtures[slug]

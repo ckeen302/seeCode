@@ -120,7 +120,7 @@ describe("predict mode", () => {
     expect(store.getState().playing).toBe(false)
 
     store.getState().answerPredict(7)
-    expect(store.getState().feedback).toMatchObject({ correct: true, given: "7" })
+    expect(store.getState().feedback).toMatchObject({ correct: true, given: "index 7" })
     expect(store.getState().predictions).toEqual([{ id: "predict:0", correct: true }])
     expect(onPrediction).toHaveBeenCalledWith({ id: "predict:0", correct: true })
 

@@ -34,7 +34,8 @@ export interface PendingPredict {
 
 export interface PredictFeedback extends PendingPredict {
   correct: boolean
-  /** What the learner answered, as text. */
+  /** What the learner answered, and as text. */
+  value: unknown
   given: string
 }
 
@@ -107,6 +108,7 @@ export function isCorrect(kind: PredictPoint["kind"], answer: Snap, value: unkno
 
 function answerText(kind: PredictPoint["kind"], value: unknown): string {
   if (kind === "yesno") return value ? "Yes" : "No"
+  if (kind === "index") return `index ${String(value)}`
   return String(value ?? "")
 }
 
@@ -295,7 +297,7 @@ export function createPlayerStore(options: PlayerOptions = {}): PlayerStore {
         const prediction = { id: pending.id, correct }
         set((state) => ({
           pendingPredict: null,
-          feedback: { ...pending, correct, given: answerText(pending.point.kind, value) },
+          feedback: { ...pending, correct, value, given: answerText(pending.point.kind, value) },
           done: [...state.done, pending.n],
           predictions: known ? state.predictions : [...state.predictions, prediction],
         }))

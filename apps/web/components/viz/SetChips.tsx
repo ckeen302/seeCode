@@ -19,8 +19,8 @@ function SetChipsImpl({ block, reduced }: { block: SetBlock; reduced: boolean })
       {block.items.length === 0 ? (
         <p className="font-mono text-sm text-muted">{block.cls}() (empty)</p>
       ) : (
-        <ul aria-label={`${block.name}, ${caption}`} className="flex flex-wrap gap-1.5">
-          <AnimatePresence initial={false}>
+        <ul aria-label={`${block.name}, ${caption}`} className="relative flex flex-wrap gap-1.5">
+          <AnimatePresence initial={false} mode="popLayout">
             {block.items.map((item) => (
               <motion.li
                 key={item.text}

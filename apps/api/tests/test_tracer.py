@@ -150,6 +150,9 @@ def test_objects_show_their_repr() -> None:
             raise RuntimeError("no")
 
     assert snap(Point()) == {"t": "obj", "v": "Point(1, 2)", "cls": "Point"}
+    # No memory addresses: a trace is the same on every run.
+    assert snap(lambda: 0)["v"] == "<function test_objects_show_their_repr.<locals>.<lambda>>"
+    assert " at 0x" not in snap(object())["v"]
     assert snap(Broken()) == {"t": "obj", "v": "<Broken>", "cls": "Broken"}
     assert snap(range(3))["t"] == "obj"
 

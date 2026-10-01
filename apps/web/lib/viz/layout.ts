@@ -148,7 +148,20 @@ export interface Scene {
 export interface LayoutOptions {
   /** Draw a ghost slot after this array's last cell (an index predict may answer there). */
   ghostEnd?: string | null
+  /** The traced code: breaks ties between arrays for automatic pointers. */
+  code?: string
 }
+
+/** Values the panel leaves out: functions and classes are code, not data. */
+const CODE_CLASSES = new Set([
+  "function",
+  "method",
+  "builtin_function_or_method",
+  "type",
+  "module",
+  "classmethod",
+  "staticmethod",
+])
 
 const MAX_LIST_NODES = 24
 
@@ -394,12 +407,45 @@ function autoMarks(name: string, vars: Map<string, Snap>, ctx: Context): Pointer
   for (const [variable, color] of Object.entries(AUTO_POINTERS)) {
     const value = intValue(vars.get(variable))
     if (value === null) continue
-    const fits = arrays.filter(([, snap]) => value >= 0 && value < lengthOf(snap))
-    if (fits.length === 1 && fits[0][0] === name) {
-      out.push({ var: variable, label: variable, color, index: value })
+    // The array the code indexes with this variable (`cleaned[left]`), if one clearly is:
+    // the arrow stays on it, even one past its end, rather than hopping between arrays.
+    const counts = ctx.options.code ? subscripts(ctx.options.code).get(variable) : undefined
+    const ranked = arrays
+      .map(([array, snap]) => ({ array, snap, count: counts?.get(array) ?? 0 }))
+      .sort((a, b) => b.count - a.count)
+    const preferred =
+      ranked.length && ranked[0].count > 0 && ranked[0].count > (ranked[1]?.count ?? 0)
+        ? ranked[0]
+        : null
+    let target: string | null = null
+    if (preferred) {
+      if (value >= -1 && value <= lengthOf(preferred.snap)) target = preferred.array
+    } else {
+      const fits = arrays.filter(([, snap]) => value >= 0 && value < lengthOf(snap))
+      if (fits.length === 1) target = fits[0][0]
     }
+    if (target === name) out.push({ var: variable, label: variable, color, index: value })
   }
   return out
+}
+
+const subscriptMemo = new Map<string, Map<string, Map<string, number>>>()
+const SUBSCRIPT = /\b([A-Za-z_]\w*)\s*\[\s*([A-Za-z_]\w*)\s*[\]+\-]/g
+
+/** How often the code indexes each array with each variable: `nums[i]`, `s[l + 1]`. */
+export function subscripts(code: string): Map<string, Map<string, number>> {
+  let found = subscriptMemo.get(code)
+  if (found) return found
+  found = new Map()
+  for (const match of code.matchAll(SUBSCRIPT)) {
+    const [, array, index] = match
+    const counts = found.get(index) ?? new Map<string, number>()
+    counts.set(array, (counts.get(array) ?? 0) + 1)
+    found.set(index, counts)
+  }
+  if (subscriptMemo.size > 20) subscriptMemo.clear()
+  subscriptMemo.set(code, found)
+  return found
 }
 
 function gridBlock(name: string, snap: Snap, ctx: Context, primary: boolean): GridBlock {
@@ -639,6 +685,7 @@ export function layoutFrame(
         linked.push([name, snap as NodeSnap])
         break
       default: {
+        if (snap.t === "obj" && CODE_CLASSES.has(snap.cls)) break
         const before = ctx.prev.get(name)
         const text = snapText(snap)
         scalars.push({

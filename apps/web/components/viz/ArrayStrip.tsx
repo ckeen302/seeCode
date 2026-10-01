@@ -82,7 +82,9 @@ function ArrayCell({ block, cell, step, scope, reduced, compact, pick, windowLab
     size,
     cell.ghost ? "border-dashed border-border text-muted" : "border-border bg-surface-2 text-text",
     cell.confirmed && "bg-confirmed",
-    cell.dimmed && "opacity-35",
+    // Ruled out (SearchRange): a faded, dashed box. Not 35% opacity on the text, which
+    // would fall below 4.5:1 (18.1); the muted text keeps it readable.
+    cell.dimmed && "border-dashed bg-transparent text-muted",
     cell.mid && "ring-2 ring-ptr-c ring-offset-1 ring-offset-surface",
     cell.changed && "border-accent",
     isAnswer && "border-good ring-2 ring-good",
@@ -145,10 +147,7 @@ function ArrayCell({ block, cell, step, scope, reduced, compact, pick, windowLab
       ) : (
         <div className={box}>{content}</div>
       )}
-      <span
-        aria-hidden
-        className={cn("mt-0.5 font-mono text-xs text-muted", cell.dimmed && "opacity-35")}
-      >
+      <span aria-hidden className="mt-0.5 font-mono text-xs text-muted">
         {cell.ghost ? (cell.index < 0 ? "-1" : cell.index) : cell.index}
       </span>
       <div

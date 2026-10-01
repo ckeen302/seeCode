@@ -40,7 +40,7 @@ export function tokenize(line: string): Token[] {
 const KIND_CLASS: Record<Token["kind"], string> = {
   plain: "",
   comment: "text-muted",
-  marker: "text-muted opacity-70",
+  marker: "text-muted",
   // --good and --accent-2 are below 4.5:1 as light-theme text (docs/DECISIONS.md).
   string: "text-ptr-d",
   number: "text-ptr-d",

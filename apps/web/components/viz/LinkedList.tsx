@@ -28,7 +28,7 @@ function LinkedListImpl({
       </figcaption>
       <ol
         aria-label={`Linked list from ${block.name}: ${block.nodes.map((node) => node.text).join(", then ")}, then ${tail}`}
-        className="flex flex-wrap items-end gap-y-3"
+        className="relative flex flex-wrap items-end gap-y-3"
       >
         <AnimatePresence initial={false} mode="popLayout">
           {block.nodes.map((node) => (
