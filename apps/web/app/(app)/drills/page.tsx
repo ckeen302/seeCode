@@ -1,9 +1,10 @@
 import type { Metadata } from "next"
 
-import { PagePlaceholder } from "@/components/shell/PagePlaceholder"
+import { DrillPicker } from "@/components/drills/DrillPicker"
 
 export const metadata: Metadata = { title: "Drills" }
 
-export default function Page() {
-  return <PagePlaceholder title="Drills" milestone="M5" />
+// Section 6.6: the drill picker.
+export default function DrillsPage() {
+  return <DrillPicker />
 }

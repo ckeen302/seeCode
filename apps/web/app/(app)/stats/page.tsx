@@ -1,9 +1,10 @@
 import type { Metadata } from "next"
 
-import { PagePlaceholder } from "@/components/shell/PagePlaceholder"
+import { StatsView } from "@/components/stats/StatsView"
 
 export const metadata: Metadata = { title: "Stats" }
 
-export default function Page() {
-  return <PagePlaceholder title="Stats" milestone="M6" />
+// Section 6.8: your progress.
+export default function StatsPage() {
+  return <StatsView />
 }

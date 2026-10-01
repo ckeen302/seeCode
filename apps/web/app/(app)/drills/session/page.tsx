@@ -1,9 +1,17 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 
-import { PagePlaceholder } from "@/components/shell/PagePlaceholder"
+import { DrillSession } from "@/components/drills/DrillSession"
+import { LoadingState } from "@/components/today/PageStates"
 
 export const metadata: Metadata = { title: "Drill session" }
 
-export default function Page() {
-  return <PagePlaceholder title="Drill session" milestone="M5" />
+// Section 6.6: `?mode=recognition|toolkit&pattern=&size=`. The search params are read on
+// the client, so the page needs a Suspense boundary to prerender.
+export default function DrillSessionPage() {
+  return (
+    <Suspense fallback={<LoadingState label="Loading your drill" rows={1} />}>
+      <DrillSession />
+    </Suspense>
+  )
 }

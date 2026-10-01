@@ -1,9 +1,10 @@
 import type { Metadata } from "next"
 
-import { PagePlaceholder } from "@/components/shell/PagePlaceholder"
+import { RoadmapView } from "@/components/roadmap/RoadmapView"
 
 export const metadata: Metadata = { title: "Roadmap" }
 
-export default function Page() {
-  return <PagePlaceholder title="Roadmap" milestone="M6" />
+// Section 6.3. Public: signed-out visitors see every pattern as available.
+export default function RoadmapPage() {
+  return <RoadmapView />
 }
