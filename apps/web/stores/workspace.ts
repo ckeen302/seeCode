@@ -155,6 +155,8 @@ export interface WorkspaceState {
   setGuest(guest: boolean): void
   /** Takes the signed-in attempt from `POST /attempts` (resume or create). */
   attach(view: AttemptView): void
+  /** Signed in: `POST /attempts` for the open problem (resume or create), then `attach`. */
+  loadAttempt(): Promise<void>
   attemptFailed(): void
   setCode(code: string): void
   setBottomTab(tab: BottomTab): void
@@ -465,8 +467,11 @@ export function createWorkspaceStore(deps: Partial<WorkspaceDeps> = {}): StoreAp
   let pending: Pending = { ...NOTHING_PENDING }
   // The user typed before the signed-in attempt arrived: their code wins over the API's.
   let editedBeforeAttach = false
-  // A Submit the API has not taken yet (offline): "Try again" sends it again.
+  // A Submit the API has not taken yet (offline, or made before the attempt arrived):
+  // "Try again" sends it again, and `attach` sends one that waited for the attempt.
   let unsentSubmit: { code: string; results: TestResult[]; session: number } | null = null
+  // The session whose `POST /attempts` is in flight (React may run effects twice).
+  let loadingSession: number | null = null
 
   return createStore<WorkspaceState>()((set, get) => {
     // ------------------------------------------------------------ localStorage
@@ -872,7 +877,12 @@ export function createWorkspaceStore(deps: Partial<WorkspaceDeps> = {}): StoreAp
     /** Sends a Submit's results to the API; a pass ends the attempt with its wrap-up. */
     async function reportSubmit(code: string, results: TestResult[], mine: number): Promise<void> {
       const state = get()
-      if (!state.attemptId || state.submitting) return
+      if (!state.attemptId) {
+        // Submitted before the attempt arrived: `attach` sends it.
+        if (state.mode === "user") unsentSubmit = { code, results, session: mine }
+        return
+      }
+      if (state.submitting) return
       const attemptId = state.attemptId
       unsentSubmit = { code, results, session: mine }
       // The submit carries these results; the sync before it need not.
@@ -1037,6 +1047,29 @@ export function createWorkspaceStore(deps: Partial<WorkspaceDeps> = {}): StoreAp
         if (!state.problem || view.slug !== state.slug || state.mode !== "user") return
         if (state.attemptId === view.id && state.coach === "ready") return
         applyView(view, false)
+        const waiting = unsentSubmit
+        if (waiting && waiting.session === session && get().attemptStatus === "active") {
+          void reportSubmit(waiting.code, waiting.results, session)
+        }
+      },
+
+      async loadAttempt() {
+        const state = get()
+        if (state.mode !== "user" || !state.problem) return
+        if (state.coach === "ready" || loadingSession === session) return
+        const mine = session
+        loadingSession = mine
+        if (state.coach === "error") set({ coach: "loading" })
+        try {
+          const view = await api().start(state.slug)
+          if (mine !== session) return
+          get().attach(view)
+        } catch {
+          if (mine !== session) return
+          get().attemptFailed()
+        } finally {
+          if (loadingSession === mine) loadingSession = null
+        }
       },
 
       attemptFailed() {
@@ -1333,6 +1366,8 @@ export function createWorkspaceStore(deps: Partial<WorkspaceDeps> = {}): StoreAp
             results: null,
             resultsKind: null,
             runError: null,
+            // A run still going belongs to the old attempt: its results are dropped.
+            running: "idle",
             solved: false,
             solvedAt: null,
             startedAt: null,
@@ -1351,7 +1386,13 @@ export function createWorkspaceStore(deps: Partial<WorkspaceDeps> = {}): StoreAp
           syncFailed = false
           unsentSubmit = null
           editedBeforeAttach = false
-          set({ results: null, resultsKind: null, solved: false, solvedAt: null })
+          set({
+            results: null,
+            resultsKind: null,
+            running: "idle",
+            solved: false,
+            solvedAt: null,
+          })
           applyView(view, true)
           return true
         } catch (error) {

@@ -5,9 +5,10 @@ import { useEffect, useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { Kbd } from "@/components/ui/kbd"
 import { HELP_KEY, HOTKEYS, formatHotkey, isHelpKey, useIsMac } from "@/lib/keyboard"
+import { COACH_HOTKEYS } from "@/lib/workspace/hotkeys"
 
 // Section 17.4: `?` anywhere opens a list of the keyboard shortcuts. It lists only what works
-// today; the Plan card, hint and walkthrough keys join when those features arrive.
+// today; the walkthrough keys join when the player arrives (M4).
 
 interface Row {
   label: string
@@ -34,6 +35,12 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
         label: "Show or hide the tests panel",
         keys: (mac) => formatHotkey(HOTKEYS.toggleBottomPanel, mac),
       },
+      { label: "Go to the Plan card", keys: (mac) => formatHotkey(COACH_HOTKEYS.focusPlan, mac) },
+      {
+        label: "Check the plan (in the Plan card)",
+        keys: (mac) => formatHotkey(COACH_HOTKEYS.checkPlan, mac),
+      },
+      { label: "Open the next hint", keys: (mac) => formatHotkey(COACH_HOTKEYS.nextHint, mac) },
       // Monaco's own binding: Tab indents until this is turned on (Section 18.8).
       { label: "Let Tab leave the code editor", keys: (mac) => (mac ? "⌃⇧M" : "Ctrl M") },
     ],

@@ -4,9 +4,13 @@ import { ArrowUpRightIcon, CircleCheckIcon } from "lucide-react"
 
 import { DifficultyChip } from "@/components/problems/DifficultyChip"
 import { InlineMarkdown, Markdown } from "@/components/workspace/Markdown"
+import { NotesBox } from "@/components/workspace/NotesBox"
+import { signalDecorator } from "@/components/workspace/SignalText"
+import { usePatterns } from "@/lib/api/hooks"
 import type { ProblemPublic } from "@/lib/api/schemas"
 import { splitExampleInput } from "@/lib/workspace/format"
-import { useWorkspace } from "@/stores/workspace"
+import { findRung } from "@/lib/workspace/ladder"
+import { isSolvedAttempt, useWorkspace } from "@/stores/workspace"
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return <h2 className="text-xs font-medium tracking-wide text-muted uppercase">{children}</h2>
@@ -26,9 +30,15 @@ function ExampleInput({ input }: { input: string }) {
   )
 }
 
-/** Section 7.2: the statement, examples, constraints and targets. Signals arrive in M3. */
+/**
+ * Section 7.2: the statement, examples, constraints and targets, then notes. Once rung 2 is
+ * open, signal phrases in the summary and constraints are highlighted.
+ */
 export function ProblemPanel({ problem }: { problem: ProblemPublic }) {
-  const solved = useWorkspace((state) => state.solved)
+  const solved = useWorkspace(isSolvedAttempt)
+  const signals = useWorkspace((state) => findRung(state.openedRungs, 2)?.signals ?? null)
+  const patterns = usePatterns({ enabled: signals !== null })
+  const decorate = signalDecorator(signals, patterns.data)
 
   return (
     <section
@@ -58,7 +68,11 @@ export function ProblemPanel({ problem }: { problem: ProblemPublic }) {
         </div>
       </div>
 
-      <Markdown text={problem.summary} className="mt-5 flex flex-col gap-3 leading-6" />
+      <Markdown
+        text={problem.summary}
+        decorate={decorate}
+        className="mt-5 flex flex-col gap-3 leading-6"
+      />
 
       <div className="mt-6 flex flex-col gap-3">
         <SectionTitle>Examples</SectionTitle>
@@ -89,7 +103,7 @@ export function ProblemPanel({ problem }: { problem: ProblemPublic }) {
         <ul aria-label="Constraints" className="flex list-disc flex-col gap-1 pl-5 text-sm">
           {problem.constraints.map((constraint, index) => (
             <li key={index}>
-              <InlineMarkdown text={constraint} />
+              <InlineMarkdown text={constraint} decorate={decorate} />
             </li>
           ))}
         </ul>
@@ -105,6 +119,10 @@ export function ProblemPanel({ problem }: { problem: ProblemPublic }) {
             {problem.targets.space} space
           </li>
         </ul>
+      </div>
+
+      <div className="mt-8">
+        <NotesBox slug={problem.slug} />
       </div>
     </section>
   )

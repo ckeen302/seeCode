@@ -6,7 +6,9 @@ import { useState } from "react"
 import { CommandPaletteProvider } from "@/components/shell/CommandPalette"
 import { PreferencesSync } from "@/components/shell/Preferences"
 import { ShortcutsHelp } from "@/components/shell/ShortcutsHelp"
+import { Toaster } from "@/components/ui/toast"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { GuestImport } from "@/components/workspace/GuestImport"
 import { shouldRetry } from "@/lib/api/hooks"
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -26,6 +28,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <PreferencesSync />
           <ShortcutsHelp />
           {children}
+          <GuestImport />
+          <Toaster />
         </CommandPaletteProvider>
       </TooltipProvider>
     </QueryClientProvider>

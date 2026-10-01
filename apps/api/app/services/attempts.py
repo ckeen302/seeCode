@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any, cast
 
-from sqlalchemy import exists, select
+from sqlalchemy import exists, select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -162,7 +162,9 @@ async def start_attempt(
         )
         .on_conflict_do_nothing(
             index_elements=[Attempt.user_id, Attempt.problem_slug],
-            index_where=Attempt.status == ACTIVE,
+            # The index's own predicate, as literal SQL: with a bind parameter Postgres
+            # cannot infer the partial index once the prepared statement goes generic.
+            index_where=text(f"status = '{ACTIVE}'"),
         )
         .returning(Attempt)
     )

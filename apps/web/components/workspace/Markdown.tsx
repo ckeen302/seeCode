@@ -9,12 +9,20 @@ import { Fragment } from "react"
 const INLINE =
   /(`[^`\n]+`)|(\*\*(?![\s*])[^*\n]*?[^\s*]\*\*)|((?<![\p{L}\p{N}_*])\*(?![\s*])[^*\n]*?[^\s*]\*(?![\p{L}\p{N}_*]))/gu
 
-export function renderInline(text: string): React.ReactNode[] {
+/**
+ * Turns a run of plain text (outside code spans) into nodes, e.g. to highlight signal
+ * phrases (7.2). `key` is unique within the rendered text.
+ */
+export type Decorate = (text: string, key: string) => React.ReactNode
+
+const plain: Decorate = (text) => text
+
+export function renderInline(text: string, decorate: Decorate = plain): React.ReactNode[] {
   const nodes: React.ReactNode[] = []
   let last = 0
   for (const match of text.matchAll(INLINE)) {
     const index = match.index ?? 0
-    if (index > last) nodes.push(text.slice(last, index))
+    if (index > last) nodes.push(decorate(text.slice(last, index), `t${last}`))
     const token = match[0]
     if (match[1]) {
       nodes.push(
@@ -26,21 +34,31 @@ export function renderInline(text: string): React.ReactNode[] {
         </code>
       )
     } else if (match[2]) {
-      nodes.push(<strong key={index}>{token.slice(2, -2)}</strong>)
+      nodes.push(<strong key={index}>{decorate(token.slice(2, -2), `b${index}`)}</strong>)
     } else {
-      nodes.push(<em key={index}>{token.slice(1, -1)}</em>)
+      nodes.push(<em key={index}>{decorate(token.slice(1, -1), `i${index}`)}</em>)
     }
     last = index + token.length
   }
-  if (last < text.length) nodes.push(text.slice(last))
-  return nodes
+  if (last < text.length) nodes.push(decorate(text.slice(last), `t${last}`))
+  return nodes.map((node, index) =>
+    typeof node === "string" || node === null ? node : <Fragment key={index}>{node}</Fragment>
+  )
 }
 
-export function InlineMarkdown({ text }: { text: string }) {
-  return <>{renderInline(text)}</>
+export function InlineMarkdown({ text, decorate }: { text: string; decorate?: Decorate }) {
+  return <>{renderInline(text, decorate)}</>
 }
 
-export function Markdown({ text, className }: { text: string; className?: string }) {
+export function Markdown({
+  text,
+  className,
+  decorate,
+}: {
+  text: string
+  className?: string
+  decorate?: Decorate
+}) {
   const blocks = text.trim().split(/\n\s*\n/)
   return (
     <div className={className}>
@@ -50,7 +68,7 @@ export function Markdown({ text, className }: { text: string; className?: string
           return (
             <ul key={index} className="list-disc space-y-1 pl-5">
               {lines.map((line, i) => (
-                <li key={i}>{renderInline(line.replace(/^\s*[-*] /, ""))}</li>
+                <li key={i}>{renderInline(line.replace(/^\s*[-*] /, ""), decorate)}</li>
               ))}
             </ul>
           )
@@ -60,7 +78,7 @@ export function Markdown({ text, className }: { text: string; className?: string
             {lines.map((line, i) => (
               <Fragment key={i}>
                 {i > 0 ? <br /> : null}
-                {renderInline(line)}
+                {renderInline(line, decorate)}
               </Fragment>
             ))}
           </p>

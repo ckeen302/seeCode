@@ -19,13 +19,20 @@ import { ProblemPanel } from "@/components/workspace/ProblemPanel"
 import { WorkspaceTopBar } from "@/components/workspace/WorkspaceTopBar"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { focusPlanCard } from "@/components/workspace/PlanCard"
 import { ApiError } from "@/lib/api/client"
-import { useProblem } from "@/lib/api/hooks"
+import { api, usePatterns, useProblem, useProblemPatterns } from "@/lib/api/hooks"
 import type { ProblemPublic } from "@/lib/api/schemas"
 import { useAuth } from "@/lib/auth/session"
 import { HOTKEYS, useHotkey } from "@/lib/keyboard"
 import { useMediaQuery } from "@/lib/useMediaQuery"
 import { cn } from "@/lib/utils"
+import { useActiveTime } from "@/lib/workspace/activity"
+import { importGuestAttempts } from "@/lib/workspace/guestImport"
+import { COACH_HOTKEYS, isInPlanCard } from "@/lib/workspace/hotkeys"
+import { REVEAL_RUNG, patternFromRungs } from "@/lib/workspace/ladder"
+import { CoachMotion } from "@/lib/workspace/motion"
+import { patternName } from "@/lib/workspace/plan"
 import { WIDE_SCREEN_QUERY, warmUpWorkspace } from "@/lib/workspace/warmup"
 import { useWorkspace, workspaceStore } from "@/stores/workspace"
 
@@ -216,6 +223,48 @@ function LoadError({ error, onRetry }: { error: Error; onRetry: () => void }) {
   )
 }
 
+/**
+ * Signed in: uploads guest work first (journey 4.1), then resumes or creates the attempt
+ * (`POST /attempts`). The store ignores a second call while one is in flight.
+ */
+function useSignedInAttempt(ready: boolean) {
+  const mode = useWorkspace((state) => state.mode)
+  const coach = useWorkspace((state) => state.coach)
+  const slug = useWorkspace((state) => state.slug)
+  useEffect(() => {
+    if (!ready || mode !== "user" || coach !== "loading") return
+    let cancelled = false
+    void importGuestAttempts(api)
+      .catch(() => null) // tried again on the next page; the attempt loads anyway
+      .then(() => {
+        if (!cancelled) void workspaceStore.getState().loadAttempt()
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [ready, mode, coach, slug])
+}
+
+/**
+ * Section 7.1: the top bar names the pattern only once the attempt ended or rung 3 opened,
+ * so it never spoils recognition.
+ */
+function useRevealedPatternName(slug: string): string | null {
+  const fromCoach = useWorkspace(
+    (state) =>
+      state.wrapUp?.patternId ??
+      (state.openedRungs.some((hint) => hint.rung >= REVEAL_RUNG)
+        ? patternFromRungs(state.openedRungs)
+        : null)
+  )
+  const ended = useWorkspace((state) => state.attemptStatus === "finished")
+  const lookUp = ended && fromCoach === null
+  const problems = useProblemPatterns({ enabled: lookUp })
+  const patterns = usePatterns({ enabled: fromCoach !== null || ended })
+  const id = fromCoach ?? (lookUp ? problems.data?.find((p) => p.slug === slug)?.patternId : null)
+  return patternName(id, patterns.data)
+}
+
 /** The Workspace (Section 7): problem, editor with tests, coach. Guests can use it fully. */
 export function Workspace({ slug }: { slug: string }) {
   const wide = useMediaQuery(WIDE_SCREEN_QUERY)
@@ -253,14 +302,33 @@ export function Workspace({ slug }: { slug: string }) {
   }, [])
 
   const ready = Boolean(problem) && openSlug === slug
+  useSignedInAttempt(ready)
+  const patternLabel = useRevealedPatternName(slug)
+
+  // Active time (11.2) counts while the attempt is open and the user is at it.
+  const timing = useWorkspace(
+    (state) => ready && state.coach === "ready" && state.attemptStatus === "active"
+  )
+  useActiveTime(timing, (seconds) => workspaceStore.getState().addActiveSeconds(seconds))
+
   // Capture phase, kept from the editor: Monaco would otherwise insert a line on ⌘↵.
   const hotkeyOptions = {
     enabled: ready && wide === true,
     stopPropagation: true,
     ignoreInDialogs: true,
   }
-  useHotkey(HOTKEYS.run, () => void workspaceStore.getState().run(), hotkeyOptions)
+  // ⌘↵ checks the plan while focus is in the Plan card (7.3), and runs the code elsewhere.
+  useHotkey(
+    HOTKEYS.run,
+    (event) => {
+      const store = workspaceStore.getState()
+      if (isInPlanCard(event.target)) void store.checkPlan()
+      else void store.run()
+    },
+    hotkeyOptions
+  )
   useHotkey(HOTKEYS.submit, () => void workspaceStore.getState().submit(), hotkeyOptions)
+  useHotkey(COACH_HOTKEYS.focusPlan, () => focusPlanCard(), hotkeyOptions)
 
   let body: React.ReactNode
   if (wide === false) body = <NarrowScreenNotice />
@@ -277,9 +345,12 @@ export function Workspace({ slug }: { slug: string }) {
       >
         Skip to content
       </a>
-      <WorkspaceTopBar title={problem?.title ?? (query.isError ? "Problem" : null)} />
+      <WorkspaceTopBar
+        title={problem?.title ?? (query.isError ? "Problem" : null)}
+        pattern={ready ? patternLabel : null}
+      />
       <main id="main" className="min-h-0 flex-1">
-        {body}
+        <CoachMotion>{body}</CoachMotion>
       </main>
     </div>
   )

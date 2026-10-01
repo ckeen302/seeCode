@@ -13,9 +13,16 @@ import { HOTKEYS } from "@/lib/keyboard"
 
 /**
  * Section 7.1 top bar. The breadcrumb reads "Problems · <title>": the pattern name would
- * give the approach away during the attempt.
+ * give the approach away during the attempt. Once the attempt ended or rung 3 opened, it
+ * reads "Problems · <pattern> · <title>".
  */
-export function WorkspaceTopBar({ title }: { title: string | null }) {
+export function WorkspaceTopBar({
+  title,
+  pattern = null,
+}: {
+  title: string | null
+  pattern?: string | null
+}) {
   const palette = useCommandPalette()
   return (
     <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-surface px-2">
@@ -33,6 +40,16 @@ export function WorkspaceTopBar({ title }: { title: string | null }) {
           <li aria-hidden className="text-muted">
             ·
           </li>
+          {pattern ? (
+            <>
+              <li className="shrink-0 px-1 text-muted" data-testid="breadcrumb-pattern">
+                {pattern}
+              </li>
+              <li aria-hidden className="text-muted">
+                ·
+              </li>
+            </>
+          ) : null}
           <li className="min-w-0 truncate px-1 font-medium" aria-current="page">
             {title ?? <Skeleton className="h-4 w-40" />}
           </li>

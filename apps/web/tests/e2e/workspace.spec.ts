@@ -285,21 +285,29 @@ test.describe("Workspace", () => {
     await expect(page.getByRole("heading", { name: "Problem not found" })).toBeVisible()
   })
 
-  test("signed-in users run and submit the same way (attempt sync is M3)", async ({ page }) => {
+  test("a signed-in user's solve is saved to their account", async ({ page, request }) => {
     await page.goto("/login")
     await page.getByRole("button", { name: "New dev user" }).click()
     await expect(page).toHaveURL(/\/today$/)
+    const cookie = (await page.context().cookies()).find((c) => c.name === "seecode-dev-user")
     await openWorkspace(page)
     await expect(page.getByRole("button", { name: /^Account:/ })).toBeVisible()
     await setCode(page, CORRECT)
     await submit(page)
     await expect(summary(page)).toHaveText("Solved.")
+    await expect(page.getByRole("region", { name: "Solved." })).toContainText("Solved on your own.")
     const saved = await page.evaluate(() => ({
       guest: window.localStorage.getItem("seecode:guest:attempts"),
       attempt: JSON.parse(window.localStorage.getItem("seecode:attempt:valid-palindrome") ?? "{}"),
     }))
     expect(saved.guest).toBeNull()
     expect(saved.attempt).toMatchObject({ code: CORRECT, solved: true })
+    const attempt = await (
+      await request.get(`http://localhost:8000/api/v1/attempts/${saved.attempt.attemptId}`, {
+        headers: { "X-Dev-User": decodeURIComponent(cookie?.value ?? "") },
+      })
+    ).json()
+    expect(attempt).toMatchObject({ status: "finished", outcome: "solved_clean", code: CORRECT })
   })
 })
 

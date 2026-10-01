@@ -58,3 +58,23 @@ async def test_abandoned_attempts_leave_the_review_item_alone(engine: AsyncEngin
         assert same is created
         await session.commit()
         assert await session.scalar(select(func.count()).select_from(ReviewItem)) == 1
+
+
+async def test_many_new_attempts_on_one_connection(engine: AsyncEngine) -> None:
+    """The insert's ON CONFLICT names the partial unique index by its predicate. Sent as a
+    bind parameter, Postgres could no longer match the index once asyncpg's prepared
+    statement switched to a generic plan (after 5 runs on one connection), so every later
+    new attempt on that connection failed with a 500."""
+    content = load_content(REAL_CONTENT)
+    problems = content.problems[:8]
+    assert len(problems) == 8
+    user = uuid.uuid4()
+    await create_auth_user(engine, user)
+    sessions = async_sessionmaker(engine, expire_on_commit=False)
+    async with sessions() as session:
+        for problem in problems:
+            attempt = await start_attempt(session, content, user, problem, datetime.now(UTC))
+            assert attempt.problem_slug == problem.slug
+        await session.commit()
+        count = await session.scalar(select(func.count()).select_from(Attempt))
+    assert count == 8

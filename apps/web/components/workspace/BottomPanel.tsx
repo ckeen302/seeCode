@@ -1,9 +1,18 @@
 "use client"
 
-import { ChevronDownIcon, ChevronUpIcon, FootprintsIcon, ScanSearchIcon } from "lucide-react"
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  FootprintsIcon,
+  RotateCwIcon,
+  ScanSearchIcon,
+} from "lucide-react"
+import { useEffect, useRef } from "react"
 
 import { TestsPanel } from "@/components/workspace/TestsPanel"
+import { WalkthroughSlot } from "@/components/workspace/WalkthroughSlot"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { HOTKEYS, formatHotkey, useIsMac } from "@/lib/keyboard"
@@ -34,6 +43,52 @@ function ComingSoon({
   )
 }
 
+/**
+ * The Walkthrough tab (7.6): the payload of rung 5, or of "See it run" after a solve. Before
+ * either, it says how to get there without giving anything away.
+ */
+function WalkthroughTab() {
+  const payload = useWorkspace((state) => state.walkthrough)
+  const loading = useWorkspace((state) => state.walkthroughLoading)
+  const error = useWorkspace((state) => state.walkthroughError)
+  if (payload) {
+    return (
+      <div className="h-full overflow-y-auto px-4 py-4">
+        <WalkthroughSlot payload={payload} />
+      </div>
+    )
+  }
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-2 px-4 py-4" aria-busy="true">
+        <Skeleton className="h-5 w-48" />
+        <Skeleton className="h-16 w-full max-w-2xl" />
+      </div>
+    )
+  }
+  if (error) {
+    return (
+      <div role="alert" className="flex flex-col items-start gap-2 px-4 py-4 text-sm">
+        <p>{error}</p>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => void workspaceStore.getState().showWalkthrough()}
+        >
+          <RotateCwIcon />
+          Try again
+        </Button>
+      </div>
+    )
+  }
+  return (
+    <ComingSoon icon={FootprintsIcon} title="Walkthrough">
+      Watch the reference solution run on real data, step by step. It opens with hint rung 5, or any
+      time after you solve the problem (See it run).
+    </ComingSoon>
+  )
+}
+
 /** The middle column's bottom panel (Section 7.1): Tests, Walkthrough, Trace my code. */
 export function BottomPanel({
   collapsed,
@@ -44,13 +99,39 @@ export function BottomPanel({
 }) {
   const tab = useWorkspace((state) => state.bottomTab)
   const running = useWorkspace((state) => state.running)
+  const focusRequest = useWorkspace((state) => state.bottomFocus)
+  const sectionRef = useRef<HTMLElement>(null)
+  // A request made before this panel mounted (another problem) is not for it.
+  const handledRequest = useRef(focusRequest)
+  const toggleRef = useRef(onToggleCollapsed)
+  useEffect(() => {
+    toggleRef.current = onToggleCollapsed
+  })
   const mac = useIsMac()
   const hint = (hotkey: (typeof HOTKEYS)[keyof typeof HOTKEYS]) =>
     mac === null ? undefined : formatHotkey(hotkey, mac)
   const toggleLabel = collapsed ? "Show the tests panel" : "Hide the tests panel"
 
+  // Rung 5 and See it run open the Walkthrough tab and move focus to it (7.4), opening a
+  // collapsed panel first.
+  useEffect(() => {
+    if (focusRequest === handledRequest.current) return
+    handledRequest.current = focusRequest
+    toggleRef.current(false)
+    const frame = requestAnimationFrame(() => {
+      sectionRef.current
+        ?.querySelector<HTMLElement>("[role=tab][data-state=active]")
+        ?.focus({ preventScroll: true })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [focusRequest])
+
   return (
-    <section aria-label="Tests" className="@container flex h-full min-h-0 flex-col bg-surface">
+    <section
+      ref={sectionRef}
+      aria-label="Tests"
+      className="@container flex h-full min-h-0 flex-col bg-surface"
+    >
       <Tabs
         value={tab}
         onValueChange={(value) => {
@@ -114,10 +195,7 @@ export function BottomPanel({
               <TestsPanel />
             </TabsContent>
             <TabsContent value="walkthrough" className="min-h-0">
-              <ComingSoon icon={FootprintsIcon} title="Walkthrough">
-                Step through the reference solution on real data, with a one-line reason for every
-                step and a predict mode. It arrives in milestone M4.
-              </ComingSoon>
+              <WalkthroughTab />
             </TabsContent>
             <TabsContent value="trace" className="min-h-0">
               <ComingSoon icon={ScanSearchIcon} title="Trace my code">
