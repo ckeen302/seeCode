@@ -1,0 +1,231 @@
+{
+  "slug": "minimum-window-substring",
+  "title": "Minimum Window Substring",
+  "leetcodeUrl": "https://leetcode.com/problems/minimum-window-substring/",
+  "difficulty": "hard",
+  "patternId": "sliding_window",
+  "order": 26,
+  "summary": "You get two strings, `s` and `t`. Find the shortest substring of `s` that contains every character of `t`, counting repeats: if `t` holds two a's, the substring needs at least two a's. Return that substring, or an empty string if no substring of `s` has them all. Letter case matters. When an answer exists, exactly one substring is the shortest.",
+  "examples": [
+    {
+      "input": "s = \"bxxaxcyab\", t = \"abc\"",
+      "output": "\"cyab\"",
+      "explanation": "\"cyab\", from index 5 to 8, holds an a, a b and a c. \"bxxaxc\" at the start holds them too, but it is 6 long."
+    },
+    {
+      "input": "s = \"kayak\", t = \"aa\"",
+      "output": "\"aya\"",
+      "explanation": "t needs two a's, so the window must run from the first a to the second: \"aya\"."
+    },
+    {
+      "input": "s = \"pq\", t = \"pqq\"",
+      "output": "\"\"",
+      "explanation": "s has only one q, and t needs two."
+    }
+  ],
+  "constraints": [
+    "1 ≤ len(s), len(t) ≤ 10⁵",
+    "s and t contain uppercase and lowercase English letters only"
+  ],
+  "targets": {"time": "O(n)", "space": "O(1)"},
+  "entry": "minWindow",
+  "starterCode": "class Solution:\n    def minWindow(self, s: str, t: str) -> str:\n        pass\n",
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "sliding_window",
+      "structures": ["counter"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Grow the window until it covers t's counts, then shrink it from the left while it still covers them, keeping the shortest.",
+      "twistKeywords": [
+        [
+          "shrink",
+          "move l",
+          "move the left",
+          "advance l",
+          "left pointer",
+          "contract",
+          "from the left"
+        ],
+        [
+          "cover",
+          "contain",
+          "valid",
+          "satisf",
+          "all of t",
+          "every character",
+          "enough",
+          "still has",
+          "count"
+        ]
+      ]
+    },
+    {
+      "id": "check_every_substring",
+      "patternId": "brute_force",
+      "structures": ["counter"],
+      "time": "O(n²)",
+      "space": "O(1)",
+      "twist": "For every start, extend the end until the substring covers t's counts, and keep the shortest one found.",
+      "twistKeywords": [
+        [
+          "every start",
+          "each start",
+          "every substring",
+          "each substring",
+          "all substrings",
+          "every index",
+          "each index",
+          "for each",
+          "for every",
+          "nested",
+          "brute"
+        ],
+        ["cover", "contain", "count", "shortest", "extend"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but starting over from every index takes O(n²) time, about 10¹⁰ steps for 10⁵ letters. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "shortest substring",
+      "meaning": "A contiguous stretch that must meet a goal, as short as possible: grow the window until it meets the goal, then shrink it from the left while it still does.",
+      "pointsTo": "sliding_window"
+    },
+    {
+      "phrase": "counting repeats",
+      "meaning": "Covering t means having at least as many of each character as t has. Compare counts, and track how many of t's characters are fully covered so the check is O(1).",
+      "pointsTo": "structure:counter"
+    },
+    {
+      "phrase": "English letters only",
+      "meaning": "At most 52 different characters, so the counts take O(1) space however long the strings are.",
+      "pointsTo": "toolkit:counter"
+    }
+  ],
+  "constraintReading": "Both strings can reach 10⁵ characters, so trying every start and extending from it is about 10¹⁰ steps: O(n²) is out. O(n) means each pointer only moves forward, so every character enters the window once and leaves at most once. Counts of at most 52 letters take O(1) space, and keeping a tally of fully covered letters avoids comparing all the counts at every step.",
+  "hints": {
+    "clarify": "Does order matter inside the window? No, and other letters may sit in it too; it only needs enough of each character of `t`. Try s = \"xaybzab\" and t = \"ab\" by hand: \"ayb\" (index 1 to 3) holds an a and a b, but \"ab\" at index 5 is shorter, so the answer is \"ab\". With t = \"aa\" you need two a's: \"aybza\", index 1 to 5.",
+    "approach": "Sliding window that grows to cover `t`, then shrinks. Count the characters of `t` in `need`. Move `r` right, adding each character to the window's counts, and keep `met`, how many distinct characters of `t` the window holds enough of. When `met` reaches the number of distinct characters in `t`, the window covers `t`: record it if it's the shortest so far, then drop `s[l]` and move `l` right, and repeat while the window still covers `t`. Once it doesn't, go back to growing.",
+    "whyNot": "Starting from every index and extending until the substring covers `t` is O(n²). Comparing all the counts of the window with `need` at every step works, but it adds up to 52 checks per step; the `met` tally answers \"does it cover t?\" in O(1). Growing alone can't find the answer: the shortest window usually starts after letters you can drop from the left.",
+    "slots": {
+      "setup": "`need`, the counts of `t`; an empty count for the window; `met` = 0, the number of characters of `t` covered so far; `l` = 0; and the best window so far, none yet.",
+      "loop": "Move `r` across `s` once, adding one character to the window at each step.",
+      "update": "Add `s[r]` to the window's counts; if its count just reached what `t` needs, `met` goes up by one. While `met` covers all of `t`, remove `s[l]` from the counts, lower `met` if that character now falls short, and move `l` right.",
+      "record": "Each time the window covers `t`, before shrinking, compare its length `r − l + 1` with the best so far and keep the shorter.",
+      "return": "Return the best window as a substring, or an empty string if the window never covered `t`."
+    }
+  },
+  "solution": {
+    "code": "class Solution:\n    def minWindow(self, s: str, t: str) -> str:\n        need = Counter(t)\n        window: Counter[str] = Counter()\n        met = 0  # characters of t the window holds enough of\n        best_l, best_len = 0, len(s) + 1\n        l = 0\n        for r, c in enumerate(s):\n            window[c] += 1  # viz:grow\n            if c in need and window[c] == need[c]:\n                met += 1  # viz:met\n            while met == len(need):\n                if r - l + 1 < best_len:  # viz:cover\n                    best_l, best_len = l, r - l + 1  # viz:record\n                out = s[l]\n                window[out] -= 1  # viz:shrink\n                if out in need and window[out] < need[out]:\n                    met -= 1  # viz:lost\n                l += 1\n        if best_len > len(s):\n            return \"\"  # viz:none\n        return s[best_l : best_l + best_len]  # viz:done\n",
+    "explanation": "`r` moves across `s` once and `l` only ever moves right, so each character enters the window once and leaves at most once: O(n) time, plus O(m) to count `t`. Each step changes one count and maybe `met`, which tells in O(1) whether the window covers `t`. The counts hold at most 52 letters: O(1) space. `met` changes only when a count crosses exactly what `t` needs, so extra copies of a letter never count twice.",
+    "toolkit": ["counter"]
+  },
+  "viz": {
+    "primary": "s",
+    "pointers": [
+      {"var": "l", "into": "s", "label": "l", "color": "a"},
+      {"var": "r", "into": "s", "label": "r", "color": "b"}
+    ],
+    "window": {"into": "s", "start": "l", "end": "r", "inclusive": true},
+    "range": null,
+    "roles": {"stack": [], "queue": [], "hidden": []},
+    "confirmed": null,
+    "events": [
+      {"id": "grow", "at": "grow", "label": "grow", "say": "{c!r} enters the window on the right"},
+      {
+        "id": "met",
+        "at": "met",
+        "label": "covered",
+        "say": "The window now holds as many {c!r} as t needs: {met + 1} of the {len(need)} different characters of t are covered"
+      },
+      {
+        "id": "cover",
+        "at": "cover",
+        "when": "r - l + 1 >= best_len",
+        "label": "covers",
+        "say": "s[{l}..{r}] covers t, but at {r - l + 1} long it is no shorter than the best so far, {best_len}"
+      },
+      {
+        "id": "record",
+        "at": "record",
+        "label": "new best",
+        "say": "s[{l}..{r}] covers t and is {r - l + 1} long, the shortest so far"
+      },
+      {
+        "id": "shrink",
+        "at": "shrink",
+        "label": "shrink",
+        "say": "The window covers t, so try a shorter one: drop {out!r} from the left"
+      },
+      {
+        "id": "lost",
+        "at": "lost",
+        "label": "lost",
+        "say": "Without that {out!r}, the window is short of what t needs, so stop shrinking and grow again"
+      },
+      {
+        "id": "none",
+        "at": "none",
+        "label": "not found",
+        "say": "The window never covered t, so there is no answer: return an empty string"
+      },
+      {
+        "id": "done",
+        "at": "done",
+        "label": "return",
+        "say": "The shortest window that covers t starts at {best_l} and is {best_len} long: {s[best_l : best_l + best_len]!r}"
+      }
+    ],
+    "predict": [
+      {
+        "atEvent": "grow",
+        "occurrence": 3,
+        "ask": "Will this character complete the cover of t?",
+        "kind": "yesno",
+        "answerWhen": "c in need and window[c] + 1 == need[c] and met + 1 == len(need)"
+      },
+      {
+        "atEvent": "shrink",
+        "occurrence": 1,
+        "ask": "Once this character is dropped, will the window still cover t?",
+        "kind": "yesno",
+        "answerWhen": "not (out in need and window[out] - 1 < need[out])"
+      }
+    ]
+  },
+  "tests": [
+    {"id": "e1", "args": ["bxxaxcyab", "abc"], "expected": "cyab", "hidden": false},
+    {"id": "e2", "args": ["kayak", "aa"], "expected": "aya", "hidden": false},
+    {"id": "e3", "args": ["pq", "pqq"], "expected": "", "hidden": false},
+    {"id": "h1", "args": ["m", "m"], "expected": "m", "hidden": true},
+    {"id": "h2", "args": ["m", "M"], "expected": "", "hidden": true},
+    {"id": "h3", "args": ["abc", "cba"], "expected": "abc", "hidden": true},
+    {"id": "h4", "args": ["aAbBa", "Ab"], "expected": "Ab", "hidden": true},
+    {"id": "h5", "args": ["xxyyzyx", "xyz"], "expected": "zyx", "hidden": true},
+    {"id": "h6", "args": ["bbaac", "aac"], "expected": "aac", "hidden": true},
+    {"id": "h7", "args": ["abcdef", "f"], "expected": "f", "hidden": true},
+    {"id": "h8", "args": ["thequickbrownfox", "oo"], "expected": "ownfo", "hidden": true},
+    {
+      "id": "h9",
+      "args": [
+        "ddgachacgdgdadccdhgfdaaebaahffggdaedggcabbcaagdfbfbgaghbafbdbcefgfhgaacabhacaagaegcbecbbaagaehfgabbdhdedcggfbbcaacgdfbdefghdhdabbaddbccaccaaghbgdfcdaaeegdhhfeeehaegaaeceddegafdhebabaabcgbfbhghdgeebhbfhdecbedfchahbhhedhhhdcbebddabedhbcfghgdedbcgehbhaecfhffafgaafcffdcafgbcadhhccbggeaegehgdahecdccfafhbcfffgheegfgheeegehhfeafgecddhdbbfcdhfahedegcagdaaffdfggeabbffbhaeaebehfehehfeeceehafbbfabagdhagbgddhehbecbabaeccfeadcaehdddecbbbgaagfceeagecgfafafhghecdbehfdaccabfgccceebcfgdfdcfcghfbgebaagedafbhedfaacedhfafgehbhegdefgdbachfhdebebdadafghaghhfhdeehcchcchaddbbcdhghfgdcfacchahcggcfdgfeeaebghddhagdcecdbghhgfbbgcfahgcecfeabggeeehfhgfbggfdhehfehgdgfbhagghfeffagcghdddedgafcdehgahefahcaagahhbbhdgbchfgdfbbgeahgcacefbdfabaacgddbddhaaegbcacdcecfdacffhccefeebacceghdbegehhcghdchdagcagfccahcadgfaacghfebdgahhbhfcechbcggchdhghfgdhhdcebdhaceehhfcdhhbccfbcgbcgffegbbcgcccehghgfeddeeacgdacbgfbffaefdhchddcffghcdegbheehdbfahdccbheeggfbdfdfbacfcahabgeefhehhbbbgfbgagegggeccdebdaeedbedagabceagaeghcaadfhecaegfcbcdggcadcafhaaacbacebgegefcehafdaffeaffbbadhcefeagggdcdfghehccchdfhdeaccdhagadhceacgbcadffgehfffceddeeebbadchcbgdhbdebchceaheedacdhgcegfbabddhcbaefhcbehafdgghfdcedbfhdfgedghgcccehfhbbdfhdgdfehgbcbcdchfcbadefeffchhcgegedageahdaeddbfbdbhhddedffdhdaabfgfdcbhdeheegdfccgfccdcbfffgecheegcfhfgbbgddcdchbfebdehdfgebebgecfhhfdfgdbebggfhdgcbfgaafgbgegdhgchbbagcaeefefdddafcdfeffdaahabcgcchgehcdfeeahdaegegcafbccbgehbdahaafbefabhbbgecegehhagbbgfhhcfhabgaggdheceafacaehdbeeegfbecfdafgeghagceadfcfghcfbcdffafdghdfaecdahghbgggaagdccgddehcbddehagbahebdffdaaaaaaebbdfbecgdbfadgbhbgbebaacacadhadedaabbbbfaccaefdaafhdfbcdedgebgcabhgbdfbhhcfbdecghfhadgcgceahfcefbhedhbbcaaebfbbbedgdehfgabbbdhffdeffcddcafhcfbdedfhbgachfebghdhababfggchehgbfddecgdaefecabfgbehabfeedggdehgacegghcbcaddacdggccdhfgaehbdcgcaaadfcbfhdcddhdgbaghdeehgbheggbcbadghagfdhhachfdedagcaegecgcchgcedhbgbahhdaaehfbagagabgfadeabbacbaeccaccffcdfhbfbagbfhhagehheafgehadfcddcacfcgcfhabbcfaagbdhehcadahcagffefehdeheedhbgebfcdfbabegghcbfacdbhhegfafdehdhbghgfaeccaecdecggadbaaaafehdbdefeafcacbgbbcddcaaaefgdegccecfdbeedfadgdcdabggcbbdcbhdfbbcffggbggegeebddfeeddgfdchebcbhahcdchghcfgdhfbgeecfbahgbebfedegbhhehgbhgecfeeafcadcdbfbaafchbaeahdefhefbahhcefefeabeeedaahefecgceffggfhhabadeccgfdffdffheggbffececdeeebgdafcbaehbahfhdbagcaahfaeccefhgbcgagfgdaegefdcfdahbebgfegdebaggbdabfgfbgfdecbeacfbaefgdhfdghaeegeadfhhbhdcahegfcbchchceccgeecbhfbahafgaegfahdhggeaabaghhegcebbcaefbccbhgffacdcagcdfceebafgecgccbbgahgcagfbfghedhbcbchaffeaeeebbbcbaaadeccgffhfdgchgccfdbfhbfebfgdaXYZQhhfgggbfgfaedcfedfhgcfhdgegfhbaefeegadcccfaccddheebfbbgdbfdggfeedfdgfahcfbdfgfaccheccfaacaahhcafafcegcadbhbfbbeddagaddbffeggebdghabgchbacacbheehehhdddghdgbbddacdfbhfbgbdfcgeefccgbacahgcbdfehecebeafedchdegcgcdghghaddehgebgddgffgfeccdcgchfaedbfadaegeheadbedcbaeaegeedghaefffgefeghfbgeeddhceedcffehhfbheahaafefefaffdagbegfcheehdaehfegdbfbbhfgchhbcddhbgfcbeabedcahgdabacgeaffahgafbgccfgbhcedbcgcechceffacagbecfgdhhaafdcgeaghadedhadbfhgggbbhafbghghghcgahbfdeghafcbccdhdahgdgbbegegceceaafchacaaeahebhbg",
+        "QZYX"
+      ],
+      "expected": "XYZQ",
+      "hidden": true
+    }
+  ],
+  "related": [
+    {
+      "slug": "permutation-in-string",
+      "relation": "Also compares a window's letter counts with another string's, but the window has a fixed size and must match the counts exactly."
+    },
+    {
+      "slug": "longest-substring-no-repeat",
+      "relation": "The mirror image: there you keep the longest window that stays valid; here the shortest window that meets the goal."
+    }
+  ]
+}

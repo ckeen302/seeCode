@@ -4,7 +4,7 @@
   "leetcodeUrl": "https://leetcode.com/problems/permutation-in-string/",
   "difficulty": "medium",
   "patternId": "sliding_window",
-  "order": 121,
+  "order": 25,
   "summary": "You get two strings, `s1` and `s2`. Return true if some substring of `s2` is a rearrangement of `s1`: it has exactly the same letters, each appearing the same number of times, in any order. Otherwise return false.",
   "examples": [
     {
@@ -20,6 +20,8 @@
   ],
   "constraints": ["1 ≤ len(s1), len(s2) ≤ 10⁴", "s1 and s2 contain lowercase English letters only"],
   "targets": {"time": "O(n)", "space": "O(1)"},
+  "entry": "checkInclusion",
+  "starterCode": "class Solution:\n    def checkInclusion(self, s1: str, s2: str) -> bool:\n        pass\n",
   "approaches": [
     {
       "id": "optimal",
@@ -114,11 +116,121 @@
     }
   ],
   "constraintReading": "Both strings can reach 10⁴ letters. Recounting every window of s2 costs O(n·m): about 2.5·10⁷ steps when s1 is half as long as s2, which is O(n²) and slow in Python. Aim for O(n) by updating the counts as the window moves one letter. With only 26 possible letters, the counts take O(1) space, and comparing two sets of counts is a fixed 26 steps.",
+  "hints": {
+    "clarify": "Does the rearranged copy have to be one unbroken run of `s2`? Yes: a substring, so its letters sit side by side. Try s1 = \"ab\" and s2 = \"xbay\" by hand: the run \"ba\" at index 1 has one a and one b, so the answer is true. With s2 = \"axby\", no run of two letters holds both, so it's false, even though s2 contains an a and a b.",
+    "approach": "Sliding window of fixed size with letter counts. Any match is exactly len(s1) letters long, so slide a window of that size across `s2`. Count the letters of `s1` once. As the window moves one step right, add the letter that enters on the right and remove the one that leaves on the left: two updates, not a recount. After each step, compare the window's counts with `s1`'s counts; equal counts mean the window is a rearrangement of `s1`.",
+    "whyNot": "Trying every ordering of `s1` is hopeless: a 10-letter word has 3.6 million of them. Recounting each window of `s2` from scratch works, but it costs len(s1) steps per window, O(n·m) in total. Sorting each window and comparing it with sorted `s1` is slower still.",
+    "slots": {
+      "setup": "The letter counts of `s1`, an empty count for the window, and `l` = 0, the window's left end. If `s1` is longer than `s2`, no window fits.",
+      "loop": "Move the right end `r` across `s2` one letter at a time.",
+      "update": "Add `s2[r]` to the window's counts. Once the window is longer than `s1`, remove `s2[l]` from the counts and move `l` right, so the window stays exactly len(s1) letters long.",
+      "record": "Compare the window's counts with `s1`'s counts. If they're equal, the window is a rearrangement of `s1`.",
+      "return": "Return true at the first match; if `r` reaches the end without one, return false."
+    }
+  },
+  "solution": {
+    "code": "class Solution:\n    def checkInclusion(self, s1: str, s2: str) -> bool:\n        need = Counter(s1)\n        window: Counter[str] = Counter()\n        l = 0\n        for r, c in enumerate(s2):\n            window[c] += 1  # viz:grow\n            if r - l + 1 > len(s1):\n                window[s2[l]] -= 1  # viz:drop\n                if window[s2[l]] == 0:\n                    del window[s2[l]]\n                l += 1\n            if window == need:  # viz:compare\n                return True  # viz:found\n        return False  # viz:done\n",
+    "explanation": "`r` visits each letter of `s2` once, and each step changes at most two counts. Comparing two Counters looks at their keys, at most 26 lowercase letters each, so it takes a fixed number of steps: O(n) time in total, with n = len(s1) + len(s2) for counting `s1`. Both Counters hold at most 26 keys: O(1) space. Deleting a letter whose count drops to 0 keeps the window's Counter showing only letters it really holds.",
+    "toolkit": ["counter"]
+  },
+  "viz": {
+    "primary": "s2",
+    "pointers": [
+      {"var": "l", "into": "s2", "label": "l", "color": "a"},
+      {"var": "r", "into": "s2", "label": "r", "color": "b"}
+    ],
+    "window": {"into": "s2", "start": "l", "end": "r", "inclusive": true},
+    "range": null,
+    "roles": {"stack": [], "queue": [], "hidden": []},
+    "confirmed": null,
+    "events": [
+      {"id": "grow", "at": "grow", "label": "grow", "say": "{c!r} enters the window on the right"},
+      {
+        "id": "drop",
+        "at": "drop",
+        "label": "drop",
+        "say": "The window is longer than s1, so {s2[l]!r} leaves on the left"
+      },
+      {
+        "id": "match",
+        "at": "compare",
+        "when": "window == need",
+        "label": "match",
+        "say": "s2[{l}..{r}] has exactly the letter counts of s1: it is a rearrangement of s1"
+      },
+      {
+        "id": "fill",
+        "at": "compare",
+        "when": "r - l + 1 < len(s1)",
+        "label": "fill",
+        "say": "The window holds {r - l + 1} of the {len(s1)} letters a match needs, so it can't match yet"
+      },
+      {
+        "id": "compare",
+        "at": "compare",
+        "when": "window != need and r - l + 1 == len(s1)",
+        "label": "compare",
+        "say": "s2[{l}..{r}] is as long as s1, but its letter counts differ from s1's"
+      },
+      {
+        "id": "done",
+        "at": "done",
+        "label": "return",
+        "say": "No window of len(s1) letters matched s1's counts, so return false"
+      },
+      {"id": "check", "at": "compare", "label": "check"}
+    ],
+    "predict": [
+      {
+        "atEvent": "grow",
+        "occurrence": 4,
+        "ask": "With this letter in, will a letter have to leave on the left?",
+        "kind": "yesno",
+        "answerWhen": "r - l + 1 > len(s1)"
+      },
+      {
+        "atEvent": "check",
+        "occurrence": 5,
+        "ask": "Do the window's counts match s1's counts?",
+        "kind": "yesno",
+        "answerWhen": "window == need"
+      }
+    ]
+  },
+  "tests": [
+    {"id": "e1", "args": ["ate", "greatly"], "expected": true, "hidden": false},
+    {"id": "e2", "args": ["noon", "onion"], "expected": false, "hidden": false},
+    {"id": "h1", "args": ["a", "a"], "expected": true, "hidden": true},
+    {"id": "h2", "args": ["ab", "a"], "expected": false, "hidden": true},
+    {"id": "h3", "args": ["xyz", "zyx"], "expected": true, "hidden": true},
+    {"id": "h4", "args": ["ab", "axby"], "expected": false, "hidden": true},
+    {"id": "h5", "args": ["aab", "abab"], "expected": true, "hidden": true},
+    {"id": "h6", "args": ["aab", "bbbaba"], "expected": true, "hidden": true},
+    {"id": "h7", "args": ["abc", "cccbbbaaabca"], "expected": true, "hidden": true},
+    {"id": "h8", "args": ["q", "abcdefg"], "expected": false, "hidden": true},
+    {
+      "id": "h9",
+      "args": [
+        "gadehaeaejgbjbjdijfcifihibbjjfgfdcjhbbgj",
+        "cquexbrfcshynronzptqupobpjfbnmuoaphntslcedchvfuyeheylgfustzrqoljlppoovnomlqdyinkzawszthsafxtiqdxziszbbqzfwbiftkcdnvtwuerleicscwsgrwufcctakwfqzhicwcwdjaotjzzljiibfinbqjajcxtekpbhpolqbjokjyelnchbudesmqaeevcwukjrzbclddrtbdwvyxpbzzczcgcpfymytixxvfmwlrdbcjxqrrgfcqmdxoctuyhmfzzeqgjpnwgcomejhlffnybkpzwhxgkintolbglupxbqavddrmizzteuzalnnikbcnpohbryimanackgcbyadbpbsdduuqzidqmpsnqeytsfqtbiamnbqlxyweydpkiabisrorilnsrbqdsdfhtzrkywqwbejeksqiiwnupdvorrtxglwzyaentzahlyjwdmzltkavduvwzswcbtnpszsgsearfszatruroljhjbhaonrnpqssckpnsiokxjihmvayzkfibtsmgktzawccddyytpvlcpzcphtlzuiyfkgeffrhvnkhgyvswycidkmnvpupssaujjouhhadwhbmtcewdnnbvkqqwmeythdghkkeucguicqpxedstyglskrscmeooymfrurerzgkkcmcgfplhvhfqiqlptbgcavltfxrxbdwedbbqhjvjfzajbthszvineklrfwjntsczyjhyzelulpthrzwwemvrmniymbdbgstcukkhxfrczqrdahnpvojklxcacqjkfavtjaqrwyiijgysyididlhpvytslcbkmocymafampkcxkvtgzfvlumfqykkucghqkmveafwoglqmkajemmlacxqawqzvhcytvtrpkiwxjqxwlszofzlrrrnewsrqzenuetqprnkspeizfnamawqitnweejurpiwofbcrfoxansgfwevelkdjthgiofiwjzmikztzryarfwcmiiynwkplmjmnjegolhhvglthbrzfqjbfpnkavoursnciexlejghdqyowghkokxegpuykxukwvnpxlexstudqltuwjbtigwigeomdctgghazechqmdlwurtyeqcorhnbdkknorsviyuhddfbdmddlvrfqssykagwezxbdstkekrtgoxglfqrjtjnfdzyoyccrqfglodqzzpweqictbgvbldzbqlpeplijczyuomaspozlfzdsizphauetnxfpzmqbegnpmqentaxxupmivxywfltftbzxyrghvbedlshgxgpemojdzypnhndhjjuscgmmliefgcjboeekebaweauzdjxpmcybvyewvukvwxeobpmnyyvkitaycqzyvlufmyqmuqdvmhwhramckdpilvccxdsytfwwhtzeyupopndcbzdxufnhpnaypgrwmfogcoxxodullomqnnbrbzscctegzblytkrkzbzlxgjqmmzsmrgtcaulancepfdcqmduxqzjqvadwtrypulrabwypqwscdxmnigonwjuvublutltfpbdklygfksojbbevjdyhyjljkhpplvijllhupicjkkcukhmszmuarhcigiwvzstimrsjrbuwhwpcewjduxirawtposqbtaxtleejlcqsydvbrhamafpaxgtzluupxioynaiqjevuhtksaahnnbyxxgdqermeijvqxuhfyenpwpnejjovzrwoeotircuihkhmioakcdpghauofgcjjyypqeajpgijbnnrccsfvmkvjjlqdijhlhihukcbszcqibfdvvthcmlfxykflnjdjynqpmzfxovoxnlgoewpkflyoawuxglyxlrbqcdrgbmctbljwpccmrctsnvtvcgvmsyvzsmhumlirmyniqahjhsinvesymbgjupwhzgoiacktfknbckrrusxnevmoqrwyupvkhqghsuricjuwqkjnziznzuuvsgbsjgoasahubzqhrkxnjuxcvpfmvyissahthabyulalynrikyxsruimjzqegiimtrkcvfmffbbykmpdpghgpuzzwuargstaclsxrcqepzecwmultjkcayminfxbiyrqtoonquryhtvykqvhjyehzhxnxlyullgjsoujmlkoaezubonrknvbivzptctftoeadkobfwvziadojfybvqjkcmkiiqizheetccgewdlbwewqlgxrdgcfmxfrloalgyjcfphubanlqbdmjxudhlotdaxsaoxumepvlpgtycxzenhlcumnvqtyjmfuwhydzlfcffmyisaptgajaaaexapcxwinmiczmvmfhtxekfpyetywbwmkmfoorapxqnjkrtolpnmoxlqdchvebypvcpvvsrynvdamzvaktbajbvvafxzapnhfmcnoxroabuveoyvyvyznfsihtxprwxzgqboghrmonmfzvoodhyhupsvqjatngsfdfwqlfstsaukicehxsrapcjtjzjkotxmmpdxrphqyithlmhzlvtexihsqlvhpihlpslkhlonhpcvwsbscohgaesnydixjthaktzbfsdwmhrnpbegkdlnrwbsrchxykrouvnamgotgmsevecarrvojnnbraittsdbntpjxkuopteqbzgofykemodaetwybgusufhgpcjproxfaclvdpszgsrwjvthftnrkvxcnxgmrgscbqmgagclyssiomtuccospcyqwtqvrfnwqtibswyzkwxzypgyzfzwghcztyldtdcartybjuwwrjakryowcacmmuaqpygljgfmvbdbuogepghcytxmssdalszqaaduwnusugwhqtlkamssghbcwjvnzsikzduvpqzwookvnklzetzkkqifoyzfnxahwnbayofpbavykjigpimjzpyvyridaxotllrsesfdinpnxlxvbxdqkjeehdbgooxkpnqwffyqvqnaobwbfcvaovodgpzihkjcypzocipkjnczzeuwmfjbfplbuddsthlbzxujuoiiwtkyftsemgznitithwrsuzizhgqrzthaspqtkhwtikjmtjatgylclnswwhtonuttscneegdpvkuenrwtiufdlvfqqsagdyvpldnxxczgqkqfzmwkziwjanagqzwtzwutpjnekpebcnpmkasvkhwbuufgoqdfoajzdxqkgftgxvjbicigdaagefijbjhhfdafbjgbijhbefbdgcejjjnrlaeyttjumbxgzwnzhexpprcycaiveuxajfjnrliudpcfotozsyolpttqiygckdefvgbwvacfpiecrpqqewfdkqnymxevzpehuxvcyhmnsiyjhqljsyxksocjikgixqpvcffycqalvvvubtkpdztpeaweqkllmddapkalljyidjwssporbvvgvaboolwjlwxtkwroqqqgikdqoocbgznbihxyfotigizapataoofuqxhevirusjchbxcyimlrchjadlskxlqsndjyqsufbhzzyltlutoiosdsjtliqhroghjslgmzhlgjclsanwyqobhsulcozutapdyxofpagtbvsnxhbhgxbovytdgmklgvcyshoszrsixmpjyzagwiursvkdmepntygbhxmldjskgwwcaeybhuliunsmlypalyohxrxiztwuwhdhlgqkrecdqkdlelivxtqevcdridyascuxynwxzalsqinwsbuzkrxjmqthkommrfvvbwowusfwnwbdncaadtkahnjvcchlltgikahybvhyxeuimxtntoibmdpakqtpwtckblejxhihwuxtvgyemdccmylcbpqhdzvpgjclppwgasowgswdajtkaqyfkwpormchijjqlpauczjopycnyyeeyrcwlyyxlxfkjtztifevtnjwltklwydcvdcwzspxzaxdbbzgdadflizddpaxidaowlxrehjvqbirsnzzwwzyqqcngqioptrqfrazuxmjazfe"
+      ],
+      "expected": true,
+      "hidden": true
+    },
+    {
+      "id": "h10",
+      "args": [
+        "gadehaeaejgbjbjdijfcifihibbjjfgfdcjhbbgj",
+        "pouxvvyvsposumxntytqpwktzwxrwrkprnuzqzluwzxrvpvruzuzuppnsnxsyyopuywznlssrkvxpqksylrnkqpoxqnwkprtkwypsqpokrykwmzwxpywukxtsnxzvsyzlmpnokorvuuvvtvyvyvkrtnnkzvytpusomkyrzpsouvmmnkonxowlrmouwvupmlkyrowlwkwulxxopvmvupmtultupupzwukvsukpzpsxwttnxumllvvmntlkwptmmmowoqxrpvvzxxvttxpzzpkpzwutknkprutypyywrqrpxrksknmvzrrpouxlyomxmlrlmmxvouvzvlwqlkxtmmptyqokwtssmqqmkutvuyoqxlzqunsykqovkzvytoyqolzxwxknvlqrowmulkqlkynxkuxnsvoprusxlmqxpqvmosylkvtwntqwqqlpwvutnqpnkmszznznywzkvsyrptsyroowmmmsnmmxyqstrlslnkpmqornqrwzlvrryxqxtlpvnkvwqnslsmysoxqszzyomkvnukyouxzzrvnlwprnupxkkvtzyvvnpzrxwmtowkwtpyouyktlmkxtnqqxnvsvmywnwpuxwqxulzqwtonmlzwlmopqnyomntzwywzkznnztxrpytrkpwxypkmtzvlukrpzqpwnolwqqykvxmusmouvovtovovpxtmyqtunzmopmxlskxvxzqznsoomtmmlstmlrxnktuzznsnrvmsymrxwxnnoyystynwpmsvumqoqstvukpqrpzltkrzwsmoqrtyuusqzsmqrrxvqzmrummspopsslkqnrmsxkwuokzwnzmmosultpxwmmrmvsllnlmwzzqlxlrpooxtnklpsrloorysyumxnutzpwsqnsmozrwkmvwqorzqvstsssyyvtoxkkymlksuvtnszstluunwxmwxnouslzyysnozllpkwkwqzulvtpptumkottmzmvntsoxpusvmwuwlmzxqxvorzvtvwlnwxrytruymnrzzzwwuyzrvswpkrpzulnmrusstrqpqusvzqukvvwqwstyxsrotqzyxuxrvkrxtumtsuprovnqsnmyxotnptyqnwvouwoqlyxywrowtkzpttxnzyppvxowylutklvtworqskvlslszwxrqknorwtsvmmtsvztpnqwysvrmnuwlvozppqvmltwtxsytnmoopuylxrmullskklqmzsnlyvxqzzkklxzlpvmlvlnqsxolslnszsoovmorozyxllvstvrtxpkorsrtxwkrroprxtnmnnvmmzqoxpnyymkynrqopwtywxlntpppxstwpvqopylxsmzwvluwzoyoxpplxqxttklxpoyxpmzwrmlrpkzopzrzopunpltvvypnlqutkoyztqmqswrrszqrrwoqtsyvoosolmpwrnrzqxzkrwwlpqrtktuuqmrsoxwnuuwxosnqtoqsnqtvxolktmmkpoksvwqxplxurwqmkursupzrvsuprnytwxznyopxqkrzsynpnznkmvnrvsxlyurrnvtyxmyszruryvmzmtvrxkomnlrxqvnuspnmkolqowzssoppqvumywxvqqyrvxvwqqnpsynkwpzuqksxutqxktnnxsuknvzpsollllrvuvtlunnlmlururopxkmqklvrqwvznzuykyqvknlwrmpyxpvpvuyxzsvmtzouvlvssptrrmmqmnsqvmlyyzxspxoxnrkzyounststvznuvtrnnsqxprsylrnuxtsumvlwtpooonzxvomvyrynnwxsutnvpqtlvktwmprozyntporlxmsnzlwoorlmlwvxoyzwxvmwononkxvpnqwyvvppzlpslruoywmkkvywuomtokpppkwznmuqpkultrzulxxuvoyrksvrzzrsmlvmtkuqutmlzkqrwlmynrnnowypxrwwpxmutuuklptslrnmusvxszvpomplkntszkuynovttvlstxrnpvtmqwwtuspkrkqzsosroomnnsntnwqowxuowupvlvqsprqxszpkktozzzpqtuzvkkxpnxozroznklowurkqlsvxstkmppkuprlupuzpvtlstktzqsvurqowmnxssomoryvwzsuvkwsmqstywnoxwkxuwposzsszswumupustonsukqtzoxysuxwlpsrqrpqkzyzokxtorqqlxrmvrorzuqlvmrlzvomztxkyznwxmxkprwpxxxywnvwqmtzropspnxtwxpvnoqpnxnppntwtwxkuquztynyvpworkqxolstwuqvzmvvylxvrospupvqvptznlslwotpoyzznrtyvyxqxvpzmruoxklqulkpouqpqkzywyowrnpspulyqzylllkvxmwlzwxnsvporxpztkxowppsmszspxrwzsqpwrsmwqmkxqnululsopynqoysvkoksvpmvkmrpyvtyuxolsxtqspskzxwuwrrnvnwowykwpzslxswprnmxwqukypsqmutknpkmsxuttptkwkqwunukwysvyqvpomunslzolxnxtlxypomtrvklpvkzszxpszwprtovusqwoxmwttlwpsxvsknylzpnnloyrwvyzswuznqouvlkylkywtpqrqvxwynszlrnzlzxsmzzymqkpswzvzupuvwulrlornnyznwqmkvksoynlvsvornwttmvuwlytltlspxtznqnzpzmooqvnnvwlznzuzzznrnptquxxxlprykmnvukrunzkzmwwyrltvpzkylkkpzwolurlqtvxwrmrvrvzontwurkpyzqvqotxkyymnyroyrkslqurmsxzwksmunpluonvzwupymnqossyvxrqxxkkovommqxqoyumyuskozynnumzouosqymqltmkxnrxyvsomyrsyxumxxzvyqqvlssukxqrxlzlzxnrxlnyrzvptxtwuzwrtorrywmqunusovqwruvkynoymuvllzsoqrnrpollmmtmknqxzlxnluzokkssqposmlwpvtmtvquqxxknkkpnlrsmnpososxppqnuqmnszsvxkklxytklsmyqqkrolwomnrkkmnsonkzvyxqnxnsqywwnpkszlsmkvsxpounstwvrkzluxrymnvosmztxzpsoxonpokkysqllvzmlwoquzwwuyvsqyuwupzvswqtzkyovoozwtlttmmpwulrvxrzmmullupxnomvkqyunlzmtntmolovwwousnrvuvwrppxtwztwouspppoukorpkwnslklmpovsosnskwzulxqvwyltvrzqpumwouxzwwptvltunvsvzymuxslvvmpmvxrwwspnqtswmnywmopyxyrxoqqqnnksrpvztsvsqyrozqwonmozszmqukslukxmlmqmpzltkormlqkmptlsozstprowzxxowqsqywmwluqsylvkppvvspkmwtzwroqzomlsyyqzxmqlrunrnktxuzwpvksprlqmnkwzyoryyzuxrwmknvovuuvtnnvuknlzxtmwqksoqzxllokqxxzmptrrrntvmrktnwptrkszlmmwrtktuptuysppnuvkuvlpkwxsoulwkrnnmuqtoyynqqmoxwxrmvkqxoltzmssvusuzonpwxwumvukxtkpwwrnlqkrkwxrnzlmqkrkuuolymouksmyyvtumonxxpwxuvlmvxsvsmqzmookslrwwnqsvnuvtmsuxkxrnlvsxwxstlqquwwkylvxovrwpyrvsqqokptnnrrxvoqmxquurmzyvqxmyvxpzvwxpyrqnuuzwxkormtmsyxzsruyxnnxpokrqlyskwvslrqpzqlowwnnkxnonkpmsmnqlyqzskyzsnwozymszpvxpxqszosmynnsppmxwzwwlxlmkuynpzztlryzmtqxuytqqrkttlpkzkvvpzqpwukqtlvkqvksvyywulkwnzvptzvmmtvqroszrrxslwnmlrurkwnu"
+      ],
+      "expected": false,
+      "hidden": true
+    }
+  ],
   "related": [
     {
       "slug": "valid-anagram",
       "relation": "Compares the letter counts of two whole strings once; here the same check runs on every window of s2."
     }
-  ],
-  "drillOnly": true
+  ]
 }

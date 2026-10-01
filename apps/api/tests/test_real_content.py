@@ -287,6 +287,11 @@ WORKSPACE_ORDER = {
     "longest-consecutive-sequence": 22,
     "container-with-most-water": 23,
     "trapping-rain-water": 24,
+    "permutation-in-string": 25,
+    "minimum-window-substring": 26,
+    "sliding-window-maximum": 27,
+    "car-fleet": 28,
+    "largest-rectangle-in-histogram": 29,
 }
 
 
@@ -352,6 +357,11 @@ def _optimal(slug: str) -> dict[str, Any]:
         "longest-consecutive-sequence",
         "container-with-most-water",
         "trapping-rain-water",
+        "permutation-in-string",
+        "minimum-window-substring",
+        "sliding-window-maximum",
+        "car-fleet",
+        "largest-rectangle-in-histogram",
     ],
 )
 def test_every_approach_grades_its_own_twist_correct(slug: str) -> None:
