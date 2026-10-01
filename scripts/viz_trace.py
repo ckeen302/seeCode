@@ -7,20 +7,23 @@ each input with sys.settrace, evaluates every expression at the same steps and w
 same builtins, and reports the first error of each. (The tracer shows only the first
 narration of a step; this checks every event's.) It also reports events that never fire
 and predict points never reached. Standard library only; the code runs in the harness
-namespace (prelude included), as it will in the browser.
+namespace (prelude included), as it will in the browser, and the harness builds the
+arguments from their io types (lists become ListNodes, and so on). A design problem's
+input is its calls: the constructor and every method call are traced, in order.
 
     python -I -B scripts/viz_trace.py <harness.py> < job.json > result.json
 
-job: {"code", "entry", "inputs": [{"id", "args"}], "viz": {"events", "predict"}}
+job: {"code", "entry", "inputs": [{"id", "args"} | {"id", "ops"}], "viz": {"events",
+      "predict"}, "spec": harness spec_json object | null}
 result: {"errors": [{"path", "message"}], "unfired": [event id], "unreached": [predict index]}
 """
 
 import copy
-import importlib.util
 import json
 import re
 import sys
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from types import FrameType, ModuleType
 from typing import Any
@@ -59,13 +62,14 @@ def _evaluate(source: str, builtins: dict[str, Any], env: dict[str, Any]) -> Any
 
 
 def trace_input(
-    harness: ModuleType, job: dict[str, Any], input_id: str, args: list[Any], report: Report
+    harness: ModuleType, job: dict[str, Any], run: dict[str, Any], report: Report
 ) -> None:
     events: list[dict[str, Any]] = job["viz"].get("events", [])
     predicts: list[dict[str, Any]] = job["viz"].get("predict", [])
     markers = marker_lines(job["code"])
     counts: Counter[str] = Counter()
     steps = 0
+    input_id = run["id"]
 
     def fail(path: str, exc: Exception, frame: FrameType) -> None:
         message = f"raises {type(exc).__name__}: {exc} (input {input_id!r}, line {frame.f_lineno})"
@@ -112,14 +116,12 @@ def trace_input(
         return tracer
 
     try:
-        namespace = harness.new_namespace()
-        exec(compile(job["code"], SOLUTION_FILE, "exec"), namespace)
-        method = getattr(namespace["Solution"](), job["entry"])
+        start = prepare(harness, job, run)
     except Exception:
-        return  # the static checks and rule 7 report code that does not load
+        return  # the static checks and rule 7 report code or arguments that do not load
     sys.settrace(tracer)
     try:
-        method(*copy.deepcopy(args))
+        start()
     except Exception:
         pass  # rule 7 reports a solution that raises; StepLimit ends a long trace
     finally:
@@ -127,10 +129,36 @@ def trace_input(
     report.fired.update(counts)
 
 
+def prepare(harness: ModuleType, job: dict[str, Any], run: dict[str, Any]) -> Callable[[], Any]:
+    """Load the code and return what runs the input: the entry method on its arguments, or
+    a design test's calls."""
+    spec = harness.parse_spec(job.get("spec"))
+    namespace = harness.new_namespace(spec)
+    if spec.kind == "design":
+        calls = copy.deepcopy(run["ops"])
+        exec(compile(job["code"], SOLUTION_FILE, "exec"), namespace)
+        design_class = namespace[job["entry"]]
+        return lambda: replay(harness, design_class, calls)
+    # Built before the code runs, which may define its own ListNode (as run_tests does).
+    args = harness.convert_args(copy.deepcopy(run["args"]), spec, namespace)
+    exec(compile(job["code"], SOLUTION_FILE, "exec"), namespace)
+    method = getattr(namespace["Solution"](), job["entry"])
+    return lambda: method(*args)
+
+
+def replay(harness: ModuleType, design_class: Any, calls: list[list[Any]]) -> None:
+    """A design test's calls in order, as the harness makes them: construct, then call."""
+    outputs: list[Any] = []
+    instance = design_class(*harness.resolve_refs(calls[0][1:], outputs))
+    outputs.append(None)
+    for name, *args in calls[1:]:
+        outputs.append(getattr(instance, name)(*harness.resolve_refs(args, outputs)))
+
+
 def check(harness: ModuleType, job: dict[str, Any]) -> dict[str, Any]:
     report = Report()
     for run in job["inputs"]:
-        trace_input(harness, job, run["id"], run["args"], report)
+        trace_input(harness, job, run, report)
     events = job["viz"].get("events", [])
     predicts = job["viz"].get("predict", [])
     return {
@@ -140,12 +168,18 @@ def check(harness: ModuleType, job: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def load_harness(path: str) -> ModuleType:
+    """harness.py as a module. Its source runs in a new module, so no bytecode is written
+    next to it (apps/web/public/ is served as is)."""
+    module = ModuleType("seecode_harness")
+    module.__file__ = path
+    with open(path, encoding="utf-8") as source:
+        exec(compile(source.read(), path, "exec"), module.__dict__)
+    return module
+
+
 def main() -> None:
-    spec = importlib.util.spec_from_file_location("seecode_harness", sys.argv[1])
-    assert spec is not None
-    assert spec.loader is not None
-    harness = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(harness)
+    harness = load_harness(sys.argv[1])
     job = json.load(sys.stdin)
     # Anything the code prints goes to stderr, so it cannot corrupt the JSON.
     out, sys.stdout = sys.stdout, sys.stderr

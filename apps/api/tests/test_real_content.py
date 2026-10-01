@@ -34,6 +34,7 @@ PROBLEM_PUBLIC_KEYS = {
     "examples",
     "constraints",
     "targets",
+    "kind",
     "entry",
     "starterCode",
     "tests",
@@ -251,8 +252,9 @@ def test_toolkit_ids_are_the_25_of_section_24_3() -> None:
     ]
 
 
-# D4: each Workspace problem's number in the Section 24.2 table.
-SECTION_24_2 = {
+# D4: each Workspace problem's number in the Section 24.2 table; problems of the parity
+# phase P1 continue from 16, in the order of docs/PARITY_PLAN.md.
+WORKSPACE_ORDER = {
     "two-sum": 1,
     "valid-anagram": 2,
     "group-anagrams": 3,
@@ -268,14 +270,37 @@ SECTION_24_2 = {
     "binary-search": 13,
     "search-insert-position": 14,
     "koko-eating-bananas": 15,
+    "min-stack": 16,
 }
 
 
-def test_workspace_problems_are_the_section_24_2_problems_in_its_order() -> None:
+def test_workspace_problems_follow_section_24_2_then_the_parity_plan() -> None:
     problems = _problems()
-    assert set(_workspace_slugs()) <= set(SECTION_24_2)
+    assert set(_workspace_slugs()) <= set(WORKSPACE_ORDER)
     for slug in _workspace_slugs():
-        assert problems[slug]["order"] == SECTION_24_2[slug], slug
+        assert problems[slug]["order"] == WORKSPACE_ORDER[slug], slug
+
+
+def test_min_stack_is_a_design_problem() -> None:
+    problem = _problems()["min-stack"]
+    assert (problem["kind"], problem["entry"], problem.get("drillOnly", False)) == (
+        "design",
+        "MinStack",
+        False,
+    )
+    tests = problem["tests"]
+    assert sum(not t["hidden"] for t in tests) >= 2
+    assert sum(t["hidden"] for t in tests) >= 4
+    assert all(t["ops"][0] == ["MinStack"] and len(t["expected"]) == len(t["ops"]) for t in tests)
+    # The walkthrough draws both lists as stacks with today's renderers.
+    assert problem["viz"]["roles"]["stack"] == ["vals", "mins"]
+
+
+async def test_min_stack_detail_carries_its_calls(real_client: AsyncClient) -> None:
+    body = (await real_client.get(f"{API}/problems/min-stack")).json()
+    assert (body["kind"], body["entry"]) == ("design", "MinStack")
+    assert body["tests"][0]["ops"][:2] == [["MinStack"], ["push", 3]]
+    assert "args" not in body["tests"][0]
 
 
 # ---------------------------------------------------------------- twist keywords (11.1)
@@ -294,7 +319,17 @@ def _optimal(slug: str) -> dict[str, Any]:
     return optimal
 
 
-@pytest.mark.parametrize("slug", M1_PROBLEMS)
+@pytest.mark.parametrize(
+    "slug",
+    [
+        *M1_PROBLEMS,
+        "three-sum",
+        "three-sum-closest",
+        "top-k-frequent-elements",
+        "sqrt-x",
+        "min-stack",
+    ],
+)
 def test_every_approach_grades_its_own_twist_correct(slug: str) -> None:
     for approach in _problems()[slug]["approaches"]:
         assert _twist_result(approach, approach["twist"]) == "correct", approach["id"]
@@ -319,3 +354,29 @@ def test_every_approach_grades_its_own_twist_correct(slug: str) -> None:
 )
 def test_optimal_twist_keywords_separate_real_twists(slug: str, twist: str, expected: str) -> None:
     assert _twist_result(_optimal(slug), twist) == expected
+
+
+def _approach(slug: str, approach_id: str) -> dict[str, Any]:
+    [approach] = [a for a in _problems()[slug]["approaches"] if a["id"] == approach_id]
+    return approach
+
+
+def test_approaches_use_the_parity_complexities() -> None:
+    """The values PARITY_PLAN 4.4 added replace the closest-value workarounds."""
+    assert _approach("three-sum", "all_triples")["time"] == "O(n³)"
+    assert _approach("three-sum-closest", "all_triples")["time"] == "O(n³)"
+    assert _approach("top-k-frequent-elements", "count_and_heap")["time"] == "O(n log k)"
+    assert _approach("sqrt-x", "count_up")["time"] == "O(√n)"
+    assert "the Plan card has no" not in _problems()["sqrt-x"]["constraintReading"]
+
+
+@pytest.mark.parametrize(
+    ("slug", "twist", "expected"),
+    [
+        ("three-sum", "Check all triples with three loops and dedupe with a set", "correct"),
+        ("three-sum", "Try every triple", "close"),
+        ("three-sum-closest", "Brute force every triple and keep the nearest sum", "correct"),
+    ],
+)
+def test_brute_force_twist_keywords(slug: str, twist: str, expected: str) -> None:
+    assert _twist_result(_approach(slug, "all_triples"), twist) == expected

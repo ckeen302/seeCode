@@ -13,6 +13,17 @@ from app.content.validation import (
     validate_files,
 )
 from tests.conftest import FIXTURE_CONTENT, encode_documents, fixture_documents
+from tests.engine_fixtures import (
+    Document,
+    any_pair,
+    copy_random_list,
+    encode_decode,
+    file_name,
+    min_stack,
+    reverse_linked_list,
+    rotate_image,
+    with_engine_problems,
+)
 
 Documents = dict[str, Any]
 TWO_SUM = "problems/two-sum.json"
@@ -105,7 +116,8 @@ def test_model_errors_carry_json_paths() -> None:
     assert _messages(result, TWO_SUM) == [
         "summary: required",
         "approaches[0].time: Input should be 'O(1)', 'O(log n)', 'O(n)', 'O(n log n)', "
-        "'O(n²)' or 'O(2ⁿ)'",
+        "'O(n²)', 'O(2ⁿ)', 'O(√n)', 'O(n log k)', 'O(k log n)', 'O(n·m)', 'O(V + E)', "
+        "'O(E log V)', 'O(n³)', 'O(n·2ⁿ)' or 'O(n!)'",
         "approaches[1].extra: unknown key",
     ]
     assert _messages(result, "patterns.json") == ["[1].slots[0].label: must not be empty"]
@@ -853,4 +865,325 @@ def test_roadmap_nodes_sharing_a_position_is_a_warning() -> None:
     assert result.errors == []
     assert _messages(result, "roadmap.json", "warning") == [
         "patterns[1]: same x/y position as 'hashing'"
+    ]
+
+
+# ---------------------------------------------------------------- io, design and checkers
+
+
+def _engine(
+    build: Callable[[], Document],
+    change: Callable[[Document], object] | None = None,
+    level: str = "error",
+) -> list[str]:
+    """`path: message` of the issues in one engine problem added to the fixture content."""
+    documents = fixture_documents()
+    problem = build()
+    if change is not None:
+        change(problem)
+    documents[file_name(problem)] = problem
+    return _messages(validate_files(encode_documents(documents)), file_name(problem), level)
+
+
+def test_engine_fixture_problems_are_valid() -> None:
+    result = validate_files(encode_documents(with_engine_problems(fixture_documents())))
+    assert result.issues == []
+    assert len(result.content.problems) == 15
+
+
+def _set_io(**io: Any) -> Callable[[Document], None]:
+    return lambda problem: problem.update(io=io)
+
+
+@pytest.mark.parametrize(
+    ("build", "change", "expected"),
+    [
+        (
+            reverse_linked_list,
+            _set_io(params=[{"name": "node", "type": "list_node"}], returns="list_node"),
+            [
+                "io.params: must list the parameters of reverseList in solution.code, in order: "
+                "head (found node)",
+                "io.params: must list the parameters of reverseList in starterCode, in order: "
+                "head (found node)",
+            ],
+        ),
+        (
+            reverse_linked_list,
+            _set_io(returns="list_node"),
+            [
+                "io.params: must list the parameters of reverseList in solution.code, in order: "
+                "head (found none)",
+                "io.params: must list the parameters of reverseList in starterCode, in order: "
+                "head (found none)",
+            ],
+        ),
+        (
+            rotate_image,
+            _set_io(params=[{"name": "matrix"}], inPlace="grid"),
+            ["io.inPlace: 'grid' is not one of io.params (matrix)"],
+        ),
+        (
+            rotate_image,
+            _set_io(params=[{"name": "matrix"}], inPlace="matrix", returns="tree_node"),
+            [
+                'io.returns: leave "returns" out when "inPlace" is set: the parameter is compared '
+                "after the call, not the return value"
+            ],
+        ),
+        (
+            copy_random_list,
+            _set_io(params=[{"name": "head", "type": "random_list"}], returns="graph_node"),
+            [
+                "io: random_list and graph_node each need their own class named Node; a problem "
+                "can use only one of them"
+            ],
+        ),
+        (
+            min_stack,
+            _set_io(),
+            ["io: io is for function problems; a design problem's calls take JSON values"],
+        ),
+        (
+            reverse_linked_list,
+            lambda problem: problem["tests"][1].update(args=[[1], 2]),
+            ["tests[1].args: has 2 argument(s); io.params lists 1 (head)"],
+        ),
+        (
+            reverse_linked_list,
+            _set_io(params=[{"name": "head"}, {"name": "head"}]),
+            [
+                "io.params: duplicate parameter 'head'",
+                "io.params: must list the parameters of reverseList in solution.code, in order: "
+                "head (found head, head)",
+                "io.params: must list the parameters of reverseList in starterCode, in order: "
+                "head (found head, head)",
+            ]
+            + [
+                f"tests[{i}].args: has 1 argument(s); io.params lists 2 (head, head)"
+                for i in range(5)
+            ],
+        ),
+        (
+            reverse_linked_list,
+            _set_io(params=[{"name": "head", "type": "linked_list"}]),
+            [
+                "io.params[0].type: Input should be 'json', 'list_node', 'list_node[]', "
+                "'tree_node', 'tree_node[]', 'random_list' or 'graph_node'"
+            ],
+        ),
+    ],
+)
+def test_io_is_checked(
+    build: Callable[[], Document], change: Callable[[Document], object], expected: list[str]
+) -> None:
+    assert _engine(build, change) == expected
+
+
+def test_io_and_checkers_need_tests() -> None:
+    def change(d: Documents) -> None:
+        d[DRILL]["io"] = {"returns": "list_node"}
+        d[DRILL]["checker"] = "def check(args, got):\n    return True\n"
+
+    assert _messages(_validate(change), DRILL) == [
+        "io: io needs tests: a drill-only problem never runs",
+        "checker: a checker needs tests: a drill-only problem never runs",
+    ]
+
+
+def test_in_place_needs_no_return_type() -> None:
+    assert _engine(rotate_image, _set_io(params=[{"name": "matrix"}], inPlace="matrix")) == []
+
+
+# ---- design problems
+
+
+def _first_test(**fields: Any) -> Callable[[Document], None]:
+    return lambda problem: problem["tests"][0].update(fields)
+
+
+@pytest.mark.parametrize(
+    ("build", "change", "expected"),
+    [
+        (
+            min_stack,
+            lambda p: p["tests"][0].pop("ops") and p["tests"][0].update(args=[1], expected=None),
+            ['tests[0].args: a design problem\'s test lists its calls in "ops", not "args"'],
+        ),
+        (
+            reverse_linked_list,
+            lambda p: p["tests"][0].pop("args") and p["tests"][0].update(ops=[["Solution"]]),
+            [
+                'tests[0].ops: "ops" are for design problems (kind "design"); a function '
+                'problem\'s test gives "args"'
+            ],
+        ),
+        (
+            min_stack,
+            _first_test(ops=[["Stack"], ["push", 1]], expected=[None, None]),
+            ["tests[0].ops[0]: the first call must construct MinStack (found 'Stack')"],
+        ),
+        (
+            min_stack,
+            _first_test(ops=[["MinStack"], ["MinStack"]], expected=[None, None]),
+            ["tests[0].ops[1]: only the first call constructs MinStack"],
+        ),
+        (
+            min_stack,
+            _first_test(ops=[["MinStack"], ["peek"]], expected=[None, None]),
+            [
+                "tests[0].ops[1]: MinStack in solution.code has no method 'peek'",
+                "tests[0].ops[1]: MinStack in starterCode has no method 'peek'",
+            ],
+        ),
+        (
+            min_stack,
+            lambda p: p.update(starterCode=p["starterCode"].replace("def top", "def peek")),
+            [
+                "tests[0].ops[5]: MinStack in starterCode has no method 'top'",
+                "tests[3].ops[2]: MinStack in starterCode has no method 'top'",
+            ],
+        ),
+        (
+            min_stack,
+            _first_test(expected=[None, None, 1]),
+            [
+                "tests[0].expected: must be a list with one value per call (6 calls), null for "
+                "the constructor and for calls that return nothing"
+            ],
+        ),
+        (
+            min_stack,
+            _first_test(expected={"getMin": 1}),
+            [
+                "tests[0].expected: must be a list with one value per call (6 calls), null for "
+                "the constructor and for calls that return nothing"
+            ],
+        ),
+        (
+            min_stack,
+            _first_test(expected=[0, None, None, 1, None, 3]),
+            ["tests[0].expected[0]: the constructor returns nothing: use null"],
+        ),
+        (
+            min_stack,
+            _first_test(compare="unordered"),
+            [
+                'tests[0].compare: "unordered" does not apply to design tests, whose result is '
+                'one value per call, in order; use "checker" when several answers are right'
+            ],
+        ),
+        (
+            min_stack,
+            lambda p: p["solution"].update(code=p["solution"]["code"].replace("MinStack", "Stack")),
+            ["solution.code: must define class MinStack"],
+        ),
+        (
+            min_stack,
+            lambda p: p.update(starterCode="class Solution:\n    pass\n"),
+            ["starterCode: must define class MinStack"],
+        ),
+    ],
+)
+def test_design_tests_are_checked(
+    build: Callable[[], Document], change: Callable[[Document], object], expected: list[str]
+) -> None:
+    assert _engine(build, change) == expected
+
+
+def test_methods_of_a_class_that_inherits_are_not_checked() -> None:
+    def change(problem: Document) -> None:
+        problem["solution"]["code"] = problem["solution"]["code"].replace(
+            "class MinStack:", "class Base:\n    pass\n\n\nclass MinStack(Base):"
+        )
+        problem["tests"][0].update(ops=[["MinStack"], ["inherited"]], expected=[None, None])
+
+    assert _engine(min_stack, change) == [
+        "tests[0].ops[1]: MinStack in starterCode has no method 'inherited'"
+    ]
+
+
+@pytest.mark.parametrize(
+    ("call", "argument", "message"),
+    [
+        (2, {"$ref": 2}, "n must be an earlier call, from 1 to 1"),
+        (2, {"$ref": 0}, "n must be an earlier call, from 1 to 1"),
+        (2, {"$ref": "1"}, "n must be an earlier call, from 1 to 1"),
+        (2, {"$ref": True}, "n must be an earlier call, from 1 to 1"),
+        (2, {"$ref": 1, "or": 2}, "n must be an earlier call, from 1 to 1"),
+        (1, {"$ref": 1}, "no call before this one returns a value"),
+        (0, {"$ref": 1}, "no call before this one returns a value"),
+    ],
+)
+def test_refs_must_name_an_earlier_call(call: int, argument: Any, message: str) -> None:
+    def change(problem: Document) -> None:
+        problem["tests"][0]["ops"][call] = [problem["tests"][0]["ops"][call][0], argument]
+
+    assert _engine(encode_decode, change) == [
+        f'tests[0].ops[{call}][1]: {{"$ref": n}} passes what call n returned: {message}'
+    ]
+
+
+def test_a_ref_to_an_earlier_call_is_valid() -> None:
+    def change(problem: Document) -> None:
+        ops = problem["tests"][0]["ops"]
+        ops.append(["decode", {"$ref": 1}])
+        problem["tests"][0]["expected"] = [*problem["tests"][0]["expected"], ["see", "code"]]
+
+    assert _engine(encode_decode, change) == []
+
+
+# ---- checkers
+
+
+@pytest.mark.parametrize(
+    ("checker", "expected"),
+    [
+        ("def check(args, got)\n    return True\n", "syntax error on line 1: expected ':'"),
+        ("def judge(args, got):\n    return True\n", "must define a function check(args, got)"),
+        ("check = lambda args, got: True\n", "must define a function check(args, got)"),
+        ("def check(got):\n    return True\n", "check must take two arguments: check(args, got)"),
+        (
+            "def check(a, b, c):\n    return True\n",
+            "check must take two arguments: check(args, got)",
+        ),
+        (
+            "def check(a, b, *, c):\n    return True\n",
+            "check must take two arguments: check(args, got)",
+        ),
+    ],
+)
+def test_checker_code_is_checked(checker: str, expected: str) -> None:
+    assert _engine(any_pair, lambda p: p.update(checker=checker)) == [f"checker: {expected}"]
+
+
+@pytest.mark.parametrize(
+    "signature",
+    ["check(args, got)", "check(a, b, c=1)", "check(*args)", "check(a, *rest, flag=False)"],
+)
+def test_checker_signatures_that_take_two_arguments(signature: str) -> None:
+    checker = f"def {signature}:\n    return True\n"
+    assert _engine(any_pair, lambda p: p.update(checker=checker)) == []
+
+
+def test_compare_checker_needs_a_checker() -> None:
+    def change(problem: Document) -> None:
+        problem["tests"][1]["compare"] = "checker"
+
+    assert _engine(reverse_linked_list, change) == [
+        'tests[1].compare: compare "checker" needs the problem\'s "checker"'
+    ]
+    assert _engine(any_pair, lambda p: p.pop("checker")) == [
+        f'tests[{i}].compare: compare "checker" needs the problem\'s "checker"' for i in range(5)
+    ]
+
+
+def test_an_unused_checker_is_a_warning() -> None:
+    def change(problem: Document) -> None:
+        for test in problem["tests"]:
+            del test["compare"]
+
+    assert _engine(any_pair, change) == []
+    assert _engine(any_pair, change, "warning") == [
+        'checker: no test uses it: set "compare": "checker" on the tests it should judge'
     ]

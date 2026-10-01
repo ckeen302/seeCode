@@ -19,7 +19,13 @@ export interface WorkerScope {
 export function pyodideWorkerMain(scope: WorkerScope): void {
   // The small part of the Pyodide API used here.
   interface HarnessModule {
-    run_tests(code: string, entry: string, testsJson: string, mode: string): unknown
+    run_tests(
+      code: string,
+      entry: string,
+      testsJson: string,
+      mode: string,
+      specJson: string | null
+    ): unknown
   }
   interface PyodideApi {
     version: string
@@ -40,9 +46,15 @@ export function pyodideWorkerMain(scope: WorkerScope): void {
   const harnessModule = "seecode_harness"
   let harness: HarnessModule | null = null
 
-  function runTests({ code, entry, tests, compare }: RunTestsRequest): unknown {
+  function runTests({ code, entry, tests, compare, spec }: RunTestsRequest): unknown {
     if (!harness) throw new Error("Python is not ready yet.")
-    const json = harness.run_tests(code, entry, JSON.stringify(tests), compare ?? "exact")
+    const json = harness.run_tests(
+      code,
+      entry,
+      JSON.stringify(tests),
+      compare ?? "exact",
+      spec ? JSON.stringify(spec) : null
+    )
     return JSON.parse(String(json))
   }
 

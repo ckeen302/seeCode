@@ -391,6 +391,41 @@ test.describe("Workspace content", () => {
   })
 })
 
+const MIN_STACK = `class MinStack:
+    def __init__(self):
+        self.vals = []
+        self.mins = []
+
+    def push(self, val):
+        self.vals.append(val)
+        self.mins.append(val if not self.mins else min(val, self.mins[-1]))
+
+    def pop(self):
+        self.vals.pop()
+        self.mins.pop()
+
+    def top(self):
+        return self.vals[-1]
+
+    def getMin(self):
+        return self.mins[-1]
+`
+
+test.describe("Design problems", () => {
+  test("Min Stack runs its calls and shows each call's result", async ({ page }) => {
+    await openWorkspace(page, "min-stack")
+    await expect(page.getByRole("button", { name: "Add a custom case" })).toHaveCount(0)
+    await setCode(page, MIN_STACK.replace("return self.mins[-1]", "return self.vals[-1]"))
+    await run(page)
+    await expect(summary(page)).toHaveText("Not quite")
+    await expect(page.getByLabel("different from expected").first()).toBeVisible()
+
+    await setCode(page, MIN_STACK)
+    await submit(page)
+    await expect(summary(page)).toHaveText("Solved.")
+  })
+})
+
 test.describe("Problems list and search", () => {
   test("lists every problem in order and opens the Workspace", async ({ page }) => {
     await page.goto("/problems")

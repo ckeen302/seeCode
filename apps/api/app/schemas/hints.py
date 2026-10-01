@@ -8,9 +8,17 @@ from typing import Annotated, Any, Literal
 
 from pydantic import Field
 
-from app.content.models import ToolkitCard, VizConfig
+from app.content.models import Io, ProblemKind, ToolkitCard, VizConfig
 from app.schemas import CamelModel
 from app.schemas.plan import PlanReveal
+
+
+def _is_none(value: object) -> bool:
+    return value is None
+
+
+def _is_function(value: object) -> bool:
+    return value == "function"
 
 
 class ClarifyHint(CamelModel):
@@ -51,16 +59,23 @@ class PlanHint(CamelModel):
 
 
 class WalkthroughInput(CamelModel):
+    """A visible test's `args`, or for a design problem its calls (`ops`)."""
+
     label: str
-    args: list[Any]
+    args: list[Any] | None = Field(default=None, exclude_if=_is_none)
+    ops: list[list[Any]] | None = Field(default=None, exclude_if=_is_none)
 
 
 class WalkthroughPayload(CamelModel):
     """The reference solution (with its `# viz:` markers), its viz config and the inputs
-    to trace: the problem's visible tests, labeled "Example 1", "Example 2", ..."""
+    to trace: the problem's visible tests, labeled "Example 1", "Example 2", ...
+    `kind` and `io` say how to run them, as for the tests (harness spec_json); both are
+    left out when they are the default (a function problem with JSON arguments)."""
 
     code: str
+    kind: ProblemKind = Field(default="function", exclude_if=_is_function)
     entry: str
+    io: Io | None = Field(default=None, exclude_if=_is_none)
     viz: VizConfig
     inputs: list[WalkthroughInput]
 

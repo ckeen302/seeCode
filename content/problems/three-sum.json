@@ -130,6 +130,54 @@
       ],
       "acceptedAs": "suboptimal",
       "note": "Works in O(n²) time, but the set of seen values takes O(n) extra space. The target is O(1): on a sorted list, two pointers find the same pairs with two indexes, and repeated values sit side by side."
+    },
+    {
+      "id": "all_triples",
+      "patternId": "brute_force",
+      "structures": ["array", "hash_set"],
+      "time": "O(n³)",
+      "space": "O(1)",
+      "twist": "Try every triple of positions with three nested loops, and keep each sorted triple once in a set.",
+      "twistKeywords": [
+        [
+          "every triple",
+          "each triple",
+          "all triples",
+          "all the triples",
+          "every combination",
+          "all combinations",
+          "every possible",
+          "all possible",
+          "three loops",
+          "3 loops",
+          "three nested",
+          "3 nested",
+          "triple loop",
+          "triple nested",
+          "triple-nested",
+          "three for",
+          "brute",
+          "every three",
+          "each three",
+          "n³",
+          "n^3"
+        ],
+        [
+          "set",
+          "dedup",
+          "de-dup",
+          "unique",
+          "distinct",
+          "duplicate",
+          "repeat",
+          "once",
+          "sorted tuple",
+          "sort each",
+          "skip"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but checking every triple takes O(n³) time: about 4.5·10⁹ sums for 3000 numbers. The target is O(n²)."
     }
   ],
   "signals": [

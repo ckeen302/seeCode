@@ -44,10 +44,12 @@ def walkthrough_payload(problem: Problem) -> WalkthroughPayload:
     visible = [test for test in tests if not test.hidden]
     return WalkthroughPayload(
         code=solution.code,
+        kind=problem.kind,
         entry=entry,
+        io=problem.io,
         viz=viz,
         inputs=[
-            WalkthroughInput(label=f"Example {number}", args=list(test.args))
+            WalkthroughInput(label=f"Example {number}", args=test.args, ops=test.ops)
             for number, test in enumerate(visible, start=1)
         ],
     )

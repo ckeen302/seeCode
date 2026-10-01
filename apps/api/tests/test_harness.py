@@ -1,62 +1,54 @@
-"""The Python test harness (Section 9.2, D7), run in CPython as the validator runs it."""
+"""The Python test harness (Section 9.2, D7), run in CPython as the validator runs it.
 
-import importlib.util
+Typed parameters are tested in test_harness_io.py, design problems and checkers in
+test_harness_design.py.
+"""
+
 import json
-import sys
-from pathlib import Path
-from types import ModuleType
+import time
 from typing import Any
 
 import pytest
 
-HARNESS_PATH = Path(__file__).resolve().parents[3] / "apps" / "web" / "public" / "py" / "harness.py"
-
-
-def _load_harness() -> ModuleType:
-    spec = importlib.util.spec_from_file_location("seecode_harness", HARNESS_PATH)
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    # No __pycache__ next to harness.py: everything in public/ is served.
-    dont_write_bytecode, sys.dont_write_bytecode = sys.dont_write_bytecode, True
-    try:
-        spec.loader.exec_module(module)
-    finally:
-        sys.dont_write_bytecode = dont_write_bytecode
-    return module
-
-
-harness = _load_harness()
-
-
-def _test(args: list[Any], expected: Any, **extra: Any) -> dict[str, Any]:
-    return {
-        "id": extra.pop("id", "t"),
-        "args": args,
-        "expected": expected,
-        "hidden": False,
-        **extra,
-    }
-
-
-def run(code: str, tests: list[dict[str, Any]], entry: str = "f", mode: str = "exact") -> Any:
-    return json.loads(harness.run_tests(code, entry, json.dumps(tests), mode))
-
-
-def _returning(expression: str) -> str:
-    return f"class Solution:\n    def f(self, *args):\n        return {expression}\n"
-
+from tests.harness_helpers import HARNESS_PATH, harness, run
+from tests.harness_helpers import case as _test
+from tests.harness_helpers import returning as _returning
 
 # ---------------------------------------------------------------- prelude (D7)
 
 
 def test_prelude_constants() -> None:
     assert harness.PRELUDE_LINES == 0
+    # LeetCode's imports, then LeetCode's ListNode and TreeNode, exactly as its starters
+    # define them in comments, so pasted code works.
     assert harness.PRELUDE == (
         "from typing import *\n"
         "from collections import *\n"
         "import heapq, bisect, math, itertools, functools\n"
+        "\n"
+        "\n"
+        "class ListNode:\n"
+        "    def __init__(self, val=0, next=None):\n"
+        "        self.val = val\n"
+        "        self.next = next\n"
+        "\n"
+        "\n"
+        "class TreeNode:\n"
+        "    def __init__(self, val=0, left=None, right=None):\n"
+        "        self.val = val\n"
+        "        self.left = left\n"
+        "        self.right = right\n"
     )
+
+
+def test_old_callers_need_no_spec() -> None:
+    """The M2 runner calls run_tests(code, entry, tests_json, mode): no spec_json."""
+    tests = json.dumps([_test([2], 4)])
+    [result] = json.loads(harness.run_tests(_returning("args[0] * 2"), "f", tests, "exact"))
+    assert result["status"] == "pass"
+    for spec in (None, "", "null", "{}"):
+        [same] = json.loads(harness.run_tests(_returning("args[0] * 2"), "f", tests, "exact", spec))
+        assert same["status"] == "pass"
 
 
 def test_prelude_names_are_available_without_imports() -> None:
@@ -166,11 +158,35 @@ def test_each_test_can_set_its_own_compare_mode() -> None:
 def test_results_that_are_not_json_are_shown_as_repr() -> None:
     results = run(_returning("args[0]"), [_test([1], 1)])
     assert results[0]["got"] == 1
+    assert "gotRepr" not in results[0]
     [infinite] = run(_returning("float('inf')"), [_test([], 1)])
-    assert infinite == {**infinite, "status": "fail", "got": "inf"}
+    assert infinite == {**infinite, "status": "fail", "got": "inf", "gotRepr": True}
     [custom] = run(_returning("object()"), [_test([], None)])
     assert custom["status"] == "fail"
     assert custom["got"].startswith("<object object")
+    assert custom["gotRepr"] is True
+
+
+@pytest.mark.parametrize(
+    ("expression", "shown"),
+    [
+        ("float('nan')", "nan"),
+        ("[1.5, float('-inf')]", "[1.5, -inf]"),
+        ("(x for x in [1])", "<generator object"),
+        ("{(1, 2): 'pair'}", "{(1, 2): 'pair'}"),
+    ],
+)
+def test_got_repr_marks_python_text(expression: str, shown: str) -> None:
+    [result] = run(_returning(expression), [_test([], None)])
+    assert result["got"].startswith(shown)
+    assert result["gotRepr"] is True
+    assert set(result) == {"id", "status", "got", "gotRepr", "stdout", "ms"}
+
+
+def test_a_returned_string_is_not_marked() -> None:
+    [result] = run(_returning("'nan'"), [_test([], "nan")])
+    assert result == {**result, "status": "pass", "got": "nan"}
+    assert "gotRepr" not in result
 
 
 def test_arguments_are_copied_for_every_test() -> None:
@@ -264,7 +280,55 @@ def test_an_exception_while_comparing_is_that_tests_error() -> None:
 
 def test_a_value_too_long_to_show_is_named_by_its_type() -> None:
     [result] = run(_returning("10 ** 5000"), [_test([], 1)])
-    assert result == {**result, "status": "fail", "got": "<int>"}
+    assert result == {**result, "status": "fail", "got": "<int>", "gotRepr": True}
+
+
+# ---------------------------------------------------------------- results too large to read
+
+
+@pytest.mark.parametrize(
+    ("expression", "preview"),
+    [
+        ("list(range(10 ** 6))", "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, ... (1,000,000 items)]"),
+        (
+            "[[0] * 1000] * 1000",
+            "[<list of 1,000>, <list of 1,000>, ",
+        ),  # shared rows count each time
+        ("{i: i for i in range(200000)}", "{0: 0, 1: 1, 2: 2, "),
+        ("'ab' * 10 ** 7", "'ababab"),
+        ("[list(range(400))] * 300", "[<list of 400>, "),
+    ],
+)
+def test_a_result_too_large_to_read_fails_fast(expression: str, preview: str) -> None:
+    started = time.perf_counter()
+    [result] = run(_returning(expression), [_test([], [0])])
+    assert time.perf_counter() - started < 2
+    assert result["status"] == "fail"
+    assert result["got"].startswith(preview)
+    assert result["gotRepr"] is True
+    assert result["error"] == (
+        "The result holds more than 100,000 items, too many to check or show; no test expects "
+        "one that large. Does a loop add too much?"
+    )
+
+
+def test_a_result_at_the_size_limit_is_read() -> None:
+    code = _returning(f"list(range({harness.MAX_RESULT_ITEMS}))")
+    [result] = run(code, [_test([], list(range(harness.MAX_RESULT_ITEMS)))])
+    assert result["status"] == "pass"
+    [over] = run(_returning(f"[0] * {harness.MAX_RESULT_ITEMS + 1}"), [_test([], [0])])
+    assert over["status"] == "fail"
+    assert over["gotRepr"] is True
+
+
+# ---------------------------------------------------------------- bytecode
+
+
+def test_loading_the_harness_writes_no_bytecode() -> None:
+    """apps/web/public/ is served as is: no __pycache__ may appear next to harness.py."""
+    cache = HARNESS_PATH.parent / "__pycache__"
+    run(_returning("1"), [_test([], 1)])
+    assert not cache.exists() or not list(cache.glob("harness*"))
 
 
 @pytest.mark.parametrize(
@@ -345,6 +409,27 @@ def test_closing_stdout_keeps_the_output_and_the_results() -> None:
     assert failed["status"] == "error"
     assert failed["stdout"] == "x\n"
     assert failed["error"].rstrip().endswith("ValueError: boom")
+
+
+def test_stderr_is_captured_with_stdout_in_order() -> None:
+    code = (
+        "import sys\n"
+        "class Solution:\n"
+        "    def f(self):\n"
+        "        print('one')\n"
+        "        print('two', file=sys.stderr)\n"
+        "        sys.stderr.write('three\\n')\n"
+        "        print('four')\n"
+        "        return 1\n"
+    )
+    results = run(code, [_test([], 1), _test([], 1, id="b")])
+    assert [r["stdout"] for r in results] == ["one\ntwo\nthree\nfour\n"] * 2
+
+
+def test_stderr_while_loading_goes_to_the_first_test() -> None:
+    code = "import sys\nprint('careful', file=sys.stderr)\n" + _returning("1")
+    first, second = run(code, [_test([], 1), _test([], 1, id="b")])
+    assert (first["stdout"], second["stdout"]) == ("careful\n", "")
 
 
 # ---------------------------------------------------------------- errors and line numbers

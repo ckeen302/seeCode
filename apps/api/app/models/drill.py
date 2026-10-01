@@ -21,6 +21,11 @@ class DrillSession(Base):
     size: Mapped[int] = mapped_column(Integer)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Migration 003: the cards dealt, in order ([{id, slug} | {id, toolkitId, phrase, options}],
+    # plus `reviewCreated` once a miss created a review item), and the end screen's
+    # "Add missed to review" choice.
+    cards: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, server_default=text("'[]'::jsonb"))
+    add_missed: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
 
 
 class DrillAnswer(Base):

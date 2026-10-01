@@ -1,11 +1,15 @@
 // Runner types (Sections 8.3 and 9). Shared by the main thread and the Pyodide worker.
 
-export type CompareMode = "exact" | "unordered" | "unordered_nested" | "float"
+export type CompareMode = "exact" | "unordered" | "unordered_nested" | "float" | "checker"
 
-/** One test for the harness. Custom cases (7.5) leave out `expected`. */
+/**
+ * One test for the harness. Custom cases (7.5) leave out `expected`. A function problem's
+ * test has `args`; a design problem's has `ops`, its calls `[name, ...args]` in order.
+ */
 export interface TestCase {
   id: string
-  args: unknown[]
+  args?: unknown[]
+  ops?: unknown[][]
   expected?: unknown
   hidden: boolean
   compare?: CompareMode
@@ -17,9 +21,18 @@ export interface TestResult {
   id: string
   status: TestStatus
   got?: unknown
+  /** `got` is the Python repr of a value JSON cannot hold (nan, an object…), not a string. */
+  gotRepr?: boolean
   stdout?: string
   error?: string
   ms?: number
+}
+
+/** How the harness runs a problem: its `kind`, `io` and `checker` (harness.py's spec_json). */
+export interface ProblemSpec {
+  kind?: "function" | "design"
+  io?: unknown
+  checker?: string | null
 }
 
 export interface RunTestsRequest {
@@ -27,6 +40,7 @@ export interface RunTestsRequest {
   entry: string
   tests: TestCase[]
   compare?: CompareMode
+  spec?: ProblemSpec
 }
 
 export interface TraceRequest {

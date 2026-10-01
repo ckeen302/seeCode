@@ -57,7 +57,7 @@
       "id": "count_and_heap",
       "patternId": "hashing",
       "structures": ["counter", "heap"],
-      "time": "O(n log n)",
+      "time": "O(n log k)",
       "space": "O(n)",
       "twist": "Count each value, then use a heap to pick the k values with the highest counts.",
       "twistKeywords": [

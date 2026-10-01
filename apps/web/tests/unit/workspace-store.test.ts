@@ -12,7 +12,7 @@ import {
 } from "@/lib/workspace/storage"
 import { allTestsPassed, createWorkspaceStore } from "@/stores/workspace"
 
-import { PALINDROME, TWO_SUM } from "./fixtures"
+import { MIN_STACK, PALINDROME, TWO_SUM } from "./fixtures"
 
 // Workspace store (Section 17.2, M2 subset) with a fake runner and in-memory storage.
 
@@ -78,7 +78,7 @@ describe("workspace store", () => {
     expect(store.getState().dirty).toBe(true)
     expect(storage.getItem(attemptKey("valid-palindrome"))).toBeNull()
     vi.advanceTimersByTime(300)
-    expect(readAttempt(storage, "valid-palindrome")).toEqual({
+    expect(readAttempt(storage, "valid-palindrome")).toMatchObject({
       v: 1,
       code: "x = 2",
       customCases: [],
@@ -136,9 +136,27 @@ describe("workspace store", () => {
         { id: "e2", args: ["Top 2 spot"], expected: false, hidden: false },
         { id: "custom-1", args: ["racecar"], hidden: false },
       ],
+      spec: { kind: "function", io: null, checker: null },
     })
     expect(store.getState()).toMatchObject({ resultsKind: "run", running: "idle", solved: false })
     expect(store.getState().results).toHaveLength(3)
+  })
+
+  it("runs a design problem's calls with its spec, and no custom cases", async () => {
+    const { store, runTests } = setup()
+    store.getState().open(MIN_STACK)
+    store.getState().addCustomCase([1])
+    await store.getState().run()
+    const request = runTests.mock.calls[0][0]
+    expect(request.spec).toEqual({ kind: "design", io: null, checker: null })
+    expect(request.tests).toEqual([
+      {
+        id: "e1",
+        ops: [["MinStack"], ["push", 3], ["push", 1], ["getMin"], ["pop"], ["getMin"]],
+        expected: [null, null, null, 1, null, 3],
+        hidden: false,
+      },
+    ])
   })
 
   it("Submit runs every test and marks the problem solved when all pass", async () => {
@@ -238,7 +256,7 @@ describe("workspace store", () => {
     store.getState().open(PALINDROME)
     store.getState().setCode("guest code")
     await store.getState().submit()
-    expect(readGuestAttempts(storage)).toEqual([
+    expect(readGuestAttempts(storage)).toMatchObject([
       {
         slug: "valid-palindrome",
         code: "guest code",

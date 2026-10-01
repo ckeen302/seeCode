@@ -15,6 +15,7 @@ export const PALINDROME: ProblemPublic = {
   ],
   constraints: ["1 ≤ len(s) ≤ 2·10⁵", "`s` is printable ASCII"],
   targets: { time: "O(n)", space: "O(1)" },
+  kind: "function",
   entry: "isPalindrome",
   starterCode: "class Solution:\n    def isPalindrome(self, s: str) -> bool:\n        pass\n",
   tests: [
@@ -44,4 +45,35 @@ export const TWO_SUM: ProblemPublic = {
     },
     { id: "h1", args: [[1, 2], 3], expected: [0, 1], hidden: true, compare: "unordered" },
   ],
+}
+
+/** A design problem: each test is a list of calls (docs/PARITY_PLAN.md 4.2). */
+export const MIN_STACK: ProblemPublic = {
+  slug: "min-stack",
+  title: "Min Stack",
+  leetcodeUrl: "https://leetcode.com/problems/min-stack/",
+  difficulty: "medium",
+  order: 16,
+  summary: "Build a stack that also returns its smallest value in O(1).",
+  examples: [{ input: '["MinStack", "push", "getMin"]', output: "[null, null, 3]" }],
+  constraints: ["At most 3·10⁴ calls"],
+  targets: { time: "O(1)", space: "O(n)" },
+  kind: "design",
+  entry: "MinStack",
+  starterCode: "class MinStack:\n    def __init__(self):\n        pass\n",
+  tests: [
+    {
+      id: "e1",
+      ops: [["MinStack"], ["push", 3], ["push", 1], ["getMin"], ["pop"], ["getMin"]],
+      expected: [null, null, null, 1, null, 3],
+      hidden: false,
+    },
+    {
+      id: "h1",
+      ops: [["MinStack"], ["push", 5], ["top"]],
+      expected: [null, null, 5],
+      hidden: true,
+    },
+  ],
+  contentVersion: "test",
 }

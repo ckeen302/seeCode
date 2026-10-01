@@ -42,6 +42,9 @@ class ReviewItem(Base):
     last_grade: Mapped[str | None] = mapped_column(Text)
     last_reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Migration 003: a borderline answer waiting for the user's Hard / Good rating
+    # ({answer, planGrade, seconds, answeredAt}); null otherwise.
+    pending: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
 
 
 Index("review_items_due", ReviewItem.user_id, ReviewItem.due_at)

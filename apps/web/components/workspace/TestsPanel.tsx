@@ -39,6 +39,8 @@ import type { CustomCase } from "@/lib/workspace/storage"
 import { cn } from "@/lib/utils"
 import { useWorkspace, workspaceStore, type RunFailure } from "@/stores/workspace"
 
+type ProblemTest = ProblemPublic["tests"][number]
+
 // ---------------------------------------------------------------- status
 
 const STATUS_TEXT: Record<TestResult["status"], string> = {
@@ -53,6 +55,7 @@ export const COMPARE_HINTS: Partial<Record<CompareMode, string>> = {
   unordered: "any order",
   unordered_nested: "any order, inside each list too",
   float: "within 10⁻⁶",
+  checker: "any valid answer",
 }
 
 function CaseStatusIcon({ item }: { item: CaseView }) {
@@ -253,9 +256,15 @@ function ValueBlock({
   )
 }
 
-/** A JSON value, cut short when it is too long to show (a huge wrong answer). */
-function ShownValue({ value }: { value: unknown }) {
-  const { text, truncated } = formatValueForDisplay(value)
+/**
+ * A JSON value, cut short when it is too long to show (a huge wrong answer). `repr` marks the
+ * Python repr of a value JSON cannot hold (nan, an object), shown as is rather than quoted.
+ */
+function ShownValue({ value, repr = false }: { value: unknown; repr?: boolean }) {
+  const { text, truncated } =
+    repr && typeof value === "string"
+      ? { text: value, truncated: false }
+      : formatValueForDisplay(value)
   return (
     <>
       {text}
@@ -277,6 +286,66 @@ function InputBlock({ names, args }: { names: string[]; args: unknown[] }) {
   )
 }
 
+/** A design call `[name, ...args]` as Python: `MinStack()`, `push(3)`. */
+function callText(op: readonly unknown[], first: boolean): string {
+  const [name, ...args] = op
+  const shown = args.map((arg) => formatValueForDisplay(arg).text).join(", ")
+  return `${first ? "" : "."}${String(name)}(${shown})`
+}
+
+/**
+ * A design problem's test (Section 9.2, docs/PARITY_PLAN.md 4.2): its calls in order, each
+ * with the value it should return and, after a run, the value it returned.
+ */
+function CallsTable({ test, result }: { test: ProblemTest; result: TestResult | null }) {
+  const ops = test.ops ?? []
+  const expected = Array.isArray(test.expected) ? test.expected : []
+  const got = hasOutput(result) && !result.gotRepr && Array.isArray(result.got) ? result.got : null
+  return (
+    <div className="max-h-64 overflow-auto rounded-md border border-border bg-bg">
+      <table className="w-full border-collapse font-mono text-sm">
+        <thead className="sticky top-0 bg-surface text-left text-xs font-medium text-muted">
+          <tr>
+            <th scope="col" className="px-3 py-1.5 font-medium">
+              Call
+            </th>
+            <th scope="col" className="px-3 py-1.5 font-medium">
+              Expected
+            </th>
+            {got ? (
+              <th scope="col" className="px-3 py-1.5 font-medium">
+                Output
+              </th>
+            ) : null}
+          </tr>
+        </thead>
+        <tbody>
+          {ops.map((op, index) => {
+            const wrong =
+              got !== null && JSON.stringify(got[index]) !== JSON.stringify(expected[index])
+            return (
+              <tr key={index} className="border-t border-border/60 align-top">
+                <td className="px-3 py-1 wrap-anywhere">{callText(op, index === 0)}</td>
+                <td className="px-3 py-1 wrap-anywhere">
+                  <ShownValue value={expected[index] ?? null} />
+                </td>
+                {got ? (
+                  <td
+                    className={cn("px-3 py-1 wrap-anywhere", wrong && "text-error")}
+                    aria-label={wrong ? "different from expected" : undefined}
+                  >
+                    <ShownValue value={got[index] ?? null} />
+                  </td>
+                ) : null}
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 /** What the code printed: open when there is something, one quiet line when there is not. */
 function Stdout({ text }: { text: string | undefined }) {
   if (!text) return <p className="text-xs font-medium text-muted">Stdout: nothing printed</p>
@@ -294,7 +363,13 @@ function Stdout({ text }: { text: string | undefined }) {
 
 /** An error's traceback, shown above the input so the line to fix is the first thing seen. */
 function ErrorField({ result }: { result: TestResult | null }) {
-  if (result?.status !== "error" || !result.error) return null
+  if (!result?.error) return null
+  // A failed test may carry a reason too (a checker that refused, a result that reuses an
+  // input node, an answer too large to compare).
+  if (result.status === "fail") {
+    return <p className="text-sm wrap-anywhere text-text">{result.error}</p>
+  }
+  if (result.status !== "error") return null
   return (
     <Field label="Error">
       <Traceback text={result.error} />
@@ -345,10 +420,36 @@ function TestCaseDetail({
         </p>
       ) : null}
       <ErrorField result={result} />
-      <Field label="Input">
-        <InputBlock names={names} args={item.test.args} />
-      </Field>
-      {/* Expected and the output side by side when there is room, so they compare at a glance. */}
+      {item.test.ops ? (
+        <Field label="Calls" hint={item.test.compare && COMPARE_HINTS[item.test.compare]}>
+          <CallsTable test={item.test} result={result} />
+        </Field>
+      ) : (
+        <>
+          <Field label="Input">
+            <InputBlock names={names} args={item.test.args ?? []} />
+          </Field>
+          <ExpectedAndOutput item={item} result={result} withOutput={withOutput} />
+        </>
+      )}
+      {result?.status === "timeout" ? <TimeoutNote /> : null}
+      {result ? <RunDetails result={result} /> : null}
+    </div>
+  )
+}
+
+/** Expected and the output side by side when there is room, so they compare at a glance. */
+function ExpectedAndOutput({
+  item,
+  result,
+  withOutput,
+}: {
+  item: Extract<CaseView, { kind: "visible" | "hidden" }>
+  result: TestResult | null
+  withOutput: boolean
+}) {
+  return (
+    <>
       <div className={cn("grid gap-3", withOutput && "@min-[480px]:grid-cols-2")}>
         <Field label="Expected" hint={item.test.compare && COMPARE_HINTS[item.test.compare]}>
           <ValueBlock label="Expected">
@@ -357,15 +458,13 @@ function TestCaseDetail({
         </Field>
         {withOutput ? (
           <Field label="Output">
-            <ValueBlock label="Output" tone={result.status === "fail" ? "fail" : undefined}>
-              <ShownValue value={result.got} />
+            <ValueBlock label="Output" tone={result?.status === "fail" ? "fail" : undefined}>
+              <ShownValue value={result?.got} repr={result?.gotRepr} />
             </ValueBlock>
           </Field>
         ) : null}
       </div>
-      {result?.status === "timeout" ? <TimeoutNote /> : null}
-      {result ? <RunDetails result={result} /> : null}
-    </div>
+    </>
   )
 }
 
@@ -444,7 +543,7 @@ function CustomCaseDetail({
       {hasOutput(result) ? (
         <Field label="Output">
           <ValueBlock label="Output">
-            <ShownValue value={result.got} />
+            <ShownValue value={result.got} repr={result.gotRepr} />
           </ValueBlock>
         </Field>
       ) : null}
@@ -462,6 +561,8 @@ function CustomCaseDetail({
 
 // ---------------------------------------------------------------- panel
 
+const NO_CUSTOM_CASES: CustomCase[] = []
+
 /** Arguments for a new custom case: the selected case's, or the first example's. */
 function argsForNewCase(
   selected: CaseView | undefined,
@@ -470,7 +571,11 @@ function argsForNewCase(
 ): unknown[] {
   const first = problem.tests.find((test) => !test.hidden)?.args ?? names.map(() => null)
   const fromSelected =
-    selected?.kind === "custom" ? selected.custom.args : selected ? selected.test.args : first
+    selected?.kind === "custom"
+      ? selected.custom.args
+      : selected
+        ? (selected.test.args ?? first)
+        : first
   // A big hidden input may not fit a custom case (10 KB, Section 20): start from an example.
   return customArgsTooLarge(fromSelected) ? first : fromSelected
 }
@@ -518,16 +623,16 @@ export function TestsPanelView({
   customCases,
   pythonLoading,
 }: TestsPanelViewProps) {
-  const cases = useMemo(
-    () => buildCases(problem, results, customCases),
-    [problem, results, customCases]
-  )
+  // Custom cases are argument lists: design problems (lists of calls) have none.
+  const design = problem.kind === "design"
+  const ownCases = design ? NO_CUSTOM_CASES : customCases
+  const cases = useMemo(() => buildCases(problem, results, ownCases), [problem, results, ownCases])
   // Results on mount (e.g. back from another tab) open on their first case that did not pass.
   const [selectedId, setSelectedId] = useState<string | null>(() =>
     results ? firstInterestingCase(cases) : null
   )
   const [shownResults, setShownResults] = useState(results)
-  const summary = summarize(problem, results, resultsKind, customCases)
+  const summary = summarize(problem, results, resultsKind, ownCases)
   const firstArgs = problem.tests.find((test) => !test.hidden)?.args ?? []
   const names = argumentNames(problem.starterCode, problem.entry, firstArgs.length)
   const tablistId = useId()
@@ -615,22 +720,24 @@ export function TestsPanelView({
             )
           })}
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 px-2 text-muted hover:text-text"
-          onClick={addCase}
-          disabled={customCases.length >= MAX_CUSTOM_CASES}
-          aria-label="Add a custom case"
-          title={
-            customCases.length >= MAX_CUSTOM_CASES
-              ? `Up to ${MAX_CUSTOM_CASES} custom cases`
-              : "Add a custom case"
-          }
-        >
-          <PlusIcon />
-          Case
-        </Button>
+        {design ? null : (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-muted hover:text-text"
+            onClick={addCase}
+            disabled={customCases.length >= MAX_CUSTOM_CASES}
+            aria-label="Add a custom case"
+            title={
+              customCases.length >= MAX_CUSTOM_CASES
+                ? `Up to ${MAX_CUSTOM_CASES} custom cases`
+                : "Add a custom case"
+            }
+          >
+            <PlusIcon />
+            Case
+          </Button>
+        )}
       </div>
 
       {selected ? (

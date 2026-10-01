@@ -10,6 +10,9 @@ PatternState = Literal["locked", "available", "in_progress", "mastered"]
 PROBLEM_STATUSES: tuple[ProblemStatus, ...] = get_args(ProblemStatus)
 SOLVED_STATUSES: frozenset[str] = frozenset({"solved", "mastered"})
 MASTERED_PROBLEMS_NEEDED = 2
+# A problem solved clean is mastered by a later review graded good or easy at an interval
+# of at least this many days.
+MASTERY_INTERVAL_DAYS = 6.0
 # Section 11.3: signed-out users see every pattern as available.
 SIGNED_OUT_STATE: PatternState = "available"
 
@@ -32,6 +35,13 @@ def problem_status(value: str | None) -> ProblemStatus:
 
 def is_solved(status: str | None) -> bool:
     return status in SOLVED_STATUSES
+
+
+def is_mastery_review(grade: str, interval_before: float) -> bool:
+    """Whether a review can master its problem (Section 11.3): graded good or easy at an
+    interval of at least 6 days, `interval_before` being the interval the item waited.
+    The problem also needs an earlier `solved_clean` attempt, which the caller checks."""
+    return grade in ("good", "easy") and interval_before >= MASTERY_INTERVAL_DAYS
 
 
 def pattern_progress(

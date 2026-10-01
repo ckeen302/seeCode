@@ -12,8 +12,8 @@ from pydantic import Field, ValidationInfo, field_validator
 from app.content.models import Complexity
 from app.schemas import CamelModel
 
-# Section 16.3: the Plan card's complexity answers include "Not sure".
-ComplexityAnswer = Literal["O(1)", "O(log n)", "O(n)", "O(n log n)", "O(n²)", "O(2ⁿ)", "Not sure"]
+# Section 16.3: the Plan card's complexity answers are the content values plus "Not sure".
+ComplexityAnswer = Literal[Complexity, "Not sure"]
 FieldResult = Literal["correct", "close", "wrong"]
 TwistSource = Literal["keywords", "ai"]
 

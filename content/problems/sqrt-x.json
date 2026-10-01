@@ -104,7 +104,7 @@
       "id": "count_up",
       "patternId": "brute_force",
       "structures": ["array"],
-      "time": "O(n)",
+      "time": "O(√n)",
       "space": "O(1)",
       "twist": "Count up from 0 and return the last number whose square is still at most x.",
       "twistKeywords": [
@@ -173,7 +173,7 @@
       "pointsTo": "binary_search"
     }
   ],
-  "constraintReading": "Here n is the value x itself, up to 2³¹ − 1, about 2.1·10⁹. Trying every number up to x is far too slow, and even counting up to √x takes over 46,000 steps; the Plan card has no O(√n), so counting up is listed under O(n), which it stays below. The O(log x) requirement means halving the range 0 to x instead: about 31 steps, with O(1) space.",
+  "constraintReading": "Here n is the value x itself, up to 2³¹ − 1, about 2.1·10⁹. Trying every number up to x is far too slow, and even counting up to √x, O(√n), takes over 46,000 steps. The O(log x) requirement means halving the range 0 to x instead: about 31 steps, with O(1) space.",
   "related": [
     {
       "slug": "koko-eating-bananas",

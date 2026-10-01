@@ -5,6 +5,17 @@ import sys
 from pathlib import Path
 
 from tests.conftest import FIXTURE_CONTENT, fixture_documents, write_documents
+from tests.engine_fixtures import (
+    Document,
+    any_pair,
+    clone_graph,
+    copy_random_list,
+    encode_decode,
+    file_name,
+    min_stack,
+    reverse_linked_list,
+    with_engine_problems,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SCRIPT = REPO_ROOT / "scripts" / "validate_content.py"
@@ -195,3 +206,162 @@ def test_events_that_never_fire_and_unreached_predicts_are_warnings(tmp_path: Pa
         "on any visible test",
         "9 content file(s) checked, 4 solution(s) run: 0 error(s), 2 warning(s)",
     ]
+
+
+# ---------------------------------------------------------------- io, design and checkers
+
+
+def _with(tmp_path: Path, *problems: Document) -> str:
+    documents = fixture_documents()
+    for problem in problems:
+        documents[file_name(problem)] = problem
+    return str(write_documents(tmp_path, documents))
+
+
+def _issues(done: subprocess.CompletedProcess[str]) -> list[str]:
+    return done.stdout.splitlines()[:-1]
+
+
+def test_engine_problems_pass_every_rule(tmp_path: Path) -> None:
+    """Typed arguments, in-place results, design calls, round trips and checkers all run
+    through the harness, and their walkthroughs are traced without warnings."""
+    before = _bytecode()
+    done = _run(str(write_documents(tmp_path, with_engine_problems(fixture_documents()))))
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert (
+        done.stdout == "19 content file(s) checked, 14 solution(s) run: 0 error(s), 0 warning(s)\n"
+    )
+    assert _bytecode() == before
+
+
+def test_a_typed_result_that_differs_fails(tmp_path: Path) -> None:
+    problem = reverse_linked_list()
+    problem["tests"][0]["expected"] = [1, 2, 3]
+    done = _run(_with(tmp_path, problem))
+    assert _issues(done) == [
+        "error: problems/reverse-linked-list.json: tests[0]: solution.code test 'e1' fails: "
+        "expected [1, 2, 3], got [3, 2, 1]"
+    ]
+
+
+def test_a_result_with_a_cycle_fails_without_hanging(tmp_path: Path) -> None:
+    problem = reverse_linked_list()
+    problem["solution"]["code"] = problem["solution"]["code"].replace(
+        "        return prev  # viz:done\n",
+        "        if prev and prev.next:\n"
+        "            prev.next.next = prev\n"
+        "        return prev  # viz:done\n",
+    )
+    done = _run(_with(tmp_path, problem))
+    assert done.returncode == 1
+    assert _issues(done)[0] == (
+        "error: problems/reverse-linked-list.json: tests[0]: solution.code test 'e1' raises: "
+        "Could not read the returned value: the list has a cycle: node 2 links back to node 1"
+    )
+
+
+def test_a_copy_that_reuses_input_nodes_fails(tmp_path: Path) -> None:
+    problem = copy_random_list()
+    problem["solution"]["code"] = problem["solution"]["code"].replace(
+        "return copies[head]  # viz:done", "return head  # viz:done"
+    )
+    done = _run(_with(tmp_path, problem))
+    assert _issues(done)[0] == (
+        "error: problems/copy-list-with-random-pointer.json: tests[0]: solution.code test 'e1' "
+        "fails: The result reuses nodes of the input list: a deep copy is made of new Node "
+        "objects. (got [[3, null], [1, 0], [2, 1]])"
+    )
+
+
+def test_a_bad_typed_test_input_is_reported(tmp_path: Path) -> None:
+    problem = clone_graph()
+    problem["tests"][2]["args"] = [[[2], [1], []]]
+    done = _run(_with(tmp_path, problem))
+    assert _issues(done) == [
+        "error: problems/clone-graph.json: tests[2]: solution.code test 'h1' raises: Could not "
+        "build the arguments: node (graph_node): node(s) 3 cannot be reached from node 1, and "
+        "the method only gets node 1"
+    ]
+
+
+def test_checker_verdicts_are_reported(tmp_path: Path) -> None:
+    wrong = any_pair()
+    wrong["solution"]["code"] = wrong["solution"]["code"].replace(
+        "return [seen[target - x], i]", "return [i, i]"
+    )
+    done = _run(_with(tmp_path, wrong))
+    assert _issues(done)[0] == (
+        "error: problems/any-pair.json: tests[0]: solution.code test 'e1' fails: the checker "
+        "rejects [1, 1] (one right answer: [0, 1])"
+    )
+    broken = any_pair()
+    broken["checker"] = "def check(args, got):\n    return got[0] / 0 == 1\n"
+    done = _run(_with(tmp_path, broken))
+    assert _issues(done)[0] == (
+        "error: problems/any-pair.json: tests[0]: solution.code test 'e1' fails: The checker "
+        "could not judge this answer: ZeroDivisionError: division by zero (checker line 2) "
+        "(got [0, 1])"
+    )
+
+
+def test_design_results_and_errors_are_reported(tmp_path: Path) -> None:
+    wrong = min_stack()
+    wrong["tests"][0]["expected"] = [None, None, None, 3, None, 3]
+    done = _run(_with(tmp_path, wrong))
+    assert _issues(done) == [
+        "error: problems/min-stack.json: tests[0]: solution.code test 'e1' fails: expected "
+        "[null, null, null, 3, null, 3], got [null, null, null, 1, null, 3]"
+    ]
+    broken = min_stack()
+    broken["solution"]["code"] = broken["solution"]["code"].replace(
+        "self.stack.pop()", "self.stack.pop(5)"
+    )
+    done = _run(_with(tmp_path, broken))
+    assert _issues(done)[0] == (
+        "error: problems/min-stack.json: tests[0]: solution.code test 'e1' raises: IndexError: "
+        "pop index out of range"
+    )
+
+
+def test_round_trips_run_through_refs(tmp_path: Path) -> None:
+    lossy = encode_decode()
+    lossy["solution"]["code"] = lossy["solution"]["code"].replace("return out", "return out[1:]")
+    done = _run(_with(tmp_path, lossy))
+    assert _issues(done)[0] == (
+        "error: problems/encode-and-decode-strings.json: tests[0]: solution.code test 'e1' "
+        'fails: the checker rejects [null, "3#see4#code", ["code"]] (one right answer: [null, '
+        'null, ["see", "code"]])'
+    )
+
+
+def test_walkthroughs_trace_typed_arguments(tmp_path: Path) -> None:
+    """The tracer builds ListNodes from the test's lists, so narration can read them."""
+    good = reverse_linked_list()
+    good["viz"]["events"][0]["say"] = "{prev.val} now leads the list"
+    assert _run(_with(tmp_path, good)).returncode == 0
+    broken = reverse_linked_list()
+    broken["viz"]["events"][0]["say"] = "{head.val} leads the list"
+    done = _run(_with(tmp_path, broken))
+    assert _issues(done) == [
+        "error: problems/reverse-linked-list.json: viz.events[0].say: raises AttributeError: "
+        "'NoneType' object has no attribute 'val' (input 'e1', line 6)"
+    ]
+
+
+def test_walkthroughs_trace_design_calls(tmp_path: Path) -> None:
+    broken = min_stack()
+    broken["viz"]["events"][0]["say"] = "{val + 'x'}"
+    done = _run(_with(tmp_path, broken))
+    assert _issues(done) == [
+        "error: problems/min-stack.json: viz.events[0].say: raises TypeError: unsupported "
+        "operand type(s) for +: 'int' and 'str' (input 'e1', line 7)"
+    ]
+    unfired = min_stack()
+    code = unfired["solution"]["code"].replace(
+        "        return self.stack[-1][0]\n", "        return self.stack[-1][0]  # viz:peek\n"
+    )
+    unfired["solution"]["code"] = code
+    unfired["viz"]["events"].append({"id": "peek", "at": "peek", "label": "top"})
+    done = _run(_with(tmp_path, unfired))
+    assert done.returncode == 0
+    assert _issues(done) == []  # e1 calls top(), so the event fires

@@ -11,7 +11,7 @@ import type { TestResult } from "@/lib/runner/types"
 import { registerEditor } from "@/lib/workspace/editorBridge"
 import { workspaceStore } from "@/stores/workspace"
 
-import { PALINDROME, TWO_SUM } from "./fixtures"
+import { MIN_STACK, PALINDROME, TWO_SUM } from "./fixtures"
 
 // Tests panel (Section 7.5).
 
@@ -89,7 +89,7 @@ describe("Tests panel", () => {
 
   it("links traceback lines to the editor", async () => {
     const goToLine = vi.fn()
-    const unregister = registerEditor({ goToLine, focus: vi.fn() })
+    const unregister = registerEditor({ goToLine, focus: vi.fn(), insertLines: vi.fn() })
     const error =
       'Traceback (most recent call last):\n  File "<solution>", line 4, in isPalindrome\n    return s[99]\nIndexError: string index out of range\n'
     view({
@@ -107,7 +107,7 @@ describe("Tests panel", () => {
 
   it("reports code that does not load once, with a link to its line", async () => {
     const goToLine = vi.fn()
-    const unregister = registerEditor({ goToLine, focus: vi.fn() })
+    const unregister = registerEditor({ goToLine, focus: vi.fn(), insertLines: vi.fn() })
     const error = '  File "<solution>", line 3\n    return s ==\nSyntaxError: invalid syntax\n'
     view({
       results: ["e1", "e2"].map((id) => ({ id, status: "error" as const, error })),
@@ -289,5 +289,31 @@ describe("custom cases", () => {
     fireEvent.click(tab)
     expect(within(selectedPanel()).getByText("Output").nextSibling).toHaveTextContent("false")
     expect(within(selectedPanel()).queryByText("Expected")).not.toBeInTheDocument()
+  })
+
+  it("shows a design problem's calls with the expected and returned value of each", () => {
+    const results: TestResult[] = [
+      { id: "e1", status: "fail", got: [null, null, null, 3, null, 3], stdout: "" },
+    ]
+    view({ problem: MIN_STACK, results, resultsKind: "run" })
+    const panel = selectedPanel()
+    const rows = within(panel).getAllByRole("row")
+    expect(rows[0]).toHaveTextContent("CallExpectedOutput")
+    expect(rows[1]).toHaveTextContent("MinStack()nullnull")
+    expect(rows[2]).toHaveTextContent(".push(3)nullnull")
+    expect(within(rows[4]).getByLabelText("different from expected")).toHaveTextContent("3")
+    // Custom cases are argument lists, so a design problem offers none.
+    expect(screen.queryByRole("button", { name: "Add a custom case" })).not.toBeInTheDocument()
+  })
+
+  it("shows a value JSON cannot hold as its Python repr, and a failed test's reason", () => {
+    const results: TestResult[] = [
+      { id: "e1", status: "fail", got: "nan", gotRepr: true, error: "The checker said no." },
+      { id: "e2", status: "pass", got: false },
+    ]
+    view({ results, resultsKind: "run" })
+    expect(within(selectedPanel()).getByText("nan")).toBeInTheDocument()
+    expect(within(selectedPanel()).queryByText('"nan"')).not.toBeInTheDocument()
+    expect(within(selectedPanel()).getByText("The checker said no.")).toBeInTheDocument()
   })
 })

@@ -1,7 +1,8 @@
 """Response bodies of the public content endpoints (Section 16.2).
 
-`ProblemPublic` follows Section 16.3. The other views are not defined there; their
-shapes are recorded in docs/DECISIONS.md. Answer fields a user may not see yet
+`ProblemPublic` follows Section 16.3, plus `kind`, `io` and `checker`, which the browser
+needs to run the tests (the harness's spec_json). The other views are not defined there;
+their shapes are recorded in docs/DECISIONS.md. Answer fields a user may not see yet
 (`patternId` in the problem list, `twist` on the pattern page) are left out of the
 JSON entirely rather than sent as null. Per-user fields are null when signed out.
 """
@@ -16,7 +17,9 @@ from app.content.models import (
     Complexity,
     Demo,
     Difficulty,
+    Io,
     PatternSignal,
+    ProblemKind,
     Slot,
     ToolkitCard,
     Variation,
@@ -41,10 +44,13 @@ class TargetsView(CamelModel):
 
 
 class TestCaseView(CamelModel):
+    """A function problem's test has `args`; a design problem's has `ops`, its calls."""
+
     __test__ = False  # not a pytest test class
 
     id: str
-    args: list[Any]
+    args: list[Any] | None = Field(default=None, exclude_if=_is_none)
+    ops: list[list[Any]] | None = Field(default=None, exclude_if=_is_none)
     expected: Any
     hidden: bool
     compare: CompareMode | None = Field(default=None, exclude_if=_is_none)
@@ -52,7 +58,8 @@ class TestCaseView(CamelModel):
 
 class ProblemPublic(CamelModel):
     """A Workspace problem without its answers: no approaches, signals, hints, solution,
-    viz, constraintReading or related. Hidden tests are included (Section 9.3)."""
+    viz, constraintReading or related. Hidden tests are included (Section 9.3), and so
+    are `io` and `checker` (left out when unset): the browser runs the tests."""
 
     slug: str
     title: str
@@ -63,8 +70,11 @@ class ProblemPublic(CamelModel):
     examples: list[ExampleView]
     constraints: list[str]
     targets: TargetsView
+    kind: ProblemKind
     entry: str
+    io: Io | None = Field(default=None, exclude_if=_is_none)
     starter_code: str
+    checker: str | None = Field(default=None, exclude_if=_is_none)
     tests: list[TestCaseView]
     content_version: str
 

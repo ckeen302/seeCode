@@ -2,13 +2,15 @@
 
 Runs every static rule from app.content.validation (the checks the API also runs at
 startup), then rule 7: each problem's reference solution must pass all of its tests
-when run with the browser test harness (apps/web/public/py/harness.py). Solutions run
-in a fresh Python subprocess per problem with a timeout, so an infinite loop cannot
-hang CI. Pattern demos are run once on their own arguments and must not raise.
+when run with the browser test harness (apps/web/public/py/harness.py), given the
+problem's kind, io and checker as the browser gives them. Solutions run in a fresh Python
+subprocess per problem with a timeout, so an infinite loop cannot hang CI. Pattern demos
+are run once on their own arguments and must not raise.
 
-Each walkthrough is also traced (scripts/viz_trace.py) on its problem's visible tests, or
-its demo's arguments: an event `when`, `say` or predict `answerWhen` that raises is an
-error, and an event that never fires or a predict point never reached is a warning.
+Each walkthrough is also traced (scripts/viz_trace.py) on its problem's visible tests
+(arguments built from their io types, or a design test's calls), or its demo's arguments:
+an event `when`, `say` or predict `answerWhen` that raises is an error, and an event that
+never fires or a predict point never reached is a warning.
 
 Usage (from the repo root):
     uv run --project apps/api python scripts/validate_content.py [content_dir] [--timeout S]
@@ -23,7 +25,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from app.content.models import Pattern, Problem, VizConfig
+from app.content.models import Pattern, Problem, TestCase, VizConfig
 from app.content.validation import PATTERNS_FILE, Issue, validate_content_dir
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -32,17 +34,20 @@ VIZ_TRACE = Path(__file__).resolve().parent / "viz_trace.py"
 DEFAULT_TIMEOUT = 10.0
 MAX_SHOWN = 300
 
-# Runs in a fresh interpreter: imports harness.py from its path, runs the job read from
-# stdin, and writes the result to the real stdout. Anything the solution prints while
-# loading goes to stderr instead, so it cannot corrupt the JSON.
+# Runs in a fresh interpreter: loads harness.py from its path (its source run in a new
+# module, so no bytecode is written next to it), runs the job read from stdin, and writes
+# the result to the real stdout. Anything the solution prints while loading goes to stderr
+# instead, so it cannot corrupt the JSON.
 _CHILD = """
-import importlib.util, json, sys
-spec = importlib.util.spec_from_file_location("seecode_harness", sys.argv[1])
-harness = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(harness)
+import json, sys, types
+harness = types.ModuleType("seecode_harness")
+harness.__file__ = sys.argv[1]
+with open(sys.argv[1], encoding="utf-8") as source:
+    exec(compile(source.read(), sys.argv[1], "exec"), harness.__dict__)
 job = json.load(sys.stdin)
 out, sys.stdout = sys.stdout, sys.stderr
-out.write(harness.run_tests(job["code"], job["entry"], json.dumps(job["tests"])))
+spec = json.dumps(job["spec"])
+out.write(harness.run_tests(job["code"], job["entry"], json.dumps(job["tests"]), "exact", spec))
 """
 
 
@@ -72,21 +77,42 @@ def _run_child(name: str, command: list[str], job: dict[str, Any], timeout: floa
         raise RunFailed(f"the {name} returned no results: {_tail(done.stderr)}") from exc
 
 
-def run_harness(code: str, entry: str, tests: list[dict[str, Any]], timeout: float) -> list[Any]:
-    job = {"code": code, "entry": entry, "tests": tests}
+def run_harness(
+    code: str,
+    entry: str,
+    tests: list[dict[str, Any]],
+    timeout: float,
+    spec: dict[str, Any] | None = None,
+) -> list[Any]:
+    """The harness's results for `tests`; `spec` is its spec_json (kind, io, checker)."""
+    job = {"code": code, "entry": entry, "tests": tests, "spec": spec}
     results = _run_child("harness", ["-c", _CHILD, str(HARNESS)], job, timeout)
     if not isinstance(results, list) or len(results) != len(tests):
         raise RunFailed(f"expected {len(tests)} results, got {results!r:.{MAX_SHOWN}}")
     return results
 
 
+def harness_test(test: TestCase) -> dict[str, Any]:
+    """A test as the browser sends it to the harness (the TestCaseView JSON)."""
+    data: dict[str, Any] = {"id": test.id}
+    if test.args is not None:
+        data["args"] = test.args
+    if test.ops is not None:
+        data["ops"] = test.ops
+    data.update(expected=test.expected, hidden=test.hidden)
+    if test.compare is not None:
+        data["compare"] = test.compare
+    return data
+
+
 def check_solution(file: str, problem: Problem, timeout: float) -> list[Issue]:
     """Rule 7: the reference solution passes every test."""
     if problem.solution is None or problem.entry is None or problem.tests is None:
         return []
-    tests = [test.model_dump(mode="json") for test in problem.tests]
+    tests = [harness_test(test) for test in problem.tests]
+    spec = problem.harness_spec()
     try:
-        results = run_harness(problem.solution.code, problem.entry, tests, timeout)
+        results = run_harness(problem.solution.code, problem.entry, tests, timeout, spec)
     except RunFailed as exc:
         return [Issue("error", file, "solution.code", str(exc))]
     issues = []
@@ -94,11 +120,16 @@ def check_solution(file: str, problem: Problem, timeout: float) -> list[Issue]:
         status = result.get("status")
         if status == "pass":
             continue
-        if status == "fail":
+        got = _show_got(result)
+        if status == "fail" and result.get("error"):  # a checker, deep-copy or size verdict
+            message = f"test {test['id']!r} fails: {_tail(str(result['error']))} (got {got})"
+        elif status == "fail" and test.get("compare") == "checker":
             message = (
-                f"test {test['id']!r} fails: expected {_show(test['expected'])}, "
-                f"got {_show(result.get('got'))}"
+                f"test {test['id']!r} fails: the checker rejects {got} (one right answer: "
+                f"{_show(test['expected'])})"
             )
+        elif status == "fail":
+            message = f"test {test['id']!r} fails: expected {_show(test['expected'])}, got {got}"
         else:
             message = f"test {test['id']!r} raises: {_tail(str(result.get('error')))}"
         issues.append(Issue("error", file, f"tests[{i}]", f"solution.code {message}"))
@@ -125,18 +156,20 @@ def check_walkthrough(
     path: str,
     code: str,
     entry: str,
-    inputs: list[tuple[str, list[Any]]],
+    inputs: list[dict[str, Any]],
     viz: VizConfig,
     timeout: float,
     inputs_name: str = "any visible test",
+    spec: dict[str, Any] | None = None,
 ) -> list[Issue]:
-    """Trace `code` on each (id, args) input and evaluate the viz expressions as the tracer
-    would."""
+    """Trace `code` on each input ({"id", "args"}, or {"id", "ops"} for a design problem)
+    and evaluate the viz expressions as the tracer would."""
     job = {
         "code": code,
         "entry": entry,
-        "inputs": [{"id": input_id, "args": args} for input_id, args in inputs],
+        "inputs": inputs,
         "viz": viz.model_dump(mode="json"),
+        "spec": spec,
     }
     try:
         report = _run_child("tracer", [str(VIZ_TRACE), str(HARNESS)], job, timeout)
@@ -159,6 +192,14 @@ def check_walkthrough(
 def _show(value: Any) -> str:
     text = json.dumps(value, ensure_ascii=False)
     return text if len(text) <= MAX_SHOWN else text[:MAX_SHOWN] + "..."
+
+
+def _show_got(result: dict[str, Any]) -> str:
+    """A result's `got`; Python repr text (`gotRepr`) is shown as is, not as a string."""
+    got = result.get("got")
+    if result.get("gotRepr") and isinstance(got, str):
+        return got if len(got) <= MAX_SHOWN else got[:MAX_SHOWN] + "..."
+    return _show(got)
 
 
 def _tail(text: str) -> str:
@@ -184,7 +225,7 @@ def validate(content_dir: Path, timeout: float = DEFAULT_TIMEOUT) -> tuple[list[
                 f"[{index}].demo.viz",
                 demo.code,
                 demo.entry,
-                [("demo", demo.args)],
+                [{"id": "demo", "args": demo.args}],
                 demo.viz,
                 timeout,
                 "the demo's arguments",
@@ -201,9 +242,12 @@ def validate(content_dir: Path, timeout: float = DEFAULT_TIMEOUT) -> tuple[list[
         issues.extend(check_solution(file, problem, timeout))
         viz, solution, entry = problem.viz, problem.solution, problem.entry
         if viz is not None and solution is not None and entry is not None:
-            visible = [(t.id, t.args) for t in problem.tests or () if not t.hidden]
+            visible = [harness_test(t) for t in problem.tests or () if not t.hidden]
+            spec = problem.harness_spec()
             walkthroughs.append(
-                check_walkthrough(file, "viz", solution.code, entry, visible, viz, timeout)
+                check_walkthrough(
+                    file, "viz", solution.code, entry, visible, viz, timeout, spec=spec
+                )
             )
     # An expression the static checks already reject would only repeat its error.
     static = {(issue.file, issue.path) for issue in result.errors}

@@ -2,6 +2,7 @@
 
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -13,6 +14,7 @@ from app.content.store import (
     load_content,
 )
 from tests.conftest import FIXTURE_CONTENT, fixture_documents, write_documents
+from tests.engine_fixtures import with_engine_problems
 
 PROBLEM_PUBLIC_KEYS = {
     "slug",
@@ -24,6 +26,7 @@ PROBLEM_PUBLIC_KEYS = {
     "examples",
     "constraints",
     "targets",
+    "kind",
     "entry",
     "starterCode",
     "tests",
@@ -167,6 +170,66 @@ def test_problem_public_leaves_out_unset_optional_keys(store: ContentStore) -> N
         "expected",
         "hidden",
     }
+
+
+def test_problem_public_is_a_function_problem_by_default(store: ContentStore) -> None:
+    body = store.problem_public("two-sum")
+    assert body is not None
+    dumped = body.model_dump(mode="json", by_alias=True)
+    assert dumped["kind"] == "function"
+    assert "io" not in dumped
+    assert "checker" not in dumped
+    assert all("ops" not in test for test in dumped["tests"])
+
+
+@pytest.fixture(scope="module")
+def engine_store(tmp_path_factory: pytest.TempPathFactory) -> ContentStore:
+    root = tmp_path_factory.mktemp("engine")
+    return load_content(write_documents(root, with_engine_problems(fixture_documents())))
+
+
+def _public(store: ContentStore, slug: str) -> Any:
+    problem = store.problem_public(slug)
+    assert problem is not None
+    return problem.model_dump(mode="json", by_alias=True)
+
+
+def test_problem_public_carries_io_with_every_key(engine_store: ContentStore) -> None:
+    body = _public(engine_store, "rotate-image")
+    assert set(body) == PROBLEM_PUBLIC_KEYS | {"io"}
+    assert body["io"] == {
+        "params": [{"name": "matrix", "type": "json"}],
+        "returns": "json",
+        "inPlace": "matrix",
+    }
+    assert _public(engine_store, "merge-k-sorted-lists")["io"] == {
+        "params": [{"name": "lists", "type": "list_node[]"}],
+        "returns": "list_node",
+        "inPlace": None,
+    }
+
+
+def test_problem_public_of_a_design_problem_has_calls(engine_store: ContentStore) -> None:
+    body = _public(engine_store, "min-stack")
+    assert (body["kind"], body["entry"]) == ("design", "MinStack")
+    assert body["starterCode"].startswith("class MinStack:")
+    assert body["tests"][0] == {
+        "id": "e1",
+        "ops": [["MinStack"], ["push", 3], ["push", 1], ["getMin"], ["pop"], ["top"]],
+        "expected": [None, None, None, 1, None, 3],
+        "hidden": False,
+    }
+
+
+def test_problem_public_carries_the_checker(engine_store: ContentStore) -> None:
+    body = _public(engine_store, "encode-and-decode-strings")
+    assert set(body) == PROBLEM_PUBLIC_KEYS | {"checker"}
+    assert body["checker"].startswith("def check(args, got):")
+    assert body["tests"][0]["compare"] == "checker"
+    assert body["tests"][0]["ops"][2] == ["decode", {"$ref": 1}]
+    # What the harness needs, and nothing that answers the problem.
+    for key in ("approaches", "signals", "hints", "solution", "viz", "constraintReading"):
+        assert key not in body
 
 
 def test_no_public_view_for_drill_only_or_unknown_problems(store: ContentStore) -> None:

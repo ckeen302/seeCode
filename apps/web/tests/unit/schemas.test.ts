@@ -50,7 +50,7 @@ describe("content schemas", () => {
     expect(ProblemPublicSchema.safeParse(base).success).toBe(true)
     expect(ProblemPublicSchema.safeParse({ ...base, difficulty: "extreme" }).success).toBe(false)
     expect(
-      ProblemPublicSchema.safeParse({ ...base, targets: { time: "O(n³)", space: "O(1)" } }).success
+      ProblemPublicSchema.safeParse({ ...base, targets: { time: "O(n^3)", space: "O(1)" } }).success
     ).toBe(false)
   })
 

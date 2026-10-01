@@ -291,11 +291,19 @@ def _problem_public(problem: Problem, version: str) -> ProblemPublic:
         ],
         constraints=list(problem.constraints),
         targets=TargetsView(time=problem.targets.time, space=problem.targets.space),
+        kind=problem.kind,
         entry=problem.entry,
+        io=problem.io,
         starter_code=problem.starter_code,
+        checker=problem.checker,
         tests=[
             TestCaseView(
-                id=t.id, args=t.args, expected=t.expected, hidden=t.hidden, compare=t.compare
+                id=t.id,
+                args=t.args,
+                ops=t.ops,
+                expected=t.expected,
+                hidden=t.hidden,
+                compare=t.compare,
             )
             for t in problem.tests
         ],

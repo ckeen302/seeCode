@@ -1,6 +1,7 @@
 """App factory: settings, content, database, middleware, error envelope and routers."""
 
 import logging
+import random
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -18,7 +19,19 @@ from app.middleware import (
     UnhandledErrorMiddleware,
 )
 from app.ratelimit import TokenBucketLimiter, rate_limit
-from app.routers import attempts, content, guest, health, me, problems
+from app.routers import (
+    attempts,
+    content,
+    drills,
+    guest,
+    health,
+    me,
+    problems,
+    review,
+    stats,
+    today,
+)
+from app.services.account import SupabaseAdmin
 
 API_PREFIX = "/api/v1"
 logger = logging.getLogger("seecode.api")
@@ -54,6 +67,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.token_verifier = TokenVerifier(settings)
     app.state.rate_limiter = TokenBucketLimiter(settings.rate_limit_per_minute)
     app.state.known_profiles = set()
+    # Drills and reviews draw from this (tests swap in a seeded one).
+    app.state.rng = random.Random()
+    # Deletes Supabase auth users with DELETE /me; None without the service role key.
+    app.state.supabase_admin = SupabaseAdmin.from_settings(settings)
 
     install_error_handlers(app)
 
@@ -77,6 +94,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     api.include_router(attempts.router, dependencies=[Depends(rate_limit)])
     api.include_router(problems.router, dependencies=[Depends(rate_limit)])
     api.include_router(guest.router, dependencies=[Depends(rate_limit)])
+    api.include_router(drills.router, dependencies=[Depends(rate_limit)])
+    api.include_router(review.router, dependencies=[Depends(rate_limit)])
+    api.include_router(today.router, dependencies=[Depends(rate_limit)])
+    api.include_router(stats.router, dependencies=[Depends(rate_limit)])
     app.include_router(api)
 
     logger.info(

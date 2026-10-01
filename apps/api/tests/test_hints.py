@@ -146,3 +146,23 @@ def test_drill_only_problems_have_no_ladder(content: ContentStore) -> None:
 def test_rungs_go_from_1_to_6(content: ContentStore, rung: int) -> None:
     with pytest.raises(ValueError, match="from 1 to 6"):
         hint_content(content, content.problems_by_slug["two-sum"], rung)
+
+
+def test_walkthrough_of_a_function_problem_gives_args(content: ContentStore) -> None:
+    body = _dump(walkthrough_payload(content.problems_by_slug["two-sum"]))
+    # kind "function" and an absent io are the defaults, so the payload is as before.
+    assert set(body) == {"code", "entry", "viz", "inputs"}
+    assert all(set(item) == {"label", "args"} for item in body["inputs"])
+
+
+def test_walkthrough_of_a_design_problem_gives_its_calls(content: ContentStore) -> None:
+    problem = content.problems_by_slug["min-stack"]
+    assert problem.tests is not None
+    body = _dump(hint_content(content, problem, 5))["walkthrough"]
+    assert (body["kind"], body["entry"]) == ("design", "MinStack")
+    assert "io" not in body
+    visible = [t for t in problem.tests if not t.hidden]
+    assert body["inputs"] == [
+        {"label": f"Example {n}", "ops": t.ops} for n, t in enumerate(visible, start=1)
+    ]
+    assert body["viz"]["roles"]["stack"] == ["vals", "mins"]

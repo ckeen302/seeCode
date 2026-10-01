@@ -26,6 +26,11 @@ export interface ApiClientOptions {
 
 type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
 
+export interface RequestOptions {
+  /** Let the request outlive the page (a sync on page hide, Section 7.9). */
+  keepalive?: boolean
+}
+
 // Hosts and proxies can answer with HTML (e.g. a 502 page while a free server wakes up).
 function parseJson(text: string): unknown {
   if (!text) return undefined
@@ -44,7 +49,8 @@ export function createApiClient(options: ApiClientOptions) {
     method: Method,
     path: string,
     schema: z.ZodType<T>,
-    body?: unknown
+    body?: unknown,
+    { keepalive }: RequestOptions = {}
   ): Promise<T> {
     const send = async () =>
       doFetch(`${options.baseUrl}${path}`, {
@@ -55,6 +61,7 @@ export function createApiClient(options: ApiClientOptions) {
           ...(await options.getHeaders?.()),
         },
         body: body === undefined ? undefined : JSON.stringify(body),
+        ...(keepalive ? { keepalive: true } : {}),
       })
 
     let response = await send()
@@ -74,12 +81,12 @@ export function createApiClient(options: ApiClientOptions) {
 
   return {
     get: <T>(path: string, schema: z.ZodType<T>) => request("GET", path, schema),
-    post: <T>(path: string, schema: z.ZodType<T>, body?: unknown) =>
-      request("POST", path, schema, body),
-    put: <T>(path: string, schema: z.ZodType<T>, body?: unknown) =>
-      request("PUT", path, schema, body),
-    patch: <T>(path: string, schema: z.ZodType<T>, body?: unknown) =>
-      request("PATCH", path, schema, body),
+    post: <T>(path: string, schema: z.ZodType<T>, body?: unknown, opts?: RequestOptions) =>
+      request("POST", path, schema, body, opts),
+    put: <T>(path: string, schema: z.ZodType<T>, body?: unknown, opts?: RequestOptions) =>
+      request("PUT", path, schema, body, opts),
+    patch: <T>(path: string, schema: z.ZodType<T>, body?: unknown, opts?: RequestOptions) =>
+      request("PATCH", path, schema, body, opts),
     delete: <T>(path: string, schema: z.ZodType<T>) => request("DELETE", path, schema),
   }
 }

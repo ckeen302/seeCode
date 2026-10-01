@@ -17,9 +17,38 @@ BRUTE_FORCE = "brute_force"
 OPTIMAL = "optimal"
 
 Difficulty = Literal["easy", "medium", "hard"]
-# Section 16.3 without "Not sure", which is a Plan card answer, never a content value.
-Complexity = Literal["O(1)", "O(log n)", "O(n)", "O(n log n)", "O(n²)", "O(2ⁿ)"]
-CompareMode = Literal["exact", "unordered", "unordered_nested", "float"]
+# Section 16.3 without "Not sure", which is a Plan card answer, never a content value. The
+# values after O(2ⁿ) came with the NeetCode parity topics (docs/PARITY_PLAN.md 4.4).
+Complexity = Literal[
+    "O(1)",
+    "O(log n)",
+    "O(n)",
+    "O(n log n)",
+    "O(n²)",
+    "O(2ⁿ)",
+    "O(√n)",
+    "O(n log k)",
+    "O(k log n)",
+    "O(n·m)",
+    "O(V + E)",
+    "O(E log V)",
+    "O(n³)",
+    "O(n·2ⁿ)",
+    "O(n!)",
+]
+# "checker" calls the problem's `checker` code (PARITY_PLAN 4.3).
+CompareMode = Literal["exact", "unordered", "unordered_nested", "float", "checker"]
+# "function": tests call Solution().<entry>(*args). "design": `entry` is a class and each
+# test is a list of calls (PARITY_PLAN 4.2).
+ProblemKind = Literal["function", "design"]
+# How the harness converts an argument or a result (PARITY_PLAN 4.1); see harness.py.
+IoType = Literal[
+    "json", "list_node", "list_node[]", "tree_node", "tree_node[]", "random_list", "graph_node"
+]
+# The io types that need LeetCode's Node class; the two Node classes differ.
+NODE_IO_TYPES: tuple[IoType, ...] = ("random_list", "graph_node")
+# A design call's argument {"$ref": i} passes what call i returned (round trips).
+REF_KEY = "$ref"
 PointerColor = Literal["a", "b", "c", "d"]
 PredictKind = Literal["index", "yesno", "value"]
 
@@ -249,14 +278,49 @@ class Solution(ContentModel):
     toolkit: list[Id]
 
 
+def _valid_call(call: list[Any]) -> list[Any]:
+    if not call or not isinstance(call[0], str) or not call[0].isidentifier():
+        raise ValueError("a call is [name, ...args]: a class or method name, then its arguments")
+    return call
+
+
+# One call of a design test: ["MinStack"] constructs, ["push", 3] calls a method.
+Call = Annotated[list[Any], AfterValidator(_valid_call)]
+
+
 class TestCase(ContentModel):
+    """Function problems give `args`; design problems give `ops` (a list of calls) and an
+    `expected` value per call."""
+
     __test__ = False  # not a pytest test class
 
     id: TestId
-    args: list[Any]
+    args: list[Any] | None = None
+    ops: Annotated[list[Call], Field(min_length=1)] | None = None
     expected: Any
     hidden: bool
     compare: CompareMode | None = None
+
+    @model_validator(mode="after")
+    def _args_or_ops(self) -> "TestCase":
+        if self.args is not None and self.ops is not None:
+            raise ValueError('a test has "args" or "ops", not both')
+        if self.args is None and self.ops is None:
+            raise ValueError('"args" required ("ops" in a design problem)')
+        return self
+
+
+class IoParam(ContentModel):
+    name: VarName
+    type: IoType = "json"
+
+
+class Io(ContentModel):
+    """Typed parameters: how the harness builds each argument and reads the result."""
+
+    params: list[IoParam] = Field(default_factory=list)
+    returns: IoType = "json"
+    in_place: VarName | None = None  # compare this parameter after the call instead
 
 
 class Related(ContentModel):
@@ -279,7 +343,9 @@ class Problem(ContentModel):
     examples: list[Example] = Field(min_length=1)
     constraints: list[Text] = Field(min_length=1)
     targets: Targets
+    kind: ProblemKind = "function"
     entry: VarName | None = None
+    io: Io | None = None
     starter_code: Text | None = None
     approaches: list[Approach] = Field(min_length=1, max_length=3)
     signals: list[Signal] = Field(min_length=1)
@@ -287,6 +353,7 @@ class Problem(ContentModel):
     hints: Hints | None = None
     solution: Solution | None = None
     viz: VizConfig | None = None
+    checker: Text | None = None  # Python code defining check(args, got) -> bool
     tests: list[TestCase] | None = None
     related: list[Related] = Field(default_factory=list)
     drill_only: bool = False
@@ -302,3 +369,11 @@ class Problem(ContentModel):
     @property
     def optimal(self) -> Approach | None:
         return next((a for a in self.approaches if a.id == OPTIMAL), None)
+
+    def harness_spec(self) -> dict[str, Any]:
+        """The `spec_json` object the test harness takes for this problem (harness.py)."""
+        return {
+            "kind": self.kind,
+            "io": None if self.io is None else self.io.model_dump(mode="json"),
+            "checker": self.checker,
+        }

@@ -62,6 +62,42 @@
         ],
         ["close", "near", "diff", "distance", "abs", "min", "smallest", "best", "gap"]
       ]
+    },
+    {
+      "id": "all_triples",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n³)",
+      "space": "O(1)",
+      "twist": "Try every triple of positions with three nested loops, and keep the sum nearest to target.",
+      "twistKeywords": [
+        [
+          "every triple",
+          "each triple",
+          "all triples",
+          "all the triples",
+          "every combination",
+          "all combinations",
+          "every possible",
+          "all possible",
+          "three loops",
+          "3 loops",
+          "three nested",
+          "3 nested",
+          "triple loop",
+          "triple nested",
+          "triple-nested",
+          "three for",
+          "brute",
+          "every three",
+          "each three",
+          "n³",
+          "n^3"
+        ],
+        ["close", "near", "diff", "distance", "abs", "min", "smallest", "best", "gap"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but checking every triple takes O(n³) time, about 2·10⁷ sums for 500 numbers, slow in Python. The target is O(n²)."
     }
   ],
   "signals": [

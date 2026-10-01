@@ -18,7 +18,7 @@ import {
 } from "@/lib/editor/monaco"
 import { useIsMac } from "@/lib/keyboard"
 import { errorLine } from "@/lib/runner/traceback"
-import { registerEditor } from "@/lib/workspace/editorBridge"
+import { indentedBlock, registerEditor } from "@/lib/workspace/editorBridge"
 import { codeTooLarge } from "@/lib/workspace/limits"
 import { useMediaQuery } from "@/lib/useMediaQuery"
 import { useWorkspace, workspaceStore } from "@/stores/workspace"
@@ -81,6 +81,7 @@ function useEditorLoadFailed(): boolean {
 export function EditorPanel() {
   const slug = useWorkspace((state) => state.slug)
   const starterCode = useWorkspace((state) => state.problem?.starterCode ?? "")
+  const codeRevision = useWorkspace((state) => state.codeRevision)
   const results = useWorkspace((state) => state.results)
   const tooLarge = useWorkspace((state) => codeTooLarge(state.code))
   const theme = useResolvedTheme()
@@ -119,9 +120,58 @@ export function EditorPanel() {
         focus() {
           editorRef.current?.focus()
         },
+        insertLines(lines) {
+          const editor = editorRef.current
+          const model = editor?.getModel()
+          if (!editor || !model) return
+          const lineNumber = editor.getPosition()?.lineNumber ?? 1
+          let previous: string | null = null
+          for (let line = lineNumber - 1; line >= 1; line--) {
+            const text = model.getLineContent(line)
+            if (text.trim()) {
+              previous = text
+              break
+            }
+          }
+          const block = indentedBlock(lines, model.getLineContent(lineNumber), previous)
+          const range = block.replaceLine
+            ? {
+                startLineNumber: lineNumber,
+                startColumn: 1,
+                endLineNumber: lineNumber,
+                endColumn: model.getLineMaxColumn(lineNumber),
+              }
+            : {
+                startLineNumber: lineNumber,
+                startColumn: 1,
+                endLineNumber: lineNumber,
+                endColumn: 1,
+              }
+          // One undoable edit, like Reset.
+          editor.pushUndoStop()
+          editor.executeEdits("insert-plan", [{ range, text: block.text }])
+          editor.pushUndoStop()
+          const last = lineNumber + lines.length - 1
+          editor.setPosition({ lineNumber: last, column: model.getLineMaxColumn(last) })
+          editor.revealLineInCenterIfOutsideViewport(last)
+          editor.focus()
+        },
       }),
     []
   )
+
+  // The store replaced the code (a resumed attempt, Start over): show it, undoably.
+  useEffect(() => {
+    const editor = editorRef.current
+    const model = editor?.getModel()
+    if (!editor || !model) return
+    const code = workspaceStore.getState().code
+    if (model.getValue() === code) return
+    editor.pushUndoStop()
+    editor.executeEdits("replace", [{ range: model.getFullModelRange(), text: code }])
+    editor.pushUndoStop()
+    editor.setPosition({ lineNumber: 1, column: 1 })
+  }, [codeRevision, mounted])
 
   // Marks the line of the latest error with a squiggle (the message shows on hover).
   useEffect(() => {

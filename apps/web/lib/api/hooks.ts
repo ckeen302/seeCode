@@ -8,6 +8,8 @@ import {
   ProblemListItemSchema,
   ProblemPublicSchema,
   ProfileSchema,
+  StructureSchema,
+  ToolkitCardSchema,
 } from "@/lib/api/schemas"
 import { getAuthHeaders, refreshSession, useAuth } from "@/lib/auth/session"
 import { env } from "@/lib/env"
@@ -49,6 +51,30 @@ export const patternsQuery = queryOptions({
   staleTime: CONTENT_STALE_MS,
 })
 
+/** Plan card "Structures" options (key ["structures"]). */
+export const structuresQuery = queryOptions({
+  queryKey: ["structures"],
+  queryFn: () => api.get("/content/structures", z.array(StructureSchema)),
+  staleTime: CONTENT_STALE_MS,
+})
+
+/** Toolkit cards, for signal targets and rung 6 callouts (key ["toolkit"]). */
+export const toolkitQuery = queryOptions({
+  queryKey: ["toolkit"],
+  queryFn: () => api.get("/content/toolkit", z.array(ToolkitCardSchema)),
+  staleTime: CONTENT_STALE_MS,
+})
+
+/**
+ * Every problem with its pattern (`?showPatterns=true`, key ["problems", "patterns"]). Only
+ * for naming the pattern of an attempt that already ended (Section 7.1).
+ */
+export const problemPatternsQuery = queryOptions({
+  queryKey: ["problems", "patterns"],
+  queryFn: () => api.get("/content/problems?showPatterns=true", z.array(ProblemListItemSchema)),
+  staleTime: CONTENT_STALE_MS,
+})
+
 export function useProblem(slug: string) {
   return useQuery(problemQuery(slug))
 }
@@ -59,6 +85,18 @@ export function useProblems({ enabled = true }: { enabled?: boolean } = {}) {
 
 export function usePatterns({ enabled = true }: { enabled?: boolean } = {}) {
   return useQuery({ ...patternsQuery, enabled })
+}
+
+export function useStructures() {
+  return useQuery(structuresQuery)
+}
+
+export function useToolkit({ enabled = true }: { enabled?: boolean } = {}) {
+  return useQuery({ ...toolkitQuery, enabled })
+}
+
+export function useProblemPatterns({ enabled = true }: { enabled?: boolean } = {}) {
+  return useQuery({ ...problemPatternsQuery, enabled })
 }
 
 /** The signed-in user's profile (`GET /me`). Keyed by user so switching users refetches. */

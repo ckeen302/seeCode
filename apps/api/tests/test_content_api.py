@@ -22,6 +22,7 @@ from tests.conftest import (
     make_settings,
     write_documents,
 )
+from tests.engine_fixtures import with_engine_problems
 
 API = "/api/v1/content"
 OTHER_USER = "00000000-0000-4000-8000-000000000002"
@@ -35,6 +36,7 @@ PROBLEM_PUBLIC_KEYS = {
     "examples",
     "constraints",
     "targets",
+    "kind",
     "entry",
     "starterCode",
     "tests",
@@ -398,3 +400,37 @@ def test_problem_public_json_round_trips(tmp_path: Path) -> None:
     problem = application.state.content.problem_public("two-sum")
     body = json.loads(problem.model_dump_json(by_alias=True))
     assert body["tests"][4]["expected"] is None
+
+
+async def test_problem_detail_carries_kind_io_checker_and_calls(tmp_path: Path) -> None:
+    """What the browser's harness needs (spec_json), serialized as the API sends it."""
+    content = write_documents(tmp_path, with_engine_problems(fixture_documents()))
+    application = create_app(make_settings(content_dir=content))
+    transport = ASGITransport(app=application)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        rotate = (await client.get(f"{API}/problems/rotate-image")).json()
+        codec = (await client.get(f"{API}/problems/encode-and-decode-strings")).json()
+        listing = (await client.get(f"{API}/problems")).json()
+    await application.state.engine.dispose()
+    assert (rotate["kind"], rotate["io"]) == (
+        "function",
+        {"params": [{"name": "matrix", "type": "json"}], "returns": "json", "inPlace": "matrix"},
+    )
+    assert "checker" not in rotate
+    assert rotate["tests"][0] == {
+        "id": "e1",
+        "args": [[[1, 2], [3, 4]]],
+        "expected": [[3, 1], [4, 2]],
+        "hidden": False,
+    }
+    assert (codec["kind"], codec["entry"]) == ("design", "Solution")
+    assert "io" not in codec
+    assert codec["checker"].startswith("def check(args, got):")
+    assert codec["tests"][1] == {
+        "id": "e2",
+        "ops": [["Solution"], ["encode", []], ["decode", {"$ref": 1}]],
+        "expected": [None, None, []],
+        "hidden": False,
+        "compare": "checker",
+    }
+    assert "min-stack" in [item["slug"] for item in listing]

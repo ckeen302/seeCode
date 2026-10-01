@@ -1,12 +1,14 @@
 """Content models (Sections 10 and 16.4): camelCase only, unknown keys and coercion refused."""
 
-from typing import Any
+from typing import Any, get_args
 
 import pytest
 from pydantic import TypeAdapter, ValidationError
 
 from app.content.models import (
     Approach,
+    Complexity,
+    Io,
     Pattern,
     Predict,
     Problem,
@@ -16,7 +18,9 @@ from app.content.models import (
     ToolkitCard,
     VizConfig,
 )
+from app.schemas.plan import PlanCard
 from tests.conftest import fixture_documents
+from tests.engine_fixtures import encode_decode, rotate_image
 
 PROBLEMS = ("two-sum", "valid-anagram", "valid-palindrome", "binary-search", "reverse-string")
 
@@ -80,14 +84,53 @@ def test_viz_config_defaults_when_keys_are_left_out() -> None:
     assert viz.roles.hidden == []
 
 
-@pytest.mark.parametrize("complexity", ["O(1)", "O(log n)", "O(n)", "O(n log n)", "O(n²)", "O(2ⁿ)"])
-def test_every_section_16_3_complexity_is_accepted(complexity: str) -> None:
+# Section 16.3's values in their order, then the ones the parity topics added (PARITY_PLAN
+# 4.4), so the Plan card lists the old values where they were.
+COMPLEXITIES = (
+    "O(1)",
+    "O(log n)",
+    "O(n)",
+    "O(n log n)",
+    "O(n²)",
+    "O(2ⁿ)",
+    "O(√n)",
+    "O(n log k)",
+    "O(k log n)",
+    "O(n·m)",
+    "O(V + E)",
+    "O(E log V)",
+    "O(n³)",
+    "O(n·2ⁿ)",
+    "O(n!)",
+)
+
+
+def test_complexities_keep_section_16_3_first_and_add_the_parity_values() -> None:
+    assert get_args(Complexity) == COMPLEXITIES
+
+
+@pytest.mark.parametrize("complexity", COMPLEXITIES)
+def test_every_complexity_is_accepted(complexity: str) -> None:
     data = _problem()
     data["targets"]["time"] = complexity
-    assert Problem.model_validate(data).targets.time == complexity
+    data["approaches"][0]["space"] = complexity
+    problem = Problem.model_validate(data)
+    assert (problem.targets.time, problem.approaches[0].space) == (complexity, complexity)
 
 
-@pytest.mark.parametrize("mode", ["exact", "unordered", "unordered_nested", "float"])
+@pytest.mark.parametrize("complexity", [*COMPLEXITIES, "Not sure"])
+def test_the_plan_card_offers_every_complexity(complexity: str) -> None:
+    assert PlanCard.model_validate({"time": complexity, "space": complexity}).time == complexity
+
+
+@pytest.mark.parametrize("complexity", ["O(n^3)", "O(n3)", "O(sqrt n)", "O(n*m)", "O(V+E)"])
+def test_complexities_are_spelled_one_way(complexity: str) -> None:
+    data = _problem()
+    data["targets"]["time"] = complexity
+    assert [loc for loc, _ in _errors(Problem, data)] == ["targets.time"]
+
+
+@pytest.mark.parametrize("mode", ["exact", "unordered", "unordered_nested", "float", "checker"])
 def test_every_compare_mode_is_accepted(mode: str) -> None:
     test = {"id": "t1", "args": [1], "expected": None, "hidden": False, "compare": mode}
     assert TestCase.model_validate(test).compare == mode
@@ -97,6 +140,102 @@ def test_expected_may_be_null_but_not_missing() -> None:
     assert TestCase.model_validate({"id": "a", "args": [], "expected": None, "hidden": True})
     errors = _errors(TestCase, {"id": "a", "args": [], "hidden": True})
     assert errors == [("expected", "Field required")]
+
+
+# ---------------------------------------------------------------- tests, io, kind, checker
+
+
+def test_a_test_has_args_or_ops() -> None:
+    base = {"id": "a", "expected": None, "hidden": False}
+    assert TestCase.model_validate({**base, "args": [1]}).ops is None
+    ops = [["MinStack"], ["push", 3], ["getMin"]]
+    test = TestCase.model_validate({**base, "ops": ops})
+    assert (test.args, test.ops) == (None, ops)
+    assert _errors(TestCase, base) == [
+        ("", 'Value error, "args" required ("ops" in a design problem)')
+    ]
+    assert _errors(TestCase, {**base, "args": [], "ops": ops}) == [
+        ("", 'Value error, a test has "args" or "ops", not both')
+    ]
+
+
+CALL_MESSAGE = "Value error, a call is [name, ...args]: a class or method name, then its arguments"
+
+
+@pytest.mark.parametrize(
+    ("ops", "location", "message"),
+    [
+        ([], "ops", "List should have at least 1 item after validation, not 0"),
+        ([[]], "ops.0", CALL_MESSAGE),
+        ([[3]], "ops.0", CALL_MESSAGE),
+        ([["push it", 1]], "ops.0", CALL_MESSAGE),
+        ([["MinStack"], "pop"], "ops.1", "Input should be a valid list"),
+        ([["MinStack"], ("pop",)], "ops.1", "Input should be a valid list"),
+    ],
+)
+def test_each_call_is_a_name_then_its_arguments(ops: Any, location: str, message: str) -> None:
+    test = {"id": "a", "ops": ops, "expected": None, "hidden": False}
+    assert _errors(TestCase, test) == [(location, message)]
+
+
+def test_problems_default_to_function_problems_without_io_or_checker() -> None:
+    problem = Problem.model_validate(_problem())
+    assert (problem.kind, problem.io, problem.checker) == ("function", None, None)
+    assert problem.harness_spec() == {"kind": "function", "io": None, "checker": None}
+
+
+def test_io_defaults_and_camel_case() -> None:
+    io = Io.model_validate({"params": [{"name": "head"}]})
+    assert (io.params[0].type, io.returns, io.in_place) == ("json", "json", None)
+    assert Io.model_validate({}).params == []
+    problem = Problem.model_validate(rotate_image())
+    assert problem.io is not None
+    assert problem.io.in_place == "matrix"
+    assert problem.harness_spec() == {
+        "kind": "function",
+        "io": {
+            "params": [{"name": "matrix", "type": "json"}],
+            "returns": "json",
+            "inPlace": "matrix",
+        },
+        "checker": None,
+    }
+
+
+@pytest.mark.parametrize(
+    ("io", "location"),
+    [
+        ({"params": [{"name": "head", "type": "linked_list"}]}, "io.params.0.type"),
+        ({"params": [{"name": "1st"}]}, "io.params.0.name"),
+        ({"params": [{"type": "json"}]}, "io.params.0.name"),
+        ({"returns": "ListNode"}, "io.returns"),
+        ({"in_place": "matrix"}, "io.in_place"),
+        ({"params": [], "extra": 1}, "io.extra"),
+    ],
+)
+def test_bad_io_is_rejected(io: dict[str, Any], location: str) -> None:
+    data = _problem()
+    data["io"] = io
+    assert location in [loc for loc, _ in _errors(Problem, data)]
+
+
+def test_design_problems_and_checkers_parse() -> None:
+    problem = Problem.model_validate(encode_decode())
+    assert (problem.kind, problem.entry) == ("design", "Solution")
+    assert problem.tests is not None
+    assert problem.tests[0].ops == [
+        ["Solution"],
+        ["encode", ["see", "code"]],
+        ["decode", {"$ref": 1}],
+    ]
+    assert problem.checker is not None
+    assert problem.harness_spec() == {"kind": "design", "io": None, "checker": problem.checker}
+    data = encode_decode()
+    data["kind"] = "class"
+    assert [loc for loc, _ in _errors(Problem, data)] == ["kind"]
+    data = _problem()
+    data["checker"] = "   "
+    assert [loc for loc, _ in _errors(Problem, data)] == ["checker"]
 
 
 # ---------------------------------------------------------------- drill-only problems

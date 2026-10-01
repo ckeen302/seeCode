@@ -4,7 +4,8 @@ Rule 7 (each reference solution passes its tests) executes content code, so it r
 in scripts/validate_content.py. The API runs everything here at startup and refuses to
 start on errors. Beyond the numbered rules this checks every cross reference (patterns,
 structures, toolkit cards, related problems, roadmap prerequisites, viz events and
-variables) so a typo fails here instead of in a user's browser.
+variables) and the shape of typed parameters (`io`), design tests and checkers, so a typo
+fails here instead of in a user's browser.
 """
 
 import ast
@@ -25,12 +26,15 @@ from pydantic_core import ErrorDetails
 
 from app.content.models import (
     BRUTE_FORCE,
+    NODE_IO_TYPES,
     OPTIMAL,
+    REF_KEY,
     SLOT_IDS,
     Pattern,
     Problem,
     Roadmap,
     Structure,
+    TestCase,
     ToolkitCard,
     VizConfig,
 )
@@ -56,6 +60,9 @@ STRUCTURE_PREFIX = "structure:"
 # (`when`, and predict `answerWhen`, which it evaluates as an extra event condition).
 SAY_BUILTINS = frozenset({"repr", "len"})
 CONDITION_BUILTINS = frozenset({"len"})
+# Compare modes that reorder a list; a design test's result is one value per call, in order.
+UNORDERED_MODES = ("unordered", "unordered_nested")
+CHECK_FUNCTION = "check"
 
 Level = Literal["error", "warning"]
 
@@ -279,6 +286,63 @@ def phrase_in_text(phrase: str, text: str) -> bool:
 
 def _duplicates(values: Iterable[str]) -> list[str]:
     return [value for value, count in Counter(values).items() if count > 1]
+
+
+def _names(names: Sequence[str]) -> str:
+    return ", ".join(names) or "none"
+
+
+def _top_level(tree: ast.Module, name: str, kind: type[ast.AST]) -> Any:
+    """The top-level class or function `name` of `tree`, or None."""
+    return next(
+        (n for n in tree.body if isinstance(n, kind) and getattr(n, "name", "") == name), None
+    )
+
+
+def _class_methods(tree: ast.Module, name: str) -> set[str] | None:
+    """The methods class `name` defines; None when unknown (no such class, or it inherits)."""
+    node = _top_level(tree, name, ast.ClassDef)
+    if node is None or node.bases or node.keywords:
+        return None
+    methods = set()
+    for item in node.body:
+        if isinstance(item, ast.FunctionDef | ast.AsyncFunctionDef):
+            methods.add(item.name)
+        elif isinstance(item, ast.Assign):
+            methods.update(t.id for t in item.targets if isinstance(t, ast.Name))
+    return methods
+
+
+def _entry_params(tree: ast.Module, entry: str) -> list[str] | None:
+    """The parameters of Solution.<entry> after `self`; None if there is no such method."""
+    solution = _top_level(tree, "Solution", ast.ClassDef)
+    if solution is None:
+        return None
+    method = next(
+        (
+            n
+            for n in solution.body
+            if isinstance(n, ast.FunctionDef | ast.AsyncFunctionDef) and n.name == entry
+        ),
+        None,
+    )
+    if method is None:
+        return None
+    return [arg.arg for arg in [*method.args.posonlyargs, *method.args.args][1:]]
+
+
+def _takes_two_args(function: ast.FunctionDef) -> bool:
+    """Whether `function(args, got)` is a valid call."""
+    arguments = function.args
+    positional = [*arguments.posonlyargs, *arguments.args]
+    required = len(positional) - len(arguments.defaults)
+    keyword_only_required = any(default is None for default in arguments.kw_defaults)
+    fits = len(positional) >= 2 or arguments.vararg is not None
+    return fits and required <= 2 and not keyword_only_required
+
+
+def _is_int(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool)
 
 
 def _viz_variables(viz: VizConfig, path: str) -> Iterator[tuple[str, str]]:
@@ -585,13 +649,16 @@ class _Validator:
         self.check_hints(file, problem)
 
         solution: ParsedCode | None = None
+        starter: ParsedCode | None = None
+        entry, kind = problem.entry, problem.kind
         if problem.solution is not None:
             self.unique(file, "solution.toolkit", problem.solution.toolkit, "toolkit id")
             for j, toolkit_id in enumerate(problem.solution.toolkit):
                 self.ref(self.toolkit_ids, toolkit_id, "toolkit id", file, f"solution.toolkit[{j}]")
-            solution = self.check_code(file, "solution.code", problem.solution.code, problem.entry)
+            code = problem.solution.code
+            solution = self.check_code(file, "solution.code", code, entry, kind)
         if problem.starter_code is not None:
-            self.check_code(file, "starterCode", problem.starter_code, problem.entry)
+            starter = self.check_code(file, "starterCode", problem.starter_code, entry, kind)
         if problem.viz is not None:
             if problem.solution is None:
                 self.error(file, "viz", "viz needs a solution: its events mark solution.code")
@@ -600,6 +667,10 @@ class _Validator:
                 self.check_viz(file, "viz", problem.viz, "solution.code", code, solution)
 
         self.check_tests(file, problem)
+        parsed = {"solution.code": solution, "starterCode": starter}
+        self.check_test_kind(file, problem, parsed)
+        self.check_io(file, problem, parsed)
+        self.check_checker(file, problem)
         self.check_related(file, problem)
         if len(problem.summary) > SUMMARY_WARN_CHARS:  # rule 10
             self.warn(
@@ -703,6 +774,180 @@ class _Validator:
                 f"(found {visible} visible, {hidden} hidden)",
             )
 
+    # ---- typed parameters, design tests and checkers (PARITY_PLAN 4.1-4.3)
+
+    def check_test_kind(
+        self, file: str, problem: Problem, parsed: Mapping[str, ParsedCode | None]
+    ) -> None:
+        """A function problem's tests give `args`; a design problem's give calls in `ops`."""
+        tests = problem.tests or []
+        if problem.kind == "function":
+            for i, test in enumerate(tests):
+                if test.ops is not None:
+                    self.error(
+                        file,
+                        f"tests[{i}].ops",
+                        '"ops" are for design problems (kind "design"); a function problem\'s '
+                        'test gives "args"',
+                    )
+            return
+        entry = problem.entry
+        if entry is None:
+            return
+        methods = {
+            path: _class_methods(code.tree, entry)
+            for path, code in parsed.items()
+            if code is not None
+        }
+        for i, test in enumerate(tests):
+            if test.args is not None:
+                self.error(
+                    file,
+                    f"tests[{i}].args",
+                    'a design problem\'s test lists its calls in "ops", not "args"',
+                )
+            else:
+                self.check_calls(file, f"tests[{i}]", test, entry, methods)
+
+    def check_calls(
+        self,
+        file: str,
+        at: str,
+        test: TestCase,
+        entry: str,
+        methods: Mapping[str, set[str] | None],
+    ) -> None:
+        ops = test.ops or []
+        if ops[0][0] != entry:
+            self.error(
+                file, f"{at}.ops[0]", f"the first call must construct {entry} (found {ops[0][0]!r})"
+            )
+        for j, call in enumerate(ops):
+            name = call[0]
+            if j > 0 and name == entry:
+                self.error(file, f"{at}.ops[{j}]", f"only the first call constructs {entry}")
+            elif j > 0:
+                for code_path, names in methods.items():
+                    if names is not None and name not in names:
+                        self.error(
+                            file, f"{at}.ops[{j}]", f"{entry} in {code_path} has no method {name!r}"
+                        )
+            for k, arg in enumerate(call[1:], start=1):
+                if isinstance(arg, dict) and REF_KEY in arg:
+                    self.check_ref(file, f"{at}.ops[{j}][{k}]", arg, j)
+        expected = test.expected
+        if not isinstance(expected, list) or len(expected) != len(ops):
+            self.error(
+                file,
+                f"{at}.expected",
+                f"must be a list with one value per call ({len(ops)} calls), null for the "
+                "constructor and for calls that return nothing",
+            )
+        elif expected[0] is not None:
+            self.error(file, f"{at}.expected[0]", "the constructor returns nothing: use null")
+        if test.compare in UNORDERED_MODES:
+            self.error(
+                file,
+                f"{at}.compare",
+                f'"{test.compare}" does not apply to design tests, whose result is one value '
+                'per call, in order; use "checker" when several answers are right',
+            )
+
+    def check_ref(self, file: str, path: str, arg: dict[str, Any], call: int) -> None:
+        """{"$ref": n} passes what an earlier call (1 to call - 1) returned."""
+        ref = arg[REF_KEY]
+        if set(arg) == {REF_KEY} and _is_int(ref) and 1 <= ref < call:
+            return
+        if call <= 1:
+            message = "no call before this one returns a value"
+        else:
+            message = f"n must be an earlier call, from 1 to {call - 1}"
+        self.error(file, path, f'{{"{REF_KEY}": n}} passes what call n returned: {message}')
+
+    def check_io(
+        self, file: str, problem: Problem, parsed: Mapping[str, ParsedCode | None]
+    ) -> None:
+        io = problem.io
+        if io is None:
+            return
+        if problem.kind == "design":
+            self.error(
+                file, "io", "io is for function problems; a design problem's calls take JSON values"
+            )
+            return
+        if problem.tests is None:
+            self.error(file, "io", "io needs tests: a drill-only problem never runs")
+            return
+        names = [param.name for param in io.params]
+        self.unique(file, "io.params", names, "parameter")
+        for code_path, code in parsed.items():
+            params = None
+            if code is not None and problem.entry is not None:
+                params = _entry_params(code.tree, problem.entry)
+            if params is not None and params != names:
+                self.error(
+                    file,
+                    "io.params",
+                    f"must list the parameters of {problem.entry} in {code_path}, in order: "
+                    f"{_names(params)} (found {_names(names)})",
+                )
+        if io.in_place is not None:
+            if io.in_place not in names:
+                self.error(
+                    file, "io.inPlace", f"{io.in_place!r} is not one of io.params ({_names(names)})"
+                )
+            if io.returns != "json":
+                self.error(
+                    file,
+                    "io.returns",
+                    'leave "returns" out when "inPlace" is set: the parameter is compared after '
+                    "the call, not the return value",
+                )
+        types = {param.type for param in io.params} | {io.returns}
+        if all(kind in types for kind in NODE_IO_TYPES):
+            self.error(
+                file,
+                "io",
+                "random_list and graph_node each need their own class named Node; a problem can "
+                "use only one of them",
+            )
+        if names:
+            for i, test in enumerate(problem.tests):
+                if test.args is not None and len(test.args) != len(names):
+                    self.error(
+                        file,
+                        f"tests[{i}].args",
+                        f"has {len(test.args)} argument(s); io.params lists {len(names)} "
+                        f"({_names(names)})",
+                    )
+
+    def check_checker(self, file: str, problem: Problem) -> None:
+        uses = [i for i, test in enumerate(problem.tests or ()) if test.compare == "checker"]
+        if problem.checker is None:
+            for i in uses:
+                self.error(
+                    file, f"tests[{i}].compare", 'compare "checker" needs the problem\'s "checker"'
+                )
+            return
+        if problem.tests is None:
+            self.error(file, "checker", "a checker needs tests: a drill-only problem never runs")
+            return
+        parsed = compile_code(problem.checker)
+        if isinstance(parsed, SyntaxError):
+            self.error(file, "checker", f"syntax error on line {parsed.lineno}: {parsed.msg}")
+        else:
+            check = _top_level(parsed.tree, CHECK_FUNCTION, ast.FunctionDef)
+            if check is None:
+                self.error(file, "checker", "must define a function check(args, got)")
+            elif not _takes_two_args(check):
+                self.error(file, "checker", "check must take two arguments: check(args, got)")
+        if not uses:
+            self.warn(
+                file,
+                "checker",
+                'no test uses it: set "compare": "checker" on the tests it should judge',
+            )
+
     def check_related(self, file: str, problem: Problem) -> None:
         for i, related in enumerate(problem.related):
             path = f"related[{i}].slug"
@@ -722,16 +967,21 @@ class _Validator:
 
     # ---- code and viz (rule 8)
 
-    def check_code(self, file: str, path: str, code: str, entry: str | None) -> ParsedCode | None:
-        """Syntax, `class Solution` and its entry method. Compiles the code, never runs it."""
+    def check_code(
+        self, file: str, path: str, code: str, entry: str | None, kind: str = "function"
+    ) -> ParsedCode | None:
+        """Syntax, then `class Solution` with the entry method, or for a design problem the
+        class named `entry`. Compiles the code, never runs it."""
         parsed = compile_code(code)
         if isinstance(parsed, SyntaxError):
             self.error(file, path, f"syntax error on line {parsed.lineno}: {parsed.msg}")
             return None
         tree = parsed.tree
-        solution = next(
-            (n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "Solution"), None
-        )
+        if kind == "design":
+            if entry is not None and _top_level(tree, entry, ast.ClassDef) is None:
+                self.error(file, path, f"must define class {entry}")
+            return parsed
+        solution = _top_level(tree, "Solution", ast.ClassDef)
         if solution is None:
             self.error(file, path, "must define class Solution")
         elif entry is not None and not any(
