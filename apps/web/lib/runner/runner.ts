@@ -2,7 +2,7 @@
 //
 // - One worker, created on first use (the Workspace, or hovering a problem link) and kept
 //   alive across problems.
-// - Requests run one at a time. Tests get 5 s in total per Run/Submit (trace: 4 s). On a
+// - Requests (test runs and traces) run one at a time. Tests get 5 s in total per Run/Submit (trace: 4 s). On a
 //   timeout the worker is terminated, the tests come back as "timeout", and a fresh
 //   worker starts loading at once so the next Run works.
 // - A worker that fails (Pyodide could not load, or it crashed) leaves the runner
@@ -12,6 +12,7 @@ import { z } from "zod"
 
 import { env, pyodideIndexUrl } from "@/lib/env"
 import { pyodideWorkerSource } from "@/lib/runner/pyodide.worker"
+import { parseTrace, timedOutTrace } from "@/lib/viz/trace"
 import type {
   Runner,
   RunnerStatus,
@@ -40,6 +41,7 @@ export interface RunnerOptions {
   createWorker?: () => WorkerLike
   indexURL?: string
   harnessUrl?: string
+  tracerUrl?: string
   testTimeoutMs?: number
   traceTimeoutMs?: number
   initTimeoutMs?: number
@@ -126,9 +128,10 @@ export class PyodideRunner implements Runner {
   #nextId = 1
   #queue: Promise<unknown> = Promise.resolve()
   #listeners = new Set<() => void>()
-  readonly #options: Required<Omit<RunnerOptions, "createWorker" | "harnessUrl">> & {
+  readonly #options: Required<Omit<RunnerOptions, "createWorker" | "harnessUrl" | "tracerUrl">> & {
     createWorker: () => WorkerLike
     harnessUrl: string | undefined
+    tracerUrl: string | undefined
   }
 
   constructor(options: RunnerOptions = {}) {
@@ -136,6 +139,7 @@ export class PyodideRunner implements Runner {
       createWorker: options.createWorker ?? defaultCreateWorker,
       indexURL: options.indexURL ?? pyodideIndexUrl(env.pyodideVersion),
       harnessUrl: options.harnessUrl,
+      tracerUrl: options.tracerUrl,
       testTimeoutMs: options.testTimeoutMs ?? TEST_TIMEOUT_MS,
       traceTimeoutMs: options.traceTimeoutMs ?? TRACE_TIMEOUT_MS,
       initTimeoutMs: options.initTimeoutMs ?? INIT_TIMEOUT_MS,
@@ -169,9 +173,17 @@ export class PyodideRunner implements Runner {
     })
   }
 
+  /**
+   * Traces one input (Section 8.2). A trace that hits its 4 s limit comes back as a Trace
+   * with an `error` (the worker is replaced, as for tests); the tracer's own step limit
+   * ends endless loops long before that.
+   */
   trace(req: TraceRequest): Promise<Trace> {
-    void req
-    return Promise.reject(new RunnerError("Tracing is not implemented until M4."))
+    return this.#enqueue(async () => {
+      const data = await this.#request("trace", req, this.#options.traceTimeoutMs)
+      if (data === TIMED_OUT) return timedOutTrace(this.#options.traceTimeoutMs)
+      return parseTrace(data)
+    })
   }
 
   // ------------------------------------------------------------------ internals
@@ -232,10 +244,12 @@ export class PyodideRunner implements Runner {
     })
     const harnessUrl =
       this.#options.harnessUrl ?? new URL("/py/harness.py", window.location.origin).toString()
+    const tracerUrl =
+      this.#options.tracerUrl ?? new URL("/py/tracer.py", window.location.origin).toString()
     const ready = this.#send(
       worker,
       "init",
-      { indexURL: this.#options.indexURL, harnessUrl },
+      { indexURL: this.#options.indexURL, harnessUrl, tracerUrl },
       this.#options.initTimeoutMs
     ).then(
       () => {

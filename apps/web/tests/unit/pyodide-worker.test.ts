@@ -12,7 +12,8 @@ const INDEX_URL = "https://cdn.example/pyodide/v314.0.7/full/"
 interface FakeState {
   options?: unknown
   files: Record<string, string>
-  imported?: string
+  imported: string[]
+  traced?: unknown[]
 }
 
 function fakePyodideModule(state: FakeState) {
@@ -29,7 +30,7 @@ function fakePyodideModule(state: FakeState) {
           },
         },
         pyimport(name: string) {
-          state.imported = name
+          state.imported.push(name)
           return {
             run_tests(code: string, _entry: string, testsJson: string, mode: string) {
               if (code.includes("raise")) throw new Error("PythonError: boom")
@@ -37,6 +38,10 @@ function fakePyodideModule(state: FakeState) {
               return JSON.stringify(
                 tests.map((test) => ({ id: test.id, status: "pass", got: test.expected, mode }))
               )
+            },
+            run_traced(...args: unknown[]) {
+              state.traced = args
+              return JSON.stringify({ steps: [], result: { t: "prim", v: 7 }, error: null })
             },
           }
         },
@@ -48,7 +53,7 @@ function fakePyodideModule(state: FakeState) {
 function startWorker() {
   const listeners: ((event: { data: WorkerRequest }) => void)[] = []
   const posted: WorkerResponse[] = []
-  const state: FakeState = { files: {} }
+  const state: FakeState = { files: {}, imported: [] }
   const scope = {
     postMessage: (message: WorkerResponse) => posted.push(message),
     addEventListener: (_type: string, listener: (event: { data: WorkerRequest }) => void) =>
@@ -94,7 +99,7 @@ describe("pyodide worker", () => {
     expect(worker.importModule).toHaveBeenCalledWith(`${INDEX_URL}pyodide.mjs`)
     expect(worker.state.options).toMatchObject({ indexURL: INDEX_URL })
     expect(worker.state.files).toEqual({ "/seecode/seecode_harness.py": "def run_tests(): ..." })
-    expect(worker.state.imported).toBe("seecode_harness")
+    expect(worker.state.imported).toEqual(["seecode_harness"])
     expect(fetch).toHaveBeenCalledWith("http://app.test/py/harness.py")
 
     const run = await worker.send({
@@ -135,7 +140,82 @@ describe("pyodide worker", () => {
       type: "trace",
       payload: { code: "", entry: "f", args: [] },
     })
-    expect(trace).toMatchObject({ id: 3, ok: false, error: expect.stringContaining("M4") })
+    // Started without a tracer URL: tests run, traces say why they cannot.
+    expect(trace).toEqual({ id: 3, ok: false, error: "Tracing is not available." })
+  })
+
+  it("loads the tracer next to the harness and traces", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => new Response(`# ${url}`, { status: 200 }))
+    )
+    const worker = startWorker()
+    await worker.send({
+      id: 1,
+      type: "init",
+      payload: {
+        indexURL: INDEX_URL,
+        harnessUrl: "http://app.test/py/harness.py",
+        tracerUrl: "http://app.test/py/tracer.py",
+      },
+    })
+    expect(worker.state.files).toEqual({
+      "/seecode/seecode_harness.py": "# http://app.test/py/harness.py",
+      "/seecode/seecode_tracer.py": "# http://app.test/py/tracer.py",
+    })
+    expect(worker.state.imported).toEqual(["seecode_harness", "seecode_tracer"])
+
+    const traced = await worker.send({
+      id: 2,
+      type: "trace",
+      payload: { code: "code", entry: "f", args: [[1, 2]], viz: { primary: "nums" } },
+    })
+    expect(traced).toEqual({
+      id: 2,
+      ok: true,
+      data: { steps: [], result: { t: "prim", v: 7 }, error: null },
+    })
+    // Missing JSON arguments go as "" (Pyodide turns a JS null into jsnull, not None).
+    expect(worker.state.traced).toEqual(["code", "f", '{"args":[[1,2]]}', '{"primary":"nums"}', ""])
+
+    await worker.send({
+      id: 3,
+      type: "trace",
+      payload: { code: "code", entry: "MinStack", ops: [["MinStack"]], spec: { kind: "design" } },
+    })
+    expect(worker.state.traced).toEqual([
+      "code",
+      "MinStack",
+      '{"ops":[["MinStack"]]}',
+      "",
+      '{"kind":"design"}',
+    ])
+  })
+
+  it("still runs tests when the tracer cannot be downloaded", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async (url: string) => new Response("", { status: url.endsWith("tracer.py") ? 503 : 200 })
+      )
+    )
+    const worker = startWorker()
+    const init = await worker.send({
+      id: 1,
+      type: "init",
+      payload: {
+        indexURL: INDEX_URL,
+        harnessUrl: "http://app.test/py/harness.py",
+        tracerUrl: "http://app.test/py/tracer.py",
+      },
+    })
+    expect(init.ok).toBe(true)
+    const trace = await worker.send({
+      id: 2,
+      type: "trace",
+      payload: { code: "", entry: "f", args: [] },
+    })
+    expect(trace).toEqual({ id: 2, ok: false, error: "Could not load the tracer (503)." })
   })
 
   it("reports a harness that cannot be downloaded", async () => {

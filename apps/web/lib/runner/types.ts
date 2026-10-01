@@ -1,4 +1,5 @@
 // Runner types (Sections 8.3 and 9). Shared by the main thread and the Pyodide worker.
+import type { Trace } from "@/lib/viz/types"
 
 export type CompareMode = "exact" | "unordered" | "unordered_nested" | "float" | "checker"
 
@@ -43,20 +44,22 @@ export interface RunTestsRequest {
   spec?: ProblemSpec
 }
 
+/**
+ * One input to trace (Section 9.1): a function problem's `args`, or a design problem's calls
+ * (`ops`, as in a design test). `viz` is the problem's viz config (8.4), left out for "Trace
+ * my code"; `spec` says how to run the input, as for the tests.
+ */
 export interface TraceRequest {
   code: string
   entry: string
-  args: unknown[]
+  args?: unknown[]
+  ops?: unknown[][]
   viz?: unknown
+  spec?: ProblemSpec
 }
 
-/** Section 8.3. The tracer arrives in M4; the type is here so the Runner interface is complete. */
-export interface Trace {
-  steps: unknown[]
-  result: unknown
-  error: string | null
-  truncated: boolean
-}
+/** Section 8.3, as tracer.py records it (the frame and snapshot types live in lib/viz). */
+export type { Trace }
 
 export type RunnerStatus = "loading" | "ready" | "busy" | "crashed"
 
@@ -74,6 +77,8 @@ export interface InitPayload {
   indexURL: string
   /** Absolute URL of public/py/harness.py. */
   harnessUrl: string
+  /** Absolute URL of public/py/tracer.py (walkthroughs and Trace my code). */
+  tracerUrl?: string
 }
 
 export type WorkerRequest =

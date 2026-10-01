@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { PyodideRunner, alignResults, type WorkerLike } from "@/lib/runner/runner"
-import type { RunTestsRequest, WorkerRequest, WorkerResponse } from "@/lib/runner/types"
+import type {
+  RunTestsRequest,
+  TraceRequest,
+  WorkerRequest,
+  WorkerResponse,
+} from "@/lib/runner/types"
 
 // Runner (Section 9.1) against a fake worker: message routing, timeouts, restarts, crashes.
 
@@ -72,6 +77,7 @@ function makeRunner(overrides: Partial<ConstructorParameters<typeof PyodideRunne
     createWorker: () => new FakeWorker(),
     indexURL: "https://cdn.example/pyodide/v1/full/",
     harnessUrl: "http://app.test/py/harness.py",
+    tracerUrl: "http://app.test/py/tracer.py",
     ...overrides,
   })
 }
@@ -112,6 +118,7 @@ describe("runner", () => {
         payload: {
           indexURL: "https://cdn.example/pyodide/v1/full/",
           harnessUrl: "http://app.test/py/harness.py",
+          tracerUrl: "http://app.test/py/tracer.py",
         },
       },
     ])
@@ -295,10 +302,74 @@ describe("runner", () => {
     expect(runner.status).toBe("ready")
   })
 
-  it("does not trace until M4", async () => {
-    await expect(makeRunner().trace({ code: "", entry: "f", args: [] })).rejects.toThrow(
-      "not implemented until M4"
-    )
+  const TRACE_REQUEST: TraceRequest = {
+    code: "class Solution: ...",
+    entry: "f",
+    args: [[1, 2]],
+    viz: { primary: "nums" },
+  }
+  const TRACE = {
+    steps: [{ line: 3, event: "line", func: "f", depth: 1, locals: {}, tags: [] }],
+    result: { t: "prim", v: 1 },
+    error: null,
+    errorLine: null,
+    truncated: false,
+    stdout: "",
+  }
+
+  it("traces through the worker (Section 8.2)", async () => {
+    const runner = makeRunner()
+    const traced = runner.trace(TRACE_REQUEST)
+    const w = await worker()
+    w.reply("init", {})
+    await settle()
+    expect(w.last("trace")).toMatchObject({ type: "trace", payload: TRACE_REQUEST })
+    expect(runner.status).toBe("busy")
+    w.reply("trace", TRACE)
+    await expect(traced).resolves.toEqual(TRACE)
+    expect(runner.status).toBe("ready")
+  })
+
+  it("rejects a malformed trace", async () => {
+    const runner = makeRunner()
+    const traced = runner.trace(TRACE_REQUEST)
+    const w = await worker()
+    w.reply("init", {})
+    await settle()
+    w.reply("trace", { steps: "nope" })
+    await expect(traced).rejects.toThrow("The tracer returned something unexpected.")
+  })
+
+  it("gives a trace 4 s, then answers with a time-limit trace and restarts Python", async () => {
+    const runner = makeRunner()
+    const traced = runner.trace(TRACE_REQUEST)
+    const stuck = await worker()
+    stuck.reply("init", {})
+    await settle()
+    await vi.advanceTimersByTimeAsync(3_999)
+    expect(stuck.terminated).toBe(false)
+    await vi.advanceTimersByTimeAsync(1)
+    const trace = await traced
+    expect(trace.steps).toEqual([])
+    expect(trace.error).toBe("Time limit exceeded: tracing took longer than 4 s.")
+    expect(stuck.terminated).toBe(true)
+    expect(FakeWorker.instances).toHaveLength(2)
+  })
+
+  it("runs traces and test runs one at a time", async () => {
+    const runner = makeRunner()
+    const traced = runner.trace(TRACE_REQUEST)
+    const tests = runner.runTests(REQUEST)
+    const w = await worker()
+    w.reply("init", {})
+    await settle()
+    expect(w.sent.map((request) => request.type)).toEqual(["init", "trace"])
+    w.reply("trace", TRACE)
+    await traced
+    await settle()
+    expect(w.sent.map((request) => request.type)).toEqual(["init", "trace", "runTests"])
+    w.reply("runTests", [])
+    await tests
   })
 
   it("answers an empty run without starting Python", async () => {

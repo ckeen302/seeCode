@@ -689,9 +689,11 @@ def _describe(exc: BaseException) -> tuple[str, int | None]:
 
 
 def _loads(value: Any) -> Any:
+    """A JSON argument: text, an already parsed object, or nothing (None, "", or Pyodide's
+    jsnull for a JavaScript null)."""
     if isinstance(value, str):
         return json.loads(value) if value.strip() else None
-    return value
+    return value if isinstance(value, Mapping | list) else None
 
 
 def trace(

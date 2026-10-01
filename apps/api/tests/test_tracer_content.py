@@ -2,6 +2,7 @@
 scripts/viz_trace.py checks configs against those real traces."""
 
 import importlib.util
+import json
 import time
 from types import ModuleType
 from typing import Any
@@ -90,6 +91,52 @@ def test_viz_configs_match_their_traces(problem: Problem) -> None:
     assert report == {"errors": [], "warnings": [], "unfired": [], "unreached": []}
 
 
+# The web unit tests play real traces of these walkthroughs (first visible test of each).
+WEB_FIXTURE = REPO_ROOT / "apps" / "web" / "tests" / "unit" / "fixtures" / "viz-traces.json"
+WEB_FIXTURE_PROBLEMS = (
+    "valid-palindrome",
+    "binary-search",
+    "min-stack",
+    "two-sum",
+    "daily-temperatures",
+    "group-anagrams",
+)
+
+
+TWO_INPUTS = ("valid-palindrome", "binary-search")
+
+
+def web_fixture() -> str:
+    """{slug: {"payload": WalkthroughPayload as the API sends it, "traces": [Trace]}}."""
+    by_slug = {problem.slug: problem for problem in WALKTHROUGHS}
+    out: dict[str, Any] = {}
+    for slug in WEB_FIXTURE_PROBLEMS:
+        problem = by_slug[slug]
+        job = _job(problem)
+        inputs = [
+            {"label": f"Example {i}", **{k: v for k, v in given.items() if k != "id"}}
+            for i, given in enumerate(job["inputs"], start=1)
+        ]
+        payload = {
+            "code": job["code"],
+            "kind": problem.kind,
+            "entry": job["entry"],
+            "viz": job["viz"],
+            "inputs": inputs,
+        }
+        traces = [
+            tracer.trace(job["code"], job["entry"], given, job["viz"], job["spec"])
+            for given in job["inputs"][: 2 if slug in TWO_INPUTS else 1]
+        ]
+        out[slug] = {"payload": payload, "traces": traces}
+    return json.dumps(out, separators=(",", ":"), sort_keys=True) + "\n"
+
+
+def test_the_web_trace_fixture_is_current() -> None:
+    # Regenerate: uv run python -m tests.test_tracer_content (from apps/api).
+    assert WEB_FIXTURE.read_text(encoding="utf-8") == web_fixture()
+
+
 def _palindrome_job(**viz: Any) -> dict[str, Any]:
     problem = CONTENT.problems["problems/valid-palindrome.json"]
     job = _job(problem)
@@ -136,3 +183,8 @@ def test_viz_trace_warns_about_a_cut_trace() -> None:
     assert {"path": "", "message": "the trace stops at 3000 steps on input 'x'"} in report[
         "warnings"
     ]
+
+
+if __name__ == "__main__":
+    WEB_FIXTURE.parent.mkdir(parents=True, exist_ok=True)
+    WEB_FIXTURE.write_text(web_fixture(), encoding="utf-8")
