@@ -1,9 +1,10 @@
 import type { Metadata } from "next"
 
-import { PagePlaceholder } from "@/components/shell/PagePlaceholder"
+import { SettingsView } from "@/components/settings/SettingsView"
 
 export const metadata: Metadata = { title: "Settings" }
 
-export default function Page() {
-  return <PagePlaceholder title="Settings" milestone="M6" />
+// Section 6.9.
+export default function SettingsPage() {
+  return <SettingsView />
 }

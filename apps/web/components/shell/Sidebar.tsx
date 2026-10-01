@@ -22,6 +22,7 @@ import { Shortcut } from "@/components/shell/Shortcut"
 import { ThemeToggle, useSidebarCollapsed } from "@/components/shell/Preferences"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { useReviewsDue } from "@/lib/api/today"
 import { HOTKEYS } from "@/lib/keyboard"
 import { setSidebarCollapsed } from "@/lib/sidebar"
 import { cn } from "@/lib/utils"
@@ -121,6 +122,9 @@ export function SidebarContent({
 }) {
   const palette = useCommandPalette()
   const collapsed = useSidebarCollapsed()
+  // The Review badge (Section 5): due items from /today for a signed-in user.
+  const dueFromToday = useReviewsDue()
+  const due = reviewsDue ?? dueFromToday
   const label = collapsible(variant, "sidebar-collapsed:sr-only")
 
   return (
@@ -179,12 +183,7 @@ export function SidebarContent({
         <ul className="flex flex-col gap-1">
           {NAV_ITEMS.map((item) => (
             <li key={item.href}>
-              <NavLink
-                item={item}
-                variant={variant}
-                reviewsDue={reviewsDue}
-                onNavigate={onNavigate}
-              />
+              <NavLink item={item} variant={variant} reviewsDue={due} onNavigate={onNavigate} />
             </li>
           ))}
         </ul>
