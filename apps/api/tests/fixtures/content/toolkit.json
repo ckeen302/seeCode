@@ -1,0 +1,71 @@
+[
+  {
+    "id": "lower",
+    "tool": ".lower()",
+    "phrases": [
+      "ignore letter case",
+      "case-insensitive"
+    ],
+    "example": "\"MiXeD\".lower()  # 'mixed'",
+    "patterns": [
+      "two_pointers_opposite"
+    ]
+  },
+  {
+    "id": "isalnum",
+    "tool": ".isalnum()",
+    "phrases": [
+      "only letters and digits count"
+    ],
+    "example": "\"7\".isalnum(), \"?\".isalnum()  # True, False",
+    "patterns": [
+      "two_pointers_opposite"
+    ]
+  },
+  {
+    "id": "enumerate",
+    "tool": "enumerate()",
+    "phrases": [
+      "need the index and the value"
+    ],
+    "example": "for i, x in enumerate(['p', 'q']):  # (0, 'p'), then (1, 'q')",
+    "patterns": [
+      "hashing"
+    ]
+  },
+  {
+    "id": "set_ops",
+    "tool": "set(), in",
+    "phrases": [
+      "seen before",
+      "duplicates"
+    ],
+    "example": "5 in {2, 5}  # True",
+    "patterns": [
+      "hashing"
+    ]
+  },
+  {
+    "id": "counter",
+    "tool": "Counter",
+    "phrases": [
+      "count occurrences",
+      "same letters"
+    ],
+    "example": "Counter('noon')  # Counter({'n': 2, 'o': 2})",
+    "patterns": [
+      "hashing"
+    ]
+  },
+  {
+    "id": "bisect_left",
+    "tool": "bisect.bisect_left()",
+    "phrases": [
+      "insert position in a sorted array"
+    ],
+    "example": "bisect.bisect_left([10, 20, 30], 25)  # 2",
+    "patterns": [
+      "binary_search"
+    ]
+  }
+]

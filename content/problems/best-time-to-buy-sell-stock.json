@@ -1,0 +1,389 @@
+{
+  "slug": "best-time-to-buy-sell-stock",
+  "title": "Best Time to Buy and Sell Stock",
+  "leetcodeUrl": "https://leetcode.com/problems/best-time-to-buy-and-sell-stock/",
+  "difficulty": "easy",
+  "patternId": "sliding_window",
+  "order": 10,
+  "summary": "You get a list `prices`, where `prices[i]` is the price of a stock on day `i`. You may make one trade: buy a single share on one day and sell it on a later day. Return the largest profit that trade can make. If every possible trade would lose money or break even, return `0`, since you can also choose not to trade.",
+  "examples": [
+    {
+      "input": "prices = [8, 3, 6, 2, 9, 5]",
+      "output": "7",
+      "explanation": "Buy on day 3 at 2 and sell on day 4 at 9. Buying at 3 on day 1 and selling at 6 on day 2 earns only 3."
+    },
+    {
+      "input": "prices = [9, 7, 7, 4, 2]",
+      "output": "0",
+      "explanation": "The price never rises, so every trade would lose money or break even. Not trading earns 0."
+    }
+  ],
+  "constraints": ["1 ≤ len(prices) ≤ 10⁵", "0 ≤ prices[i] ≤ 10⁴"],
+  "targets": {"time": "O(n)", "space": "O(1)"},
+  "entry": "maxProfit",
+  "starterCode": "class Solution:\n    def maxProfit(self, prices: list[int]) -> int:\n        pass\n",
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "sliding_window",
+      "structures": ["array"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Track the lowest price so far; the best sale is today's price minus that low.",
+      "twistKeywords": [
+        [
+          "lowest",
+          "lower",
+          "below",
+          "the low",
+          "that low",
+          "a low",
+          "new low",
+          "low point",
+          "low price",
+          "low value",
+          "low so far",
+          "running low",
+          "minimum",
+          "min ",
+          "min(",
+          "min_",
+          "min.",
+          "min,",
+          "min;",
+          "min)",
+          "the min",
+          "running min",
+          "prefix min",
+          "- min",
+          "-min",
+          "− min",
+          "−min",
+          "smallest",
+          "smaller",
+          "cheapest",
+          "cheaper",
+          "bottom",
+          "trough",
+          "dip"
+        ],
+        [
+          "minus",
+          "subtract",
+          "difference",
+          "diff",
+          "profit",
+          "gain",
+          "earn",
+          "today",
+          "current",
+          "price -",
+          "price-",
+          "price −",
+          "price−",
+          "- low",
+          "-low",
+          "− low",
+          "- buy",
+          "-buy",
+          "− buy",
+          "] -",
+          "]-",
+          "] −"
+        ],
+        [
+          "so far",
+          "track",
+          "keep",
+          "running",
+          "remember",
+          "seen",
+          "before",
+          "earlier",
+          "prior",
+          "previous",
+          "past",
+          "until",
+          "up to",
+          "store",
+          "save",
+          "update",
+          "maintain",
+          "move",
+          "each day",
+          "every day",
+          "each price",
+          "every price",
+          "each new",
+          "every new",
+          "as you go",
+          "one pass",
+          "single pass",
+          "scan",
+          "iterat",
+          "walk",
+          "prefix"
+        ]
+      ]
+    },
+    {
+      "id": "all_pairs",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n²)",
+      "space": "O(1)",
+      "twist": "Try every buy day with every later sell day and keep the largest difference.",
+      "twistKeywords": [
+        [
+          "every pair",
+          "each pair",
+          "all pairs",
+          "all the pairs",
+          "every buy",
+          "each buy",
+          "every combination",
+          "all combinations",
+          "every possible",
+          "all possible",
+          "nested",
+          "two loops",
+          "double loop",
+          "inner loop",
+          "two for",
+          "double for",
+          "brute"
+        ],
+        [
+          "later",
+          "after",
+          "difference",
+          "minus",
+          "subtract",
+          "profit",
+          "gain",
+          "sell",
+          "largest",
+          "max",
+          "best"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but trying every buy day with every later sell day takes O(n²) time. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "sell it on a later day",
+      "meaning": "The buy day always comes before the sell day, so the two days form a window that only moves right. For each sell day, the best buy day is the cheapest one before it.",
+      "pointsTo": "sliding_window"
+    },
+    {
+      "phrase": "largest profit",
+      "meaning": "Keep a running best: after each day, it's the larger of the old best and today's profit. max() does that in one step.",
+      "pointsTo": "toolkit:min_max_key"
+    },
+    {
+      "phrase": "one trade",
+      "meaning": "One trade is just two days, a buy day and a sell day. Two indexes into prices are enough; you don't need to copy or sort anything.",
+      "pointsTo": "structure:array"
+    }
+  ],
+  "constraintReading": "len(prices) can reach 10⁵, so trying every buy day with every later sell day means about 5·10⁹ pairs: O(n²) is far too slow. Aim for O(n), a single pass over the days. The O(1) space target also rules out extra lists, such as the highest price after each day, so keep only a few numbers as you go.",
+  "hints": {
+    "clarify": "Can you sell on the day you buy, or before it? No: the sale comes on a later day. What if the price only falls? Then every trade loses money, so you skip it and return 0. Try [4, 7, 1, 3] by hand: buying at 4 and selling at 7 earns 3, while buying at 1 and selling at 3 earns only 2, so the answer is 3.",
+    "approach": "Sliding window, running from the buy day on the left to the sell day on the right. Move the sell day forward one day at a time. For today's sale, the best buy day is the cheapest day before it, so keep `buy` on the lowest price so far. If today's price is lower still, move `buy` to today: every later sale does better buying here. Otherwise, today's profit is today's price minus the price on `buy`; keep the best one. One pass is enough.",
+    "whyNot": "The tempting route is to try every buy day with every later sell day. That works, but it's O(n²) time: about 5·10⁹ pairs when there are 10⁵ days. Taking the lowest and the highest price overall doesn't work either: the highest price can come before the lowest one, and you can't sell before you buy.",
+    "slots": {
+      "setup": "`buy` is the window's left end: the day with the lowest price so far. It starts at day 0. `best` starts at 0, because not trading is always allowed.",
+      "loop": "Move `sell`, the right end, through the days from day 1 to the last one. Each new day is one more chance to sell.",
+      "update": "If today's price is lower than the price on `buy`, move `buy` all the way to today. A lower buy price beats the old one for every later sale, so the window starts over here.",
+      "record": "Otherwise, selling today earns today's price minus the price on `buy`. Keep the larger of that profit and `best`.",
+      "return": "After the last day, return `best`. It's still 0 if the price never rose after a low."
+    }
+  },
+  "solution": {
+    "code": "class Solution:\n    def maxProfit(self, prices: list[int]) -> int:\n        buy = 0\n        best = 0\n        for sell in range(1, len(prices)):\n            if prices[sell] < prices[buy]:\n                buy = sell  # viz:new_low\n            else:\n                profit = prices[sell] - prices[buy]  # viz:sell\n                best = max(best, profit)\n        return best  # viz:done\n",
+    "explanation": "The loop looks at each day once and does a fixed amount of work there, so the time is O(n). You keep only the buy day, today's profit and the best profit, so the extra space is O(1).",
+    "toolkit": ["min_max_key"]
+  },
+  "viz": {
+    "primary": "prices",
+    "pointers": [
+      {"var": "buy", "into": "prices", "label": "buy", "color": "a"},
+      {"var": "sell", "into": "prices", "label": "sell", "color": "b"}
+    ],
+    "window": {"into": "prices", "start": "buy", "end": "sell", "inclusive": true},
+    "range": null,
+    "roles": {"stack": [], "queue": [], "hidden": []},
+    "confirmed": null,
+    "events": [
+      {
+        "id": "new_low",
+        "at": "new_low",
+        "label": "new low",
+        "say": "Today's price, {prices[sell]}, is below the lowest price so far, {prices[buy]}. Buying lower makes every later sale earn more, so the buy day moves"
+      },
+      {
+        "id": "new_best",
+        "at": "sell",
+        "when": "prices[sell] - prices[buy] > best",
+        "label": "new best",
+        "say": "Selling at {prices[sell]} after buying at {prices[buy]} earns {prices[sell] - prices[buy]}, more than the best so far, {best}"
+      },
+      {
+        "id": "no_gain",
+        "at": "sell",
+        "when": "prices[sell] - prices[buy] <= best",
+        "label": "no gain",
+        "say": "Selling at {prices[sell]} after buying at {prices[buy]} earns {prices[sell] - prices[buy]}, no more than the best so far, {best}"
+      },
+      {
+        "id": "done",
+        "at": "done",
+        "label": "return",
+        "say": "No days are left, so return the best profit: {best}"
+      }
+    ],
+    "predict": [
+      {
+        "atEvent": "new_low",
+        "occurrence": 1,
+        "ask": "Where will the buy day move?",
+        "var": "buy",
+        "kind": "index"
+      },
+      {
+        "atEvent": "new_low",
+        "occurrence": 2,
+        "ask": "Will selling on the next day beat the best profit so far?",
+        "kind": "yesno",
+        "answerWhen": "sell + 1 < len(prices) and prices[sell + 1] - prices[sell] > best"
+      }
+    ]
+  },
+  "tests": [
+    {"id": "e1", "args": [[8, 3, 6, 2, 9, 5]], "expected": 7, "hidden": false},
+    {"id": "e2", "args": [[9, 7, 7, 4, 2]], "expected": 0, "hidden": false},
+    {"id": "h1", "args": [[5]], "expected": 0, "hidden": true},
+    {"id": "h2", "args": [[7, 7, 7, 7]], "expected": 0, "hidden": true},
+    {"id": "h3", "args": [[3, 2]], "expected": 0, "hidden": true},
+    {"id": "h4", "args": [[1, 2]], "expected": 1, "hidden": true},
+    {"id": "h5", "args": [[4, 11, 2, 7]], "expected": 7, "hidden": true},
+    {"id": "h6", "args": [[9, 2, 5, 1, 3]], "expected": 3, "hidden": true},
+    {"id": "h7", "args": [[0, 10000]], "expected": 10000, "hidden": true},
+    {"id": "h8", "args": [[10000, 0]], "expected": 0, "hidden": true},
+    {"id": "h9", "args": [[3, 1, 4, 1, 5, 9, 2, 6]], "expected": 8, "hidden": true},
+    {"id": "h10", "args": [[6, 5, 4, 3, 2, 3, 4, 5, 6]], "expected": 4, "hidden": true},
+    {
+      "id": "h11",
+      "args": [
+        [
+          7966, 8079, 7961, 8011, 8073, 8124, 8048, 7960, 8023, 7967, 7861, 7962, 8060, 8082, 8059,
+          8193, 8107, 8147, 8231, 8259, 8364, 8243, 8090, 8200, 8305, 8427, 8413, 8328, 8241, 8339,
+          8267, 8120, 8057, 8118, 8012, 7860, 7714, 7586, 7703, 7569, 7700, 7837, 7703, 7687, 7627,
+          7583, 7455, 7411, 7397, 7528, 7520, 7481, 7591, 7535, 7549, 7460, 7464, 7349, 7435, 7518,
+          7552, 7412, 7442, 7373, 7251, 7203, 7269, 7250, 7102, 6997, 6860, 6896, 7002, 6900, 6911,
+          6857, 6824, 6689, 6580, 6668, 6734, 6754, 6612, 6607, 6501, 6598, 6438, 6372, 6256, 6364,
+          6481, 6609, 6458, 6528, 6489, 6340, 6197, 6160, 6109, 6080, 6125, 6127, 6243, 6192, 6168,
+          6143, 6235, 6184, 6031, 5936, 6004, 5870, 5959, 5895, 5956, 5882, 5731, 5693, 5777, 5907,
+          5816, 5728, 5693, 5833, 5956, 5910, 5797, 5757, 5861, 5914, 5918, 6057, 6053, 6178, 6244,
+          6279, 6187, 6306, 6350, 6440, 6520, 6366, 6380, 6416, 6501, 6376, 6495, 6471, 6364, 6369,
+          6231, 6256, 6289, 6170, 6053, 6129, 6177, 6197, 6087, 6003, 5997, 6072, 6174, 6160, 6233,
+          6320, 6365, 6295, 6400, 6376, 6259, 6349, 6305, 6209, 6279, 6405, 6292, 6358, 6496, 6590,
+          6621, 6678, 6723, 6612, 6534, 6642, 6519, 6527, 6639, 6518, 6611, 6611, 6663, 6607, 6726,
+          6692, 6688, 6760, 6754, 6690, 6785, 6693, 6538, 6493, 6597, 6542, 6594, 6652, 6654, 6758,
+          6867, 6908, 6789, 6699, 6798, 6749, 6724, 6701, 6619, 6490, 6599, 6646, 6496, 6405, 6527,
+          6639, 6723, 6676, 6807, 6725, 6661, 6651, 6588, 6715, 6684, 6815, 6892, 6783, 6722, 6718,
+          6623, 6490, 6450, 6586, 6703, 6635, 6631, 6602, 6635, 6749, 6694, 6685, 6654, 6773, 6880,
+          7000, 7109, 7077, 7013, 7085, 7089, 7078, 7105, 7063, 7062, 6928, 6933, 7031, 7171, 7221,
+          7344, 7190, 7198, 7289, 7275, 7238, 7120, 6969, 7040, 7052, 7072, 6969, 6958, 7030, 7006,
+          6870, 6768, 6886, 7023, 6904, 6841, 6938, 6839, 6707, 6712, 6830, 6935, 6801, 6660, 6518,
+          6589, 6723, 6766, 6829, 6770, 6644, 6536, 6404, 6454, 6471, 6324, 6199, 6171, 6167, 6035,
+          5893, 5885, 5856, 5725, 5745, 5604, 5689, 5565, 5676, 5517, 5621, 5587, 5707, 5757, 5882,
+          5974, 5894, 5919, 6011, 5891, 5912, 5858, 5968, 5836, 5684, 5529, 5615, 5504, 5547, 5508,
+          5458, 5427, 5537, 5645, 5663, 5773, 5694, 5597, 5521, 5650, 5501, 5598, 5704, 5705, 5724,
+          5691, 5635, 5666, 5591, 5621, 5633, 5594, 5492, 5446, 5439, 5346, 5286, 5381, 5360, 5251,
+          5307, 5213, 5272, 5330, 5284, 5360, 5463, 5458, 5423, 5339, 5451, 5583, 5465, 5590, 5449,
+          5395, 5445, 5400, 5537, 5457, 5430, 5529, 5535, 5480, 5590, 5433, 5372, 5390, 5480, 5458,
+          5494, 5529, 5426, 5485, 5441, 5419, 5355, 5276, 5177, 5208, 5061, 5046, 5032, 5124, 5175,
+          5236, 5174, 5152, 5011, 5016, 4897, 4884, 4988, 4944, 4797, 4798, 4752, 4712, 4717, 4835,
+          4737, 4795, 4868, 4721, 4783, 4881, 4941, 4871, 4936, 5045, 4898, 4829, 4782, 4710, 4709,
+          4847, 4758, 4849, 4711, 4721, 4776, 4830, 4959, 5083, 5131, 5135, 5156, 5130, 5035, 4956,
+          5089, 4940, 4990, 5013, 4918, 4774, 4858, 4716, 4771, 4709, 4714, 4707, 4622, 4698, 4702,
+          4817, 4748, 4835, 4845, 4816, 4763, 4640, 4551, 4471, 4512, 4471, 4439, 4486, 4387, 4480,
+          4495, 4523, 4616, 4679, 4720, 4705, 4566, 4607, 4663, 4780, 4718, 4799, 4671, 4702, 4768,
+          4824, 4666, 4566, 4586, 4503, 4432, 4332, 4421, 4318, 4361, 4418, 4414, 4354, 4214, 4119,
+          4169, 4263, 4366, 4297, 4187, 4173, 4110, 4033, 4050, 3918, 3828, 3724, 3679, 3554, 3686,
+          3546, 3590, 3534, 3623, 3647, 3554, 3636, 3489, 3478, 3476, 3353, 3327, 3227, 3337, 3372,
+          3275, 3119, 3154, 3178, 3197, 3256, 3132, 3039, 3135, 3208, 3286, 3313, 3190, 3296, 3247,
+          3183, 3091, 2969, 2946, 2896, 2853, 2926, 2946, 2809, 2920, 2880, 2730, 2752, 2602, 2535,
+          2583, 2555, 2516, 2544, 2565, 2512, 2544, 2398, 2281, 2339, 2461, 2425, 2433, 2363, 2494,
+          2514, 2537, 2586, 2491, 2611, 2508, 2421, 2372, 2499, 2483, 2498, 2562, 2691, 2708, 2770,
+          2809, 2760, 2727, 2786, 2908, 2821, 2930, 2927, 3017, 3056, 3122, 3167, 3049, 2915, 2972,
+          2894, 2798, 2795, 2710, 2732, 2681, 2799, 2875, 2827, 2737, 2688, 2806, 2706, 2558, 2625,
+          2684, 2553, 2460, 2579, 2557, 2645, 2564, 2486, 2604, 2482, 2482, 2515, 2529, 2422, 2363,
+          2383, 2339, 2294, 2150, 2025, 2032, 1942, 1851, 1974, 1875, 1787, 1797, 1714, 1762, 1657,
+          1703, 1685, 1615, 1712, 1651, 1676, 1746, 1797, 1852, 1957, 1934, 2053, 1902, 1992, 1905,
+          1879, 1862, 1797, 1833, 1764, 1809, 1752, 1699, 1571, 1710, 1607, 1581, 1630, 1490, 1572,
+          1440, 1369, 1237, 1201, 1308, 1261, 1143, 1087, 1087, 1162, 1169, 1065, 1017, 911, 840,
+          705, 555, 649, 745, 883, 889, 732, 728, 860, 906, 917, 999, 966, 901, 906, 776, 854, 861,
+          737, 860, 998, 923, 824, 884, 998, 916, 944, 805, 678, 560, 617, 523, 635, 663, 561, 499,
+          628, 606, 581, 553, 523, 591, 585, 593, 569, 583, 571, 612, 595, 460, 544, 461, 540, 489,
+          470, 544, 676, 556, 636, 776, 867, 898, 983, 1090, 1173, 1134, 1098, 1071, 935, 1023, 872,
+          975, 1092, 1043, 926, 1032, 1115, 1095, 986, 1017, 958, 819, 936, 804, 804, 772, 909, 753,
+          698, 795, 932, 780, 652, 702, 647, 694, 830, 797, 776, 745, 637, 702, 717, 780, 775, 829,
+          695, 731, 822, 746, 709, 732, 736, 598, 718, 670, 594, 708, 560, 446, 426, 497, 380, 483,
+          399, 317, 357, 263, 380, 225, 210, 281, 330, 174, 183, 101, 195, 183, 35, 1, 8, 91, 68,
+          197, 281, 227, 255, 110, 234, 185, 72, 163, 4, 38, 68, 108, 233, 276, 374, 298, 372, 494,
+          444, 336, 207, 124, 186, 136, 222, 354, 257, 125, 47, 182, 74, 84, 25, 0, 0, 90, 229, 169,
+          205, 245, 302, 313, 180, 274, 368, 334, 317, 435, 492, 584, 549, 656, 580, 643, 606, 693,
+          687, 738, 604, 549, 505, 526, 402, 491, 364, 299, 425, 294, 417, 338, 383, 438, 456, 400,
+          318, 198, 56, 63, 185, 196, 66, 0, 0, 0, 0, 70, 103, 222, 278, 149, 166, 261, 136, 273,
+          189, 185, 166, 201, 142, 15, 4, 0, 84, 81, 53, 100, 59, 57, 162, 118, 189, 260, 197, 179,
+          218, 181, 225, 195, 114, 38, 157, 112, 38, 0, 0, 0, 0, 45, 0, 0, 0, 0, 0, 0, 86, 63
+        ]
+      ],
+      "expected": 1651,
+      "hidden": true
+    },
+    {
+      "id": "h12",
+      "args": [
+        [
+          10000, 9969, 9938, 9907, 9876, 9845, 9814, 9783, 9752, 9721, 9690, 9659, 9628, 9597, 9566,
+          9535, 9504, 9473, 9442, 9411, 9380, 9349, 9318, 9287, 9256, 9225, 9194, 9163, 9132, 9101,
+          9070, 9039, 9008, 8977, 8946, 8915, 8884, 8853, 8822, 8791, 8760, 8729, 8698, 8667, 8636,
+          8605, 8574, 8543, 8512, 8481, 8450, 8419, 8388, 8357, 8326, 8295, 8264, 8233, 8202, 8171,
+          8140, 8109, 8078, 8047, 8016, 7985, 7954, 7923, 7892, 7861, 7830, 7799, 7768, 7737, 7706,
+          7675, 7644, 7613, 7582, 7551, 7520, 7489, 7458, 7427, 7396, 7365, 7334, 7303, 7272, 7241,
+          7210, 7179, 7148, 7117, 7086, 7055, 7024, 6993, 6962, 6931, 6900, 6869, 6838, 6807, 6776,
+          6745, 6714, 6683, 6652, 6621, 6590, 6559, 6528, 6497, 6466, 6435, 6404, 6373, 6342, 6311,
+          6280, 6249, 6218, 6187, 6156, 6125, 6094, 6063, 6032, 6001, 5970, 5939, 5908, 5877, 5846,
+          5815, 5784, 5753, 5722, 5691, 5660, 5629, 5598, 5567, 5536, 5505, 5474, 5443, 5412, 5381,
+          5350, 5319, 5288, 5257, 5226, 5195, 5164, 5133, 5102, 5071, 5040, 5009, 4978, 4947, 4916,
+          4885, 4854, 4823, 4792, 4761, 4730, 4699, 4668, 4637, 4606, 4575, 4544, 4513, 4482, 4451,
+          4420, 4389, 4358, 4327, 4296, 4265, 4234, 4203, 4172, 4141, 4110, 4079, 4048, 4017, 3986,
+          3955, 3924, 3893, 3862, 3831, 3800, 3769, 3738, 3707, 3676, 3645, 3614, 3583, 3552, 3521,
+          3490, 3459, 3428, 3397, 3366, 3335, 3304, 3273, 3242, 3211, 3180, 3149, 3118, 3087, 3056,
+          3025, 2994, 2963, 2932, 2901, 2870, 2839, 2808, 2777, 2746, 2715, 2684, 2653, 2622, 2591,
+          2560, 2529, 2498, 2467, 2436, 2405, 2374, 2343, 2312, 2281, 2250, 2219, 2188, 2157, 2126,
+          2095, 2064, 2033, 2002, 1971, 1940, 1909, 1878, 1847, 1816, 1785, 1754, 1723, 1692, 1661,
+          1630, 1599, 1568, 1537, 1506, 1475, 1444, 1413, 1382, 1351, 1320, 1289, 1258, 1227, 1196,
+          1165, 1134, 1103, 1072, 1041, 1010, 979, 948, 917, 886, 855, 824, 793, 762, 731
+        ]
+      ],
+      "expected": 0,
+      "hidden": true
+    }
+  ],
+  "related": [
+    {
+      "slug": "longest-substring-no-repeat",
+      "relation": "Same left and right ends, but the left end steps forward one character at a time while the new character repeats, instead of jumping to a new lowest price."
+    },
+    {
+      "slug": "two-sum",
+      "relation": "Also one pass that remembers the past, but it stores every number in a dict to look up an exact partner, where here only the lowest price so far matters."
+    }
+  ]
+}

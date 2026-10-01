@@ -1,0 +1,146 @@
+{
+  "slug": "asteroid-collision",
+  "title": "Asteroid Collision",
+  "leetcodeUrl": "https://leetcode.com/problems/asteroid-collision/",
+  "difficulty": "medium",
+  "patternId": "stack",
+  "order": 117,
+  "drillOnly": true,
+  "summary": "A row of asteroids is given as a list of nonzero integers `asteroids`. The absolute value is an asteroid's size and the sign its direction: positive moves right, negative moves left, all at the same speed. When a right-mover and a left-mover collide, the smaller one is destroyed; equal sizes destroy each other. Asteroids moving the same way never meet. Return the asteroids that survive, in their original order.",
+  "examples": [
+    {
+      "input": "asteroids = [7, -3, 4, -9, 2]",
+      "output": "[-9, 2]",
+      "explanation": "7 destroys -3. Then -9 destroys 4, then 7, and keeps flying left; 2 flies right, away from it."
+    },
+    {
+      "input": "asteroids = [-4, 6, 1, -6]",
+      "output": "[-4]",
+      "explanation": "-4 flies left with nothing ahead of it. -6 destroys 1, then meets 6, which has the same size, so both are destroyed."
+    }
+  ],
+  "constraints": ["2 ≤ len(asteroids) ≤ 10⁴", "−1000 ≤ asteroids[i] ≤ 1000", "asteroids[i] ≠ 0"],
+  "targets": {"time": "O(n)", "space": "O(n)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "stack",
+      "structures": ["stack"],
+      "time": "O(n)",
+      "space": "O(n)",
+      "twist": "Push each asteroid, but let a left-mover pop smaller right-movers off the top until it is destroyed, ties, or none are left.",
+      "twistKeywords": [
+        [
+          "right",
+          "left",
+          "positive",
+          "negative",
+          "opposite",
+          "sign",
+          "direction",
+          "toward",
+          "> 0",
+          "< 0",
+          ">0",
+          "<0"
+        ],
+        [
+          "pop",
+          "destroy",
+          "explode",
+          "remove",
+          "blow up",
+          "discard",
+          "drop",
+          "delete",
+          "until",
+          "repeatedly",
+          "cascade",
+          "chain"
+        ],
+        [
+          "size",
+          "abs",
+          "bigger",
+          "larger",
+          "smaller",
+          "equal",
+          "tie",
+          "compare",
+          "weaker",
+          "stronger",
+          "magnitude",
+          "heavier",
+          "lighter",
+          "wins",
+          "loses"
+        ]
+      ]
+    },
+    {
+      "id": "crash_and_rescan",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n²)",
+      "space": "O(n)",
+      "twist": "Scan the row for a right-mover followed directly by a left-mover, settle that crash, and rescan until no such pair is left.",
+      "twistKeywords": [
+        [
+          "rescan",
+          "re-scan",
+          "repeat",
+          "again",
+          "until",
+          "restart",
+          "start over",
+          "over and over",
+          "each pass",
+          "every pass",
+          "no more",
+          "no longer"
+        ],
+        [
+          "adjacent",
+          "neighbo",
+          "next to",
+          "pair",
+          "followed",
+          "side by side",
+          "beside",
+          "consecutive"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but a pass may settle only one crash before the rescan, so it takes O(n²) time. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "collide",
+      "meaning": "A left-mover first hits the nearest right-mover before it, the most recent survivor still flying: the top of the stack.",
+      "pointsTo": "stack"
+    },
+    {
+      "phrase": "the smaller one is destroyed",
+      "meaning": "A left-mover that wins keeps flying into the next right-mover, so pop in a loop until it loses, ties, or finds none.",
+      "pointsTo": "stack"
+    },
+    {
+      "phrase": "moving the same way never meet",
+      "meaning": "Only a right-mover on top and a new left-mover can crash; every other asteroid is simply pushed.",
+      "pointsTo": "stack"
+    },
+    {
+      "phrase": "in their original order",
+      "meaning": "Survivors sit on the stack from left to right, so the stack itself is the answer.",
+      "pointsTo": "structure:stack"
+    }
+  ],
+  "constraintReading": "Up to 10⁴ asteroids: settling one crash per pass and rescanning the row is O(n²), up to about 10⁸ steps, too slow in Python. With a stack, each asteroid is pushed once and popped at most once, so one pass is O(n); the stack can hold every asteroid, so the space is O(n).",
+  "related": [
+    {
+      "slug": "daily-temperatures",
+      "relation": "Also pops in a while loop as long as the new item beats the top, but here only a left-mover pops, and a tie destroys both."
+    }
+  ]
+}

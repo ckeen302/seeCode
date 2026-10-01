@@ -1,0 +1,184 @@
+{
+  "slug": "sqrt-x",
+  "title": "Sqrt(x)",
+  "leetcodeUrl": "https://leetcode.com/problems/sqrtx/",
+  "difficulty": "easy",
+  "patternId": "binary_search",
+  "order": 129,
+  "summary": "You get a non-negative integer `x`. Return the largest integer whose square is at most `x`: the square root of `x` with any fractional part dropped. Built-in shortcuts are off limits, so use no square root or power function and no `**` operator.",
+  "examples": [
+    {
+      "input": "x = 30",
+      "output": "5",
+      "explanation": "5 × 5 = 25 is at most 30, but 6 × 6 = 36 is more than 30."
+    },
+    {"input": "x = 49", "output": "7", "explanation": "49 is a perfect square: 7 × 7 = 49."}
+  ],
+  "constraints": ["0 ≤ x ≤ 2³¹ − 1", "Your method must run in O(log x) time"],
+  "targets": {"time": "O(log n)", "space": "O(1)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "binary_search",
+      "structures": ["array"],
+      "time": "O(log n)",
+      "space": "O(1)",
+      "twist": "Binary search over the candidate answers 0 to x: square the middle guess, and keep the largest one whose square is at most x.",
+      "twistKeywords": [
+        [
+          "answer",
+          "candidate",
+          "guess",
+          "integer",
+          "number",
+          "root",
+          "0 to x",
+          "0 and x",
+          "1 to x",
+          "1 and x",
+          "0..x",
+          "1..x",
+          "[0, x]",
+          "[1, x]",
+          "0 through x",
+          "range of",
+          "possible",
+          "largest",
+          "biggest",
+          "greatest",
+          "highest",
+          "last",
+          "values"
+        ],
+        [
+          "squaring",
+          "squared",
+          "square it",
+          "square each",
+          "square the",
+          "square of",
+          "square mid",
+          "square is",
+          "square <",
+          "square ≤",
+          "square >",
+          "square fits",
+          "square doesn't",
+          "square does",
+          "mid * mid",
+          "mid*mid",
+          "m * m",
+          "m*m",
+          "k * k",
+          "k*k",
+          "i * i",
+          "i*i",
+          "mid²",
+          "m²",
+          "k²",
+          "** 2",
+          "**2",
+          "^2",
+          "times itself",
+          "multiply",
+          "multiplied",
+          "product",
+          "x // mid",
+          "x//mid",
+          "x / mid",
+          "x/mid",
+          "<= x",
+          "≤ x",
+          "at most x",
+          "> x",
+          "exceeds x",
+          "compare with x",
+          "compare to x",
+          "compared with x",
+          "compared to x",
+          "against x"
+        ]
+      ]
+    },
+    {
+      "id": "count_up",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(√n)",
+      "space": "O(1)",
+      "twist": "Count up from 0 and return the last number whose square is still at most x.",
+      "twistKeywords": [
+        [
+          "count up",
+          "counting up",
+          "count from",
+          "one by one",
+          "one at a time",
+          "increment",
+          "every",
+          "each",
+          "linear",
+          "iterate",
+          "loop",
+          "+= 1",
+          "+1",
+          "from 0",
+          "from 1",
+          "upward",
+          "sequential",
+          "brute",
+          "try all",
+          "all numbers",
+          "while"
+        ],
+        [
+          "square",
+          "times itself",
+          "k * k",
+          "k*k",
+          "i * i",
+          "i*i",
+          "multipl",
+          "**2",
+          "** 2",
+          "exceed",
+          "larger than x",
+          "greater than x",
+          "bigger than x",
+          "more than x",
+          "> x",
+          "at most x",
+          "<= x",
+          "≤ x"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but counting up takes about √x steps, over 46,000 when x is near 2³¹. The target is O(log x)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "largest integer whose square is at most",
+      "meaning": "Search on the answer: every integer up to the answer has a square that fits, and every larger one doesn't. Square a middle guess and keep the half where the answer can be.",
+      "pointsTo": "binary_search"
+    },
+    {
+      "phrase": "O(log x) time",
+      "meaning": "The size here is the value x, not a length. log x means halving the range of possible answers, 0 to x, about 31 times.",
+      "pointsTo": "binary_search"
+    },
+    {
+      "phrase": "no square root or power function",
+      "meaning": "You can't call math.isqrt, so you have to find the root yourself. Testing a guess needs only one multiplication.",
+      "pointsTo": "binary_search"
+    }
+  ],
+  "constraintReading": "Here n is the value x itself, up to 2³¹ − 1, about 2.1·10⁹. Trying every number up to x is far too slow, and even counting up to √x, O(√n), takes over 46,000 steps. The O(log x) requirement means halving the range 0 to x instead: about 31 steps, with O(1) space.",
+  "related": [
+    {
+      "slug": "koko-eating-bananas",
+      "relation": "Also searches over possible answers instead of indexes, testing each guess with a quick calculation."
+    }
+  ],
+  "drillOnly": true
+}

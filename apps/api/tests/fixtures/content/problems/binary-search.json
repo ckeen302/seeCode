@@ -1,0 +1,242 @@
+{
+  "slug": "binary-search",
+  "title": "Binary Search",
+  "leetcodeUrl": "https://leetcode.com/problems/binary-search/",
+  "difficulty": "easy",
+  "patternId": "binary_search",
+  "order": 13,
+  "summary": "You get a list `nums` of distinct integers sorted in increasing order and a number `target`. Return the position of `target` in `nums`, or -1 when it is not there, in logarithmic time.",
+  "examples": [
+    {
+      "input": "nums = [-3, 0, 4, 9, 15], target = 9",
+      "output": "3"
+    },
+    {
+      "input": "nums = [2, 6, 7], target = 5",
+      "output": "-1",
+      "explanation": "5 is not in the list."
+    }
+  ],
+  "constraints": [
+    "1 ≤ len(nums) ≤ 10⁴",
+    "the values in nums are distinct"
+  ],
+  "targets": {
+    "time": "O(log n)",
+    "space": "O(1)"
+  },
+  "entry": "search",
+  "starterCode": "class Solution:\n    def search(self, nums: List[int], target: int) -> int:\n        pass\n",
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "binary_search",
+      "structures": [
+        "array"
+      ],
+      "time": "O(log n)",
+      "space": "O(1)",
+      "twist": "Compare the middle with the target and discard half.",
+      "twistKeywords": [
+        [
+          "middle",
+          "mid"
+        ],
+        [
+          "half",
+          "discard",
+          "halve"
+        ]
+      ]
+    },
+    {
+      "id": "scan",
+      "patternId": "brute_force",
+      "structures": [
+        "array"
+      ],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Check every position from left to right.",
+      "twistKeywords": [
+        [
+          "every",
+          "scan",
+          "linear"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but a scan takes O(n) time. The target is O(log n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "sorted in increasing order",
+      "meaning": "One look at the middle tells you which half to drop.",
+      "pointsTo": "binary_search"
+    },
+    {
+      "phrase": "in logarithmic time",
+      "meaning": "O(log n) means halving the range at every step.",
+      "pointsTo": "binary_search"
+    }
+  ],
+  "constraintReading": "The logarithmic time target rules out scanning the list, which is O(n).",
+  "hints": {
+    "clarify": "What should you return when the target is missing? Try target 5 in [2, 6, 7] by hand.",
+    "approach": "Keep a range lo..hi that could still hold the target. Look at the middle: it is the answer, or it tells you which half to drop.",
+    "whyNot": "A hash map needs O(n) time just to build it.",
+    "slots": {
+      "setup": "lo at 0, hi at the last index.",
+      "loop": "Keep going while lo <= hi.",
+      "update": "Move lo past the middle when the middle is too small; move hi below it when it is too big.",
+      "record": "When the middle equals the target, return its index.",
+      "return": "If the range becomes empty, return -1."
+    }
+  },
+  "solution": {
+    "code": "class Solution:\n    def search(self, nums: List[int], target: int) -> int:\n        lo, hi = 0, len(nums) - 1\n        while lo <= hi:\n            mid = (lo + hi) // 2\n            if nums[mid] == target:  # viz:mid\n                return mid  # viz:found\n            if nums[mid] < target:\n                lo = mid + 1  # viz:right\n            else:\n                hi = mid - 1  # viz:left\n        return -1  # viz:missing\n",
+    "explanation": "The range halves every step, so the time is O(log n). Only three integers are stored, so the space is O(1).",
+    "toolkit": []
+  },
+  "viz": {
+    "primary": "nums",
+    "range": {
+      "into": "nums",
+      "lo": "lo",
+      "hi": "hi",
+      "mid": "mid"
+    },
+    "events": [
+      {
+        "id": "mid",
+        "at": "mid",
+        "label": "mid",
+        "say": "The middle is nums[{mid}] = {nums[mid]}"
+      },
+      {
+        "id": "found",
+        "at": "found",
+        "label": "found",
+        "say": "Found {target} at {mid}"
+      },
+      {
+        "id": "right",
+        "at": "right",
+        "label": "drop left",
+        "say": "{nums[mid]} < {target}: drop the left half"
+      },
+      {
+        "id": "left",
+        "at": "left",
+        "label": "drop right",
+        "say": "{nums[mid]} > {target}: drop the right half"
+      },
+      {
+        "id": "missing",
+        "at": "missing",
+        "label": "return",
+        "say": "The range is empty: {target} is not there"
+      }
+    ],
+    "predict": [
+      {
+        "atEvent": "mid",
+        "occurrence": 1,
+        "ask": "Which index will mid point to next?",
+        "var": "mid",
+        "kind": "index"
+      }
+    ]
+  },
+  "tests": [
+    {
+      "id": "e1",
+      "args": [
+        [
+          -3,
+          0,
+          4,
+          9,
+          15
+        ],
+        9
+      ],
+      "expected": 3,
+      "hidden": false
+    },
+    {
+      "id": "e2",
+      "args": [
+        [
+          2,
+          6,
+          7
+        ],
+        5
+      ],
+      "expected": -1,
+      "hidden": false
+    },
+    {
+      "id": "h1",
+      "args": [
+        [
+          8
+        ],
+        8
+      ],
+      "expected": 0,
+      "hidden": true
+    },
+    {
+      "id": "h2",
+      "args": [
+        [
+          8
+        ],
+        3
+      ],
+      "expected": -1,
+      "hidden": true
+    },
+    {
+      "id": "h3",
+      "args": [
+        [
+          1,
+          3,
+          5,
+          7,
+          9,
+          11
+        ],
+        1
+      ],
+      "expected": 0,
+      "hidden": true
+    },
+    {
+      "id": "h4",
+      "args": [
+        [
+          1,
+          3,
+          5,
+          7,
+          9,
+          11
+        ],
+        11
+      ],
+      "expected": 5,
+      "hidden": true
+    }
+  ],
+  "related": [
+    {
+      "slug": "valid-palindrome",
+      "relation": "Also two indexes moving toward each other, one step at a time instead of by halves."
+    }
+  ]
+}

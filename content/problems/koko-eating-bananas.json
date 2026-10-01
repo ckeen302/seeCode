@@ -1,0 +1,371 @@
+{
+  "slug": "koko-eating-bananas",
+  "title": "Koko Eating Bananas",
+  "leetcodeUrl": "https://leetcode.com/problems/koko-eating-bananas/",
+  "difficulty": "medium",
+  "patternId": "binary_search",
+  "order": 15,
+  "summary": "Koko has `h` hours to eat several piles of bananas, where `piles[i]` is the number of bananas in pile i. She eats at one fixed speed k, a whole number of bananas per hour. Each hour goes to a single pile: she eats k bananas from it, or all of them if fewer than k are left, and the rest of that hour is lost. Return the smallest k such that she finishes every pile within `h` hours.",
+  "examples": [
+    {
+      "input": "piles = [4, 9, 6], h = 5",
+      "output": "5",
+      "explanation": "At speed 5 the piles take 1 + 2 + 2 = 5 hours, just in time. At speed 4 they take 1 + 3 + 2 = 6 hours, one too many."
+    },
+    {
+      "input": "piles = [12, 12], h = 5",
+      "output": "6",
+      "explanation": "24 bananas in 5 hours sounds like speed 5, but then each pile takes 3 hours (5, 5, then 2), 6 in all. At speed 6 each pile takes 2 hours."
+    },
+    {
+      "input": "piles = [3, 11, 7], h = 3",
+      "output": "11",
+      "explanation": "Three piles and three hours leave one hour per pile, so the biggest pile sets the speed."
+    }
+  ],
+  "constraints": ["1 ≤ len(piles) ≤ 10⁴", "len(piles) ≤ h ≤ 10⁹", "1 ≤ piles[i] ≤ 10⁹"],
+  "targets": {"time": "O(n log n)", "space": "O(1)"},
+  "entry": "minEatingSpeed",
+  "starterCode": "class Solution:\n    def minEatingSpeed(self, piles: list[int], h: int) -> int:\n        pass\n",
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "binary_search",
+      "structures": ["array"],
+      "time": "O(n log n)",
+      "space": "O(1)",
+      "twist": "Search on the eating speed instead of an index, and test each speed by adding up every pile's hours, rounded up.",
+      "twistKeywords": [
+        [
+          "speed",
+          "eating rate",
+          "the rate",
+          "rate k",
+          "rate of",
+          "per hour",
+          "answer",
+          "on k",
+          "over k",
+          "for k",
+          "search k",
+          "each k",
+          "value of k",
+          "values of k",
+          "k from",
+          "k between",
+          "possible k",
+          "minimum k",
+          "min k",
+          "smallest k",
+          "lowest k",
+          "slowest",
+          "candidate",
+          "max(piles)",
+          "max pile",
+          "largest pile",
+          "biggest pile",
+          "1 to max",
+          "1 and max"
+        ],
+        [
+          "ceil",
+          "round up",
+          "rounded up",
+          "rounding up",
+          "round it up",
+          "rounds up",
+          "round each",
+          "-(-",
+          "sum",
+          "total",
+          "add up",
+          "adding up",
+          "added up",
+          "add the hours",
+          "count hours",
+          "count the hours",
+          "hours needed",
+          "hours it takes",
+          "hours each",
+          "how many hours"
+        ]
+      ]
+    },
+    {
+      "id": "try_every_speed",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n²)",
+      "space": "O(1)",
+      "twist": "Try speeds 1, 2, 3 and so on, and return the first one whose rounded-up hours add up to at most h.",
+      "twistKeywords": [
+        [
+          "every",
+          "each",
+          "one by one",
+          "one at a time",
+          "linear",
+          "scan",
+          "iterate",
+          "in order",
+          "increment",
+          "increase",
+          "+1",
+          "+ 1",
+          "+= 1",
+          "upward",
+          "count up",
+          "counting up",
+          "from 1",
+          "starting at 1",
+          "start at 1",
+          "brute",
+          "all speeds",
+          "all the speeds",
+          "try"
+        ],
+        [
+          "first",
+          "stop",
+          "until",
+          "smallest",
+          "lowest",
+          "slowest",
+          "minimum",
+          "fits",
+          "fit in",
+          "within",
+          "≤ h",
+          "<= h",
+          "at most h",
+          "works"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but it may try up to 10⁹ speeds, and each try reads every pile: O(n · m) time for m speeds, which the Plan card rounds to O(n²). Binary search needs at most 30 tries, so the target is O(n log n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "smallest k such that",
+      "meaning": "You want the smallest value that passes a yes/no test, and the test flips only once: if speed k is fast enough, every faster speed is too. Binary search over the speeds, not over the piles.",
+      "pointsTo": "binary_search"
+    },
+    {
+      "phrase": "the rest of that hour is lost",
+      "meaning": "A partial hour still costs a whole hour, so a pile of p bananas takes p / k hours rounded up: math.ceil(p / k).",
+      "pointsTo": "toolkit:ceil"
+    },
+    {
+      "phrase": "piles[i] ≤ 10⁹",
+      "meaning": "The answer can be any speed up to 10⁹: far too many to try one by one. Halving the range of speeds needs at most 30 tests.",
+      "pointsTo": "binary_search"
+    },
+    {
+      "phrase": "len(piles) ≤ h",
+      "meaning": "There's at least one hour per pile, so a speed equal to the biggest pile always works. That's the top of the search range.",
+      "pointsTo": "binary_search"
+    }
+  ],
+  "constraintReading": "piles[i] can reach 10⁹, so the answer can be any speed from 1 to 10⁹: far too many to try one by one when each try reads up to 10⁴ piles. Halving the range of speeds takes at most 30 tests of one O(n) pass each, so the time is O(n log m), where m is the biggest pile. That's the O(n log n) choice on the Plan card. Each test only keeps a running total, so the space is O(1).",
+  "hints": {
+    "clarify": "Can Koko split an hour between two piles? No: once a pile runs out, the rest of that hour is wasted. Try piles [7, 2] with 4 hours by hand. At speed 3, the 7 takes 3 hours (3, 3, then 1) and the 2 takes 1 hour: 4 in all, just in time. At speed 2, it's 4 + 1 = 5 hours, one too many. So the answer is 3.",
+    "approach": "Binary search on the answer. You aren't searching `piles`; you're searching the speeds from 1 up to the biggest pile. The biggest pile always works: every pile then takes one hour, and `h` is at least the number of piles. The test flips only once: if a speed is fast enough, every faster speed is too. So try the middle speed: add up each pile's hours at that speed, rounded up, and compare the total with `h`. Fast enough means the answer is that speed or slower; too slow means it's faster. About 30 tries cover speeds up to 10⁹.",
+    "whyNot": "Trying speeds 1, 2, 3 and so on until one fits gives the right answer, but the answer can be up to 10⁹ and each try reads every pile: far too slow. A shortcut like the total number of bananas divided by `h` fails too, because leftover time in an hour can't go to another pile. Two piles of 12 with 5 hours need speed 6, not 5.",
+    "slots": {
+      "setup": "Search speeds, not indexes. `lo` starts at 1, the slowest speed. `hi` starts at the biggest pile: at that speed every pile takes one hour, and `h` is at least the number of piles, so it always works.",
+      "loop": "Keep going while `lo` is less than `hi`. When they meet, one speed is left, and it's the answer. Each round, try `mid`, the speed halfway between them, rounded down.",
+      "update": "If `mid` is fast enough, it might be the answer, so move `hi` to `mid` itself, not past it. If `mid` is too slow, so is every slower speed: move `lo` to the speed just above `mid`.",
+      "record": "Test `mid`. For each pile, divide it by `mid` and round up, because a partial hour costs a whole one, then add these up. `mid` is fast enough if the total is at most `h`.",
+      "return": "When the loop ends, `lo` equals `hi`: the one speed left is fast enough, and every slower one was ruled out. Return `lo`."
+    }
+  },
+  "solution": {
+    "code": "class Solution:\n    def minEatingSpeed(self, piles: list[int], h: int) -> int:\n        lo, hi = 1, max(piles)\n        while lo < hi:\n            mid = (lo + hi) // 2\n            hours = 0\n            for p in piles:\n                hours += math.ceil(p / mid)  # viz:pile\n            if hours <= h:  # viz:test\n                hi = mid  # viz:fast_enough\n            else:\n                lo = mid + 1  # viz:too_slow\n        return lo  # viz:done\n",
+    "explanation": "The speeds from 1 to m, the biggest pile, are halved every round, so the loop runs about log₂ m times: at most 30 for m up to 10⁹. Each round adds up the hours for all n piles, so the time is O(n log m), the O(n log n) choice on the Plan card. You store only a few numbers, so the space is O(1). `math.ceil(p / mid)` rounds a pile's hours up; `-(-p // mid)` gives the same result with integers only, so it never depends on float rounding.",
+    "toolkit": ["ceil", "divmod"]
+  },
+  "viz": {
+    "primary": "piles",
+    "pointers": [],
+    "window": null,
+    "range": null,
+    "roles": {"stack": [], "queue": [], "hidden": []},
+    "confirmed": null,
+    "events": [
+      {
+        "id": "pile",
+        "at": "pile",
+        "label": "pile",
+        "say": "At speed {mid}, a pile of {p} takes {p} / {mid} hours, rounded up: {-(-p // mid)}"
+      },
+      {
+        "id": "test",
+        "at": "test",
+        "label": "total",
+        "say": "At speed {mid}, all the piles take {hours} hours, and Koko has {h}"
+      },
+      {
+        "id": "fast_enough",
+        "at": "fast_enough",
+        "label": "fast enough",
+        "say": "{hours} hours is within the {h} she has, so speed {mid} is fast enough. Now see whether a slower speed also works"
+      },
+      {
+        "id": "too_slow",
+        "at": "too_slow",
+        "label": "too slow",
+        "say": "{hours} hours is more than the {h} she has, so speed {mid} is too slow, and so is every slower speed"
+      },
+      {
+        "id": "done",
+        "at": "done",
+        "label": "answer",
+        "say": "lo and hi met at {lo}: the slowest speed that finishes within {h} hours"
+      }
+    ],
+    "predict": [
+      {
+        "atEvent": "test",
+        "occurrence": 1,
+        "ask": "Is this speed fast enough?",
+        "kind": "yesno",
+        "answerWhen": "hours <= h"
+      },
+      {
+        "atEvent": "fast_enough",
+        "occurrence": 1,
+        "ask": "What will hi become?",
+        "var": "hi",
+        "kind": "value"
+      },
+      {
+        "atEvent": "too_slow",
+        "occurrence": 1,
+        "ask": "What will lo become?",
+        "var": "lo",
+        "kind": "value"
+      }
+    ]
+  },
+  "tests": [
+    {"id": "e1", "args": [[4, 9, 6], 5], "expected": 5, "hidden": false},
+    {"id": "e2", "args": [[12, 12], 5], "expected": 6, "hidden": false},
+    {"id": "e3", "args": [[3, 11, 7], 3], "expected": 11, "hidden": false},
+    {"id": "h1", "args": [[6, 14, 2, 9], 4], "expected": 14, "hidden": true},
+    {"id": "h2", "args": [[5, 13, 7], 1000000000], "expected": 1, "hidden": true},
+    {"id": "h3", "args": [[2, 3, 1], 6], "expected": 1, "hidden": true},
+    {"id": "h4", "args": [[1], 1], "expected": 1, "hidden": true},
+    {
+      "id": "h5",
+      "args": [[1000000000, 999999999, 1000000000], 3],
+      "expected": 1000000000,
+      "hidden": true
+    },
+    {"id": "h6", "args": [[1000000000, 1000000000], 4], "expected": 500000000, "hidden": true},
+    {
+      "id": "h7",
+      "args": [[1000000000, 1000000000, 1000000000], 1000000000],
+      "expected": 4,
+      "hidden": true
+    },
+    {"id": "h8", "args": [[999999999], 7], "expected": 142857143, "hidden": true},
+    {"id": "h9", "args": [[7, 7, 7], 5], "expected": 7, "hidden": true},
+    {"id": "h10", "args": [[30, 1, 1, 1, 1], 6], "expected": 15, "hidden": true},
+    {
+      "id": "h11",
+      "args": [
+        [
+          866168866, 904756845, 783748357, 338610473, 77542021, 568307377, 616856794, 483352502,
+          670882414, 893673497, 383761624, 942838194, 432870252, 699506099, 30778797, 806252211,
+          897281489, 543582156, 454606723, 773255961, 956032326, 406611088, 312790307, 396941268,
+          271478931, 663043301, 984248514, 510230084, 692748355, 113163059, 529785937, 998195082,
+          477456761, 238549482, 786938078, 873661634, 352136337, 156382124, 535255511, 650300997,
+          149434967, 781137831, 44787744, 905146922, 534943220, 881489837, 668552352, 965072778,
+          126305478, 630949211, 9240015, 502073317, 286426604, 75628813, 402925764, 276960997,
+          502784854, 5817230, 404351455, 435213180, 221327598, 920001610, 45742113, 284708027,
+          996674555, 553159210, 22746431, 509208392, 60484368, 198047028, 798494320, 550074756,
+          136032886, 221882678, 66115416, 33434880, 884870472, 53492057, 96892549, 720881313,
+          523518410, 748264515, 829180709, 500184254, 258206796, 587081354, 539715488, 767051103,
+          639016487, 230825190, 537459989, 290413600, 741115252, 487576417, 665935829, 598515714,
+          339036055, 121946516, 268534076, 394907018, 44552498, 97738076, 258051903, 648805926,
+          829015623, 614227249, 673732811, 69729481, 484950930, 945576357, 148457673, 62858783,
+          444123425, 510602111, 129752078, 894601315, 173107492, 163929940, 655419570, 687217730,
+          459595476, 389767742, 3203043, 363483817, 820241527, 730447909, 747205453, 693192621,
+          949321358, 474139573, 992319429, 862156131, 89271736, 239857037, 661382484, 131994594,
+          482392310, 875505518, 871322262, 83571942, 361320600, 115933120, 233288152, 116021057,
+          378938061, 407192597, 247782902, 613219015, 634906498, 862307857, 940381753, 1442870,
+          6978046, 94538528, 657661930, 897325318, 149619298, 609574585, 448100916, 737976431,
+          969049667, 169063708, 636518029, 876237307, 369052613, 742046576, 43127572, 384926294,
+          742872881, 908190007, 16269017, 647846219, 324127845, 880043502, 811324161, 171186193,
+          955092827, 618508123, 942753402, 634238293, 845722474, 553358407, 936714807, 301413874,
+          273248653, 928362490, 518889115, 969654286, 239628381, 828813229, 265566955, 366658628,
+          50998910, 28943213, 895434598, 649251348, 953833387, 23344208, 455105829, 751005270,
+          54565794, 364545190, 828612623, 41882967, 207768713, 823406191, 536638197, 10057124,
+          970812001, 690683211, 651440029, 779216175, 531214084, 266876940, 78611078, 406683417,
+          763994067, 351244459, 841747798, 242659462, 337531375, 412294116, 862369418, 899656564,
+          765701722, 620661571, 522873568, 628135688, 76562688, 535508271, 88879163, 611851130,
+          834639606, 845780405, 431874226, 280489992, 656964562, 913124725, 479582107, 81284622,
+          304952480, 954740943, 559170973, 594012359, 986515400, 405019004, 533380380, 761843808,
+          898693163, 146113843, 761472118, 257411493, 95288826, 320075780, 105013747, 673466716,
+          1984995, 160717635, 47744714, 206692083, 138301377, 90365102, 659430692, 790146503,
+          284911430, 742996431, 837907144, 778576965, 902224478, 990105959, 268855527, 904425530,
+          38418206, 495935380, 994585887, 470845764, 478741923, 114082775, 260767569, 542540560,
+          626133291, 338995168, 880193540, 774914325, 220578937, 364259778, 26143888, 41236040,
+          67225834, 315304792, 104041622, 658303760, 555008874, 531771224, 683016979, 686933106,
+          968545019, 689061975, 561758408, 815300632, 475119011, 677533074, 746929575, 802282226,
+          524066618, 663961942, 799296659, 307726665, 500202593, 679754406, 7800290, 907174584,
+          629417927, 709571663, 761088414, 745558414, 18923243, 431965282, 363966323, 697875928,
+          782862783, 794252195, 542605250, 681903892, 396984410, 307126413, 698671093, 582785425,
+          301269633, 422804312, 732302019, 491290114, 60580740, 524981175, 867766417, 933834091,
+          756557874, 16701002, 838247935, 341359767, 80167244, 321926098, 222664553, 485692552,
+          566780683, 678057679, 192512137, 389130875, 948477923, 98421047, 85633572, 195253610,
+          525245375, 962758285, 342051733, 461098222, 142535666, 876339377, 196803073, 200335773,
+          780150809, 716041985, 109327033, 41518341, 938904124, 346683597, 546932954, 634669966,
+          886061493, 809128026, 627350881, 981783141, 991359706, 456932589, 997185985, 398267945,
+          300262555, 617473164, 218899805, 611600700, 38783473, 555882337, 465126157, 223067206,
+          54530446, 209214583, 343451734, 744134080, 384284148, 911843915, 954290495, 655199666,
+          373467030, 642493542, 39338459, 930695027, 317869513, 928791549, 178296151, 902379030,
+          757085254, 400944608, 580602927, 425191485, 504224129, 400117546, 979378516, 286988253,
+          12137572, 952175302, 315062231, 527282481, 487333485, 988506034, 428739869, 606473915,
+          640047635, 131034487, 303988444, 804854120, 924138638, 833895350, 97761102, 80754234,
+          953249192, 347680242, 857085101, 84806912, 560880145, 308511521, 505669602, 839399310,
+          498517652, 473699653, 959422884, 733720819, 914870691, 454119463, 265518402, 622670135,
+          27155234, 783653528, 607716226, 13855771, 473407037, 436555187, 225551725, 514457126,
+          649875271, 95696433, 562875498, 597780182, 691038040, 800956836, 59394811, 500324842,
+          562452000, 109844964, 875286291, 609839053, 125277412, 833366401, 488018565, 35827056,
+          869808666, 784267700, 60618324, 903248325, 657535270, 398128495, 927787021, 924498487,
+          108387538, 305633442, 344436608, 513866062, 733589450, 836970341, 202697963, 769331217,
+          791695868, 116667640, 153574677, 811335393, 208621524, 405550506, 712268249, 23869224,
+          22105818, 835000380, 97792799, 672826136, 267922137, 68943783, 532357118, 198491752,
+          205560905, 41607283, 6051812, 881130801, 499402717, 447317477, 438691899, 590590187,
+          761216309, 551777774, 856092195, 741850677, 599421509, 445873978, 502558468, 710612251,
+          167644674, 857304144, 925261458, 960057166, 559472508, 408012098, 285767336, 994990362,
+          170833394, 343622320, 507672504, 994754583, 351139241, 413993871, 611223910, 787389206,
+          874152628, 298879713, 139728623, 772506681, 423203260, 436553684, 592935145, 560574155,
+          909301547, 789673850, 907707719, 494793406, 646357649, 969649093, 246651710, 210322973,
+          929775241, 151681214, 334642207, 857720278, 851177106, 560197086, 92413644, 74241027,
+          344617421, 445307542, 440305638, 638062657, 829179824, 341441010, 822937327, 988701428,
+          382510427, 914753638, 80127979, 424412419, 288219679, 864471948, 471938305, 426667735,
+          777858384, 838527179, 838736619, 827266129, 864797594, 365456164, 99134587, 437584236,
+          766244739, 291190791, 989280731, 393578791, 435892350, 212896715, 128601841, 220038692,
+          698550582, 289937078, 707356255, 7095294, 808403202, 465990384, 457888246, 612018064,
+          785696544, 1535732, 627749249, 526265050, 181922586, 987014969, 896113743, 293047004
+        ],
+        2917
+      ],
+      "expected": 117081487,
+      "hidden": true
+    }
+  ],
+  "related": [
+    {
+      "slug": "binary-search",
+      "relation": "Same halving, but over the indexes of a sorted list, where one comparison with the target decides each step instead of a pass over the piles."
+    },
+    {
+      "slug": "search-insert-position",
+      "relation": "Also ends with lo on the first spot that passes a test, but the spots are indexes in a sorted list, and the test is one comparison instead of a sum of rounded-up hours."
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+{
+  "slug": "valid-palindrome-ii",
+  "title": "Valid Palindrome II",
+  "leetcodeUrl": "https://leetcode.com/problems/valid-palindrome-ii/",
+  "difficulty": "easy",
+  "patternId": "two_pointers_opposite",
+  "order": 110,
+  "drillOnly": true,
+  "summary": "You get a string `s` of lowercase English letters. You may delete at most one character from it, or none at all. Return true if, after that, `s` reads the same forward and backward, and false otherwise.",
+  "examples": [
+    {
+      "input": "s = \"rotators\"",
+      "output": "true",
+      "explanation": "Deleting the last \"s\" leaves \"rotator\". Deleting the first \"r\", the other half of the mismatched pair, would not work."
+    },
+    {
+      "input": "s = \"plump\"",
+      "output": "false",
+      "explanation": "The first pair that differs is \"l\" and \"m\". Deleting either one still leaves a pair that differs."
+    }
+  ],
+  "constraints": ["1 ≤ len(s) ≤ 10⁵", "s holds only lowercase English letters"],
+  "targets": {"time": "O(n)", "space": "O(1)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "two_pointers_opposite",
+      "structures": ["array"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Skip either the left or the right character at the first mismatch, and check that the rest is a palindrome.",
+      "twistKeywords": [
+        [
+          "either",
+          "left or right",
+          "left or the right",
+          "or the right",
+          "l or r",
+          "s[l] or s[r]",
+          "try both",
+          "check both",
+          "test both",
+          "both option",
+          "both choice",
+          "both way",
+          "both possibilit",
+          "both substring",
+          "both range",
+          "each option",
+          "each choice",
+          "two option",
+          "two choice",
+          "two way",
+          "two possibilit",
+          "l+1",
+          "l + 1",
+          "r-1",
+          "r - 1",
+          "i+1",
+          "i + 1",
+          "j-1",
+          "j - 1"
+        ],
+        [
+          "mismatch",
+          "differ",
+          "disagree",
+          "not match",
+          "n't match",
+          "not equal",
+          "unequal",
+          "!=",
+          "not the same",
+          "conflict"
+        ]
+      ]
+    },
+    {
+      "id": "delete_each",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n²)",
+      "space": "O(n)",
+      "twist": "Delete each character in turn and check whether what's left is a palindrome.",
+      "twistKeywords": [
+        [
+          "each",
+          "every",
+          "one by one",
+          "one at a time",
+          "in turn",
+          "all positions",
+          "all indices",
+          "all indexes",
+          "all characters",
+          "all chars",
+          "try all",
+          "n times",
+          "brute"
+        ],
+        ["delet", "remov", "drop", "skip", "without", "cut", "exclud"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but n deletions with an O(n) check each take O(n²) time, about 10¹⁰ steps for 10⁵ characters. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "reads the same forward and backward",
+      "meaning": "A palindrome is a row of mirrored pairs. Check them from both ends inward; only a pair that differs needs any thought.",
+      "pointsTo": "two_pointers_opposite"
+    },
+    {
+      "phrase": "at most one character",
+      "meaning": "You get one deletion. At the first pair that differs, spend it on one of those two characters. You can't tell which one, so check the rest both ways: once without each.",
+      "pointsTo": "two_pointers_opposite"
+    }
+  ],
+  "constraintReading": "len(s) can reach 10⁵, so deleting each character in turn and checking the rest (O(n²), about 10¹⁰ steps) is far too slow. Aim for O(n): one inward pass, and after the first mismatch at most two more passes over the middle, with O(1) space.",
+  "related": [
+    {
+      "slug": "valid-palindrome",
+      "relation": "The same inward palindrome check with no deletion to spend, but with case and punctuation to skip."
+    }
+  ]
+}

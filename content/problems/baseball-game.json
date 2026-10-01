@@ -1,0 +1,102 @@
+{
+  "slug": "baseball-game",
+  "title": "Baseball Game",
+  "leetcodeUrl": "https://leetcode.com/problems/baseball-game/",
+  "difficulty": "easy",
+  "patternId": "stack",
+  "order": 116,
+  "drillOnly": true,
+  "summary": "You keep a score log that starts empty and get a list of string commands `ops`. An integer command, possibly negative, records that score. `\"+\"` records a new score equal to the sum of the last two, `\"D\"` records double the most recent score, and `\"C\"` cancels the most recent score, deleting it from the log for good. Return the sum of the scores left in the log at the end.",
+  "examples": [
+    {
+      "input": "ops = [\"4\", \"-2\", \"+\", \"D\", \"C\", \"7\"]",
+      "output": "11",
+      "explanation": "The log grows to [4, -2, 2, 4]; \"C\" deletes the last 4, then 7 is recorded: 4 - 2 + 2 + 7 = 11."
+    },
+    {
+      "input": "ops = [\"2\", \"5\", \"9\", \"C\", \"+\"]",
+      "output": "14",
+      "explanation": "\"C\" deletes 9, so \"+\" adds the two scores that are now the most recent: 2 + 5 = 7, and 2 + 5 + 7 = 14."
+    }
+  ],
+  "constraints": [
+    "1 ≤ len(ops) ≤ 1000",
+    "Each command is \"+\", \"D\", \"C\" or an integer from −3·10⁴ to 3·10⁴ written as a string",
+    "\"+\" always finds at least two scores in the log, and \"D\" and \"C\" at least one",
+    "Every score and the final sum fit in a 32-bit signed integer"
+  ],
+  "targets": {"time": "O(n)", "space": "O(n)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "stack",
+      "structures": ["stack"],
+      "time": "O(n)",
+      "space": "O(n)",
+      "twist": "Push each new score, pop the top on \"C\", and read the top one or two scores for \"D\" and \"+\".",
+      "twistKeywords": [
+        ["pop", "remove", "undo", "delete", "discard", "drop", "erase", "take off"],
+        ["top", "last", "[-1]", "[-2]", "previous", "recent", "latest", "newest", "peek"]
+      ]
+    },
+    {
+      "id": "mark_and_scan_back",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n²)",
+      "space": "O(n)",
+      "twist": "Never delete: mark cancelled scores, and scan back past them to find the latest live scores for \"+\", \"D\" and \"C\".",
+      "twistKeywords": [
+        [
+          "mark",
+          "flag",
+          "invalid",
+          "tombstone",
+          "never delete",
+          "don't delete",
+          "do not delete",
+          "dead",
+          "live"
+        ],
+        [
+          "scan back",
+          "search back",
+          "backward",
+          "walk back",
+          "look back",
+          "go back",
+          "step back",
+          "loop back",
+          "reverse",
+          "skip"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but cancelled scores pile up and a scan back may cross all of them, so it takes O(n²) time. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "most recent",
+      "meaning": "Every command works on the newest scores, and the newest score is always on top of a stack, where stack[-1] reads it.",
+      "pointsTo": "stack"
+    },
+    {
+      "phrase": "sum of the last two",
+      "meaning": "Read the top two scores, stack[-1] and stack[-2], without popping them: both stay in the log.",
+      "pointsTo": "structure:stack"
+    },
+    {
+      "phrase": "cancels",
+      "meaning": "An undo. Pop the newest score, and the one before it becomes the newest again, ready for the next \"+\" or \"D\".",
+      "pointsTo": "stack"
+    }
+  ],
+  "constraintReading": "len(ops) is at most 1000, so even O(n²) would finish quickly. The O(n) target asks for O(1) work per command: a push, a pop, or a look at the top one or two scores. The log may keep every score, so the space is O(n).",
+  "related": [
+    {
+      "slug": "evaluate-rpn",
+      "relation": "Also pushes numbers and combines the top two, but an operator pops both operands and pushes one result, while \"+\" here keeps both scores."
+    }
+  ]
+}

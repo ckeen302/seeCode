@@ -1,0 +1,524 @@
+{
+  "slug": "three-sum",
+  "title": "3Sum",
+  "leetcodeUrl": "https://leetcode.com/problems/3sum/",
+  "difficulty": "medium",
+  "patternId": "two_pointers_opposite",
+  "order": 6,
+  "summary": "You get a list of integers `nums`. Find every way to pick three numbers from three different positions so that they add up to 0, and return each such triple as a list of its values. Triples made of the same three values count as one, however many sets of positions form them, so each appears once. The triples, and the numbers inside each, can come in any order. If no three numbers add up to 0, return an empty list.",
+  "examples": [
+    {
+      "input": "nums = [-2, 4, -3, 5, -2, -3]",
+      "output": "[[-3, -2, 5], [-2, -2, 4]]",
+      "explanation": "-3 + (-2) + 5 = 0 and -2 + (-2) + 4 = 0. With two -3s and two -2s, the first triple can be picked from four sets of positions, but it counts once."
+    },
+    {
+      "input": "nums = [5, -2, 4, -1]",
+      "output": "[]",
+      "explanation": "Every choice of three adds up to more than 0. The smallest sum is -2 + (-1) + 4 = 1."
+    },
+    {
+      "input": "nums = [4, -2, -2, -2, 4]",
+      "output": "[[-2, -2, 4]]",
+      "explanation": "Any two of the three -2s with either 4 make 0. That's six sets of positions, but all of them give [-2, -2, 4], so it appears once."
+    }
+  ],
+  "constraints": [
+    "3 ≤ len(nums) ≤ 3000",
+    "−10⁵ ≤ nums[i] ≤ 10⁵",
+    "nums is in no particular order, and a value can appear more than once"
+  ],
+  "targets": {"time": "O(n²)", "space": "O(1)"},
+  "entry": "threeSum",
+  "starterCode": "class Solution:\n    def threeSum(self, nums: list[int]) -> list[list[int]]:\n        pass\n",
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "two_pointers_opposite",
+      "structures": ["sorted"],
+      "time": "O(n²)",
+      "space": "O(1)",
+      "twist": "Sort, fix one number at a time, run two pointers on the numbers to its right, and skip repeated values.",
+      "twistKeywords": [
+        ["sort", "ascending", "increasing order", "smallest to largest"],
+        [
+          "fix",
+          "each number",
+          "every number",
+          "each element",
+          "every element",
+          "each value",
+          "every value",
+          "each item",
+          "each index",
+          "every index",
+          "for each",
+          "for every",
+          "outer",
+          "loop over",
+          "loop through",
+          "iterate over",
+          "iterate through",
+          "iterate i",
+          "loop i",
+          "each i",
+          "every i",
+          "for i",
+          "anchor",
+          "pivot",
+          "pick one",
+          "choose one",
+          "one number",
+          "one element",
+          "one value",
+          "first number",
+          "first element",
+          "nums[i]",
+          "the rest",
+          "remaining",
+          "third"
+        ],
+        [
+          "dup",
+          "repeat",
+          "same value",
+          "same number",
+          "same element",
+          "same triple",
+          "identical",
+          "skip",
+          "unique",
+          "distinct",
+          "twice",
+          "neighbo",
+          "de-dup"
+        ]
+      ]
+    },
+    {
+      "id": "hash_set",
+      "patternId": "hashing",
+      "structures": ["hash_set"],
+      "time": "O(n²)",
+      "space": "O(n)",
+      "twist": "Fix each number, find the pairs that complete it with a set of seen values, and keep each triple once in a set of sorted tuples.",
+      "twistKeywords": [
+        ["set", "hash", "dict", "map", "seen", "lookup", "look up", "visited"],
+        [
+          "fix",
+          "each number",
+          "every number",
+          "each element",
+          "every element",
+          "for each",
+          "for every",
+          "outer",
+          "loop over",
+          "anchor",
+          "pivot",
+          "complement",
+          "partner",
+          "complet",
+          "missing",
+          "third",
+          "negat",
+          "two sum",
+          "two-sum",
+          "2sum",
+          "twosum"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works in O(n²) time, but the set of seen values takes O(n) extra space. The target is O(1): on a sorted list, two pointers find the same pairs with two indexes, and repeated values sit side by side."
+    },
+    {
+      "id": "all_triples",
+      "patternId": "brute_force",
+      "structures": ["array", "hash_set"],
+      "time": "O(n³)",
+      "space": "O(1)",
+      "twist": "Try every triple of positions with three nested loops, and keep each sorted triple once in a set.",
+      "twistKeywords": [
+        [
+          "every triple",
+          "each triple",
+          "all triples",
+          "all the triples",
+          "every combination",
+          "all combinations",
+          "every possible",
+          "all possible",
+          "three loops",
+          "3 loops",
+          "three nested",
+          "3 nested",
+          "triple loop",
+          "triple nested",
+          "triple-nested",
+          "three for",
+          "brute",
+          "every three",
+          "each three",
+          "n³",
+          "n^3"
+        ],
+        [
+          "set",
+          "dedup",
+          "de-dup",
+          "unique",
+          "distinct",
+          "duplicate",
+          "repeat",
+          "once",
+          "sorted tuple",
+          "sort each",
+          "skip"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but checking every triple takes O(n³) time: about 4.5·10⁹ sums for 3000 numbers. The target is O(n²)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "three numbers",
+      "meaning": "Fix one of the three, and the other two must add up to minus it: a pair with a known sum. On a sorted list, two pointers find every such pair in one pass.",
+      "pointsTo": "two_pointers_opposite"
+    },
+    {
+      "phrase": "no particular order",
+      "meaning": "Nothing is sorted yet. You return values, not positions, so you're free to sort nums first, and at O(n log n) the sort costs less than the O(n²) search.",
+      "pointsTo": "toolkit:sorted_key"
+    },
+    {
+      "phrase": "count as one",
+      "meaning": "No triple may appear twice. Once nums is sorted, equal values sit side by side, so you can skip a value that equals its neighbor instead of collecting triples in a set.",
+      "pointsTo": "structure:sorted"
+    }
+  ],
+  "constraintReading": "len(nums) can reach 3000, so checking every triple means about 4.5·10⁹ sums: O(n³) is far too slow. O(n²) is about 9·10⁶ steps, which is fine, so you can afford one pass over the rest of the list for each number. Sorting first costs only O(n log n), well inside that budget. The O(1) space target leaves no room for a set of seen values.",
+  "hints": {
+    "clarify": "Do you return positions or values, and can the same three values appear twice in the answer? Values, and no. Try [3, -3, 0, 3] by hand: 3 + (-3) + 0 = 0 with the first 3, and again with the second 3. Both give the triple [-3, 0, 3], so the answer lists it once: [[-3, 0, 3]].",
+    "approach": "Two pointers from opposite ends, run once for each fixed number. Sort `nums` first. Then fix one number at a time, at index `i`: the other two must add up to minus that number, and you only need to look to its right, since every number to its left already had its turn. That's the pair search from Two Sum II: `l` starts just after `i` and `r` at the end, and the sum tells you which one to move. Sorting also puts equal values side by side, so repeats are easy to skip: pass over a fixed number equal to the one before it, and after a match, move `l` past copies of the value it just used.",
+    "whyNot": "Checking every triple takes O(n³) time: about 4.5·10⁹ sums for 3000 numbers. For each fixed number, a set of seen values could find the pairs instead of two pointers, still O(n²) in total, but the set takes O(n) extra space, and you'd still have to weed out repeated triples. Sorting makes both jobs cheap: the pointers need no memory, and repeats sit next to each other.",
+    "slots": {
+      "setup": "Sort `nums` and start an empty list of triples. For each fixed index `i`, put `l` just right of `i` and `r` on the last index.",
+      "loop": "Let `i` run from the first index to the third from last, so two numbers always fit to its right. Skip an `i` whose value equals the one before it: its triples are already in the list. For every other `i`, move the pointers while `l` is strictly left of `r`.",
+      "update": "If the three numbers add up to less than 0, move `l` right to a bigger number; if more, move `r` left to a smaller one. After a match, move both inward, then keep moving `l` right while its value equals the one just before it.",
+      "record": "Add the numbers at `i`, `l` and `r`. When the total is 0, append those three values to the list.",
+      "return": "Once every `i` has had its turn, return the list of triples. It's empty when no three numbers add up to 0."
+    }
+  },
+  "solution": {
+    "code": "class Solution:\n    def threeSum(self, nums: list[int]) -> list[list[int]]:\n        nums.sort()\n        triples: list[list[int]] = []\n        for i in range(len(nums) - 2):\n            if i > 0 and nums[i] == nums[i - 1]:\n                continue  # viz:skip_i\n            l, r = i + 1, len(nums) - 1  # viz:fix\n            while l < r:\n                total = nums[i] + nums[l] + nums[r]\n                if total < 0:\n                    l += 1  # viz:move_l\n                elif total > 0:\n                    r -= 1  # viz:move_r\n                else:\n                    triples.append([nums[i], nums[l], nums[r]])  # viz:found\n                    l += 1\n                    r -= 1\n                    while l < r and nums[l] == nums[l - 1]:\n                        l += 1  # viz:skip_l\n        return triples\n",
+    "explanation": "Sorting takes O(n log n) time. After that, each fixed number starts one pass of the pointers, and every step of a pass moves `l` or `r` inward, so a pass takes O(n) and all of them together O(n²), which outweighs the sort. Besides the list you return, you keep a few indexes: O(1) extra space. Python's sort can borrow up to O(n) scratch memory while it runs; like most analyses, this one doesn't count it.",
+    "toolkit": ["sorted_key"]
+  },
+  "viz": {
+    "primary": "nums",
+    "pointers": [
+      {"var": "i", "into": "nums", "label": "i", "color": "c"},
+      {"var": "l", "into": "nums", "label": "l", "color": "a"},
+      {"var": "r", "into": "nums", "label": "r", "color": "b"}
+    ],
+    "window": null,
+    "range": null,
+    "roles": {"stack": [], "queue": [], "hidden": []},
+    "confirmed": {"into": "nums", "outside": ["l", "r"]},
+    "events": [
+      {
+        "id": "skip_i",
+        "at": "skip_i",
+        "label": "skip",
+        "say": "nums[{i}] is {nums[i]}, the same as the fixed number before it, whose triples are all found. Skip it"
+      },
+      {
+        "id": "fix",
+        "at": "fix",
+        "label": "fix",
+        "say": "Fix nums[{i}] = {nums[i]}. The other two numbers must add up to {-nums[i]}, so look for them to its right"
+      },
+      {
+        "id": "move_l",
+        "at": "move_l",
+        "label": "move l",
+        "say": "{nums[i]}, {nums[l]} and {nums[r]} add up to {total}, less than 0, so l moves right to a bigger number"
+      },
+      {
+        "id": "move_r",
+        "at": "move_r",
+        "label": "move r",
+        "say": "{nums[i]}, {nums[l]} and {nums[r]} add up to {total}, more than 0, so r moves left to a smaller number"
+      },
+      {
+        "id": "found",
+        "at": "found",
+        "label": "found",
+        "say": "{nums[i]}, {nums[l]} and {nums[r]} add up to 0: save the triple, then move both pointers inward"
+      },
+      {
+        "id": "skip_l",
+        "at": "skip_l",
+        "label": "skip",
+        "say": "nums[{l}] is {nums[l]}, the value l just used, so l steps past it to avoid the same triple twice"
+      }
+    ],
+    "predict": [
+      {
+        "atEvent": "move_l",
+        "occurrence": 1,
+        "ask": "After l moves right, will the sum still be less than 0?",
+        "kind": "yesno",
+        "answerWhen": "l + 1 < r and nums[i] + nums[l + 1] + nums[r] < 0"
+      },
+      {
+        "atEvent": "found",
+        "occurrence": 1,
+        "ask": "After this match, will l have to skip a repeated value?",
+        "kind": "yesno",
+        "answerWhen": "l + 1 < r - 1 and nums[l + 1] == nums[l]"
+      },
+      {
+        "atEvent": "skip_l",
+        "occurrence": 1,
+        "ask": "Will the next fixed number be skipped?",
+        "kind": "yesno",
+        "answerWhen": "i + 1 < len(nums) - 2 and nums[i + 1] == nums[i]"
+      }
+    ]
+  },
+  "tests": [
+    {
+      "id": "e1",
+      "args": [[-2, 4, -3, 5, -2, -3]],
+      "expected": [[-3, -2, 5], [-2, -2, 4]],
+      "hidden": false,
+      "compare": "unordered_nested"
+    },
+    {
+      "id": "e2",
+      "args": [[5, -2, 4, -1]],
+      "expected": [],
+      "hidden": false,
+      "compare": "unordered_nested"
+    },
+    {
+      "id": "e3",
+      "args": [[4, -2, -2, -2, 4]],
+      "expected": [[-2, -2, 4]],
+      "hidden": false,
+      "compare": "unordered_nested"
+    },
+    {
+      "id": "h1",
+      "args": [[3, -1, -2]],
+      "expected": [[-2, -1, 3]],
+      "hidden": true,
+      "compare": "unordered_nested"
+    },
+    {
+      "id": "h2",
+      "args": [[1, 1, -1]],
+      "expected": [],
+      "hidden": true,
+      "compare": "unordered_nested"
+    },
+    {
+      "id": "h3",
+      "args": [[0, 0, 0, 0, 0]],
+      "expected": [[0, 0, 0]],
+      "hidden": true,
+      "compare": "unordered_nested"
+    },
+    {
+      "id": "h4",
+      "args": [[-7, -3, -1, -4]],
+      "expected": [],
+      "hidden": true,
+      "compare": "unordered_nested"
+    },
+    {
+      "id": "h5",
+      "args": [[6, 2, 9, 1]],
+      "expected": [],
+      "hidden": true,
+      "compare": "unordered_nested"
+    },
+    {
+      "id": "h6",
+      "args": [[-4, 2, 1]],
+      "expected": [],
+      "hidden": true,
+      "compare": "unordered_nested"
+    },
+    {
+      "id": "h7",
+      "args": [[2, 0, -2, 2, 0]],
+      "expected": [[-2, 0, 2]],
+      "hidden": true,
+      "compare": "unordered_nested"
+    },
+    {
+      "id": "h8",
+      "args": [[-8, 4, 4]],
+      "expected": [[-8, 4, 4]],
+      "hidden": true,
+      "compare": "unordered_nested"
+    },
+    {
+      "id": "h9",
+      "args": [[6, -3, -3, 6]],
+      "expected": [[-3, -3, 6]],
+      "hidden": true,
+      "compare": "unordered_nested"
+    },
+    {
+      "id": "h10",
+      "args": [[-4, 1, 1, 3, 3, 3]],
+      "expected": [[-4, 1, 3]],
+      "hidden": true,
+      "compare": "unordered_nested"
+    },
+    {
+      "id": "h11",
+      "args": [[100000, -100000, 0, 50000, -50000, 100000]],
+      "expected": [[-100000, 0, 100000], [-50000, 0, 50000]],
+      "hidden": true,
+      "compare": "unordered_nested"
+    },
+    {
+      "id": "h12",
+      "args": [[-1, 4, -2, 1, 3, -3, -4, 3, 0, 4, -1, -1, 3, 4, 4, 3, 2, -2, -1, -2]],
+      "expected": [
+        [-4, 0, 4],
+        [-4, 1, 3],
+        [-3, -1, 4],
+        [-3, 0, 3],
+        [-3, 1, 2],
+        [-2, -2, 4],
+        [-2, -1, 3],
+        [-2, 0, 2],
+        [-1, -1, 2],
+        [-1, 0, 1]
+      ],
+      "hidden": true,
+      "compare": "unordered_nested"
+    },
+    {
+      "id": "h13",
+      "args": [
+        [
+          56212, -11649, -19879, 38932, 955, 49249, 60890, 53851, 96643, 6194, -6381, -17852, 16847,
+          -11649, -43656, 42701, 89663, 15749, 85484, -11874, 85686, 97944, 20167, -58987, -4796,
+          -24710, 3267, -95085, -18968, 42525, 15160, 6910, 40328, -17386, -3717, 79414, 46038,
+          -45253, 31052, -11375, -25674, -2682, -6889, -77737, -11649, 71901, 70000, -43656, 21186,
+          18141, 2180, -24866, 51734, 2759, 29757, 2832, -82741, 10067, -3319, -37840, 22159,
+          -56866, -9927, -81451, -62282, -40740, -69534, 20215, -45218, -78577, 89132, 30664, 22245,
+          -61557, -54861, -59243, -55400, -34613, -80549, -37161, -61584, 84864, -4548, -28580,
+          -92512, -441, 1307, -87571, 79709, 58560, -13230, 31090, 61800, -61400, 16553, 17733,
+          -5638, -56866, 31408, -11197, 48115, -95575, 12985, -77737, -44241, -6746, -18280, -40072,
+          -24084, 36660, 31302, 94276, 24923, 73589, -91903, -71618, 13671, 64142, 58465, -35151,
+          -16454, 43387, -85596, -69529, -51053, 68142, -12679, 52966, 3644, 5803, 61865, -95444,
+          -66248, -8752, -84518, 81006, -53021, 85484, 43776, 81934, 97579, 90199, 99190, 93373,
+          13671, -45170, -58111, 13671, 20876, -48630, -73819, 77801, 2037, 28632, 27676, 28956,
+          62150, 31090, 5240, 81515, -39344, -58578, 48030, -1395, -6895, 90479, 48115, -37577,
+          24377, -83168, -38779, -1673, -18705, -57713, -38779, -65943, 71884, -96945, 91066, 53923,
+          -51036, 39450, -89153, -85330, -84426, -48696, -15540, 29101, -12232, -46218, 26933, 9574,
+          -439, -36081, -38329, 39968, -3327, 19416, 21092, -2089, 55540, -99261, 48545, -34202,
+          84045, 45609, 28351, 85648, 77311, 27676, 49929, -6844, -31836, -91903, -57015, 20464,
+          43387, -75794, 28632, -56879, 49321, 61599, 75417, -28587, -44252, -38233, -73978, -83825,
+          0, 4628, -55533, -20746, 77458, -58483, -84161, -27616, -85213, -17384, 1828, -29041,
+          97944, -439, 42701, -39886, -98800, 57843, -33139, 78611, 8950, 71884, -17384, 85484,
+          -57015, -97661, 19416, 82131, 88983, 60969, 22856, 69483, 27676, -58111, -51053, -69749,
+          -12014, 42525, -63217, -59243, 26083, 29757, 57645, 81889, 37240, 230, -6953, 60877,
+          -3450, -8836, 56094, -54576, -16420, 22389, 40328, 55540, -37361, -59507, -79472, -8951,
+          60969, 30813, 16820, -73722, 24373, -54561, 29757, 16553, 69375, 28956, 6359, 48115,
+          -58987, 1828, 89132, 1421, 31611, -4796, -84161, 27688, 27175, 92935, -39086, -69296,
+          95291, 38957, -45903, 16411, -15560, -59243, -85400, -54854, -41440, -22453, 18119,
+          -10862, 803, -95964, -7254, 89732, 36406, -2408, 25453, -68146, -56004, -9734, 69232,
+          28811, 10222, -60236, 45487, 64809, -16569, 51296, 44184, -98800, -15966, 54355, -28433,
+          -90517, 0, -29041, 1375, -8836, 96978, 50959, -36081, 34368, 441, -881, -766, -96058,
+          60890, 28956, 52328, -88716, -26448, 26083, 34052, -85213, -30974, 23373, 88503, 39292, 0,
+          24923, 57677, -83296, 93917, 18161, -33139, -439, 18197, -58830, -18413, -74258, 82765,
+          49312, -62737, -82385, -32990, -18280, -39242, -58483, 60118, 35813, -28587, 10073, -8708,
+          98504, -79302, 34510, -4548, 31153, -80549, 23274, -88716, -33963, -80710, -58830, 28517,
+          -99334, -2061, -17473, 93392, -40990, 32527, 43592, 5803, -14836
+        ]
+      ],
+      "expected": [
+        [-95444, 31302, 64142],
+        [-87571, 43387, 44184],
+        [-85330, 39292, 46038],
+        [-83825, 22856, 60969],
+        [-83296, 25453, 57843],
+        [-82741, 20876, 61865],
+        [-81451, 2037, 79414],
+        [-80710, 22245, 58465],
+        [-79302, 15160, 64142],
+        [-77737, 16847, 60890],
+        [-73819, 230, 73589],
+        [-62737, -6746, 69483],
+        [-61584, 18197, 43387],
+        [-61400, -24084, 85484],
+        [-59507, 20215, 39292],
+        [-57015, 803, 56212],
+        [-56879, -766, 57645],
+        [-56004, -1673, 57677],
+        [-55533, -37840, 93373],
+        [-54576, 23274, 31302],
+        [-54561, 5240, 49321],
+        [-51036, -3319, 54355],
+        [-48696, -6844, 55540],
+        [-45253, 5803, 39450],
+        [-45253, 20876, 24377],
+        [-45218, -3327, 48545],
+        [-45170, -439, 45609],
+        [-44241, 16553, 27688],
+        [-43656, -38233, 81889],
+        [-43656, 955, 42701],
+        [-40072, 2832, 37240],
+        [-39086, -16454, 55540],
+        [-38233, -7254, 45487],
+        [-37840, -37577, 75417],
+        [-37577, 18161, 19416],
+        [-37361, -2089, 39450],
+        [-37361, 955, 36406],
+        [-35151, -26448, 61599],
+        [-35151, -2089, 37240],
+        [-33963, -15966, 49929],
+        [-31836, -29041, 60877],
+        [-29041, 230, 28811],
+        [-27616, 441, 27175],
+        [-25674, -8836, 34510],
+        [-24084, -4548, 28632],
+        [-18968, -8708, 27676],
+        [-18705, -9927, 28632],
+        [-16420, -6953, 23373],
+        [-15966, -3450, 19416],
+        [-15966, -881, 16847],
+        [-13230, -441, 13671],
+        [-12232, -9927, 22159],
+        [-6895, -3327, 10222],
+        [-6889, -2061, 8950],
+        [-6746, -3327, 10073],
+        [-4796, 2037, 2759],
+        [-2682, 1307, 1375],
+        [-441, 0, 441],
+        [0, 0, 0]
+      ],
+      "hidden": true,
+      "compare": "unordered_nested"
+    }
+  ],
+  "related": [
+    {
+      "slug": "two-sum-ii",
+      "relation": "The inner loop here, on its own: one pair search on a sorted list with a given target, with no number to fix and no repeats to skip."
+    },
+    {
+      "slug": "two-sum",
+      "relation": "Also looks for numbers that complete a sum, but only one pair and by index, so it can't sort and uses a dict instead of two pointers."
+    }
+  ]
+}

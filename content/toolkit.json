@@ -1,0 +1,220 @@
+[
+  {
+    "id": "lower",
+    "tool": ".lower()",
+    "phrases": ["case-insensitive", "ignore letter case", "uppercase and lowercase are the same"],
+    "example": "\"AbC\".lower()  # 'abc'",
+    "patterns": ["hashing", "two_pointers_opposite"]
+  },
+  {
+    "id": "isalnum",
+    "tool": ".isalnum()",
+    "phrases": [
+      "ignore non-alphanumeric characters",
+      "only letters and digits count",
+      "skip spaces and punctuation"
+    ],
+    "example": "\"a\".isalnum(), \",\".isalnum()  # True, False",
+    "patterns": ["two_pointers_opposite"]
+  },
+  {
+    "id": "isalpha_isdigit",
+    "tool": ".isalpha(), .isdigit()",
+    "phrases": ["only letters", "only digits", "tell letters and digits apart"],
+    "example": "\"ab\".isalpha(), \"a1\".isalpha(), \"42\".isdigit()  # True, False, True",
+    "patterns": ["two_pointers_opposite"]
+  },
+  {
+    "id": "ord_chr",
+    "tool": "ord(), chr()",
+    "phrases": [
+      "lowercase English letters only",
+      "shift letters by k",
+      "position of the letter in the alphabet"
+    ],
+    "example": "ord(\"c\") - ord(\"a\"), chr(ord(\"a\") + 2)  # 2, 'c'",
+    "patterns": ["hashing", "sliding_window"]
+  },
+  {
+    "id": "counter",
+    "tool": "Counter",
+    "phrases": [
+      "frequency",
+      "same characters",
+      "count occurrences",
+      "how many times each value appears"
+    ],
+    "example": "Counter(\"abca\")  # Counter({'a': 2, 'b': 1, 'c': 1})",
+    "patterns": ["hashing", "sliding_window"]
+  },
+  {
+    "id": "most_common",
+    "tool": "Counter.most_common(k)",
+    "phrases": ["k most frequent", "the value that appears most often"],
+    "example": "Counter(\"banana\").most_common(1)  # [('a', 3)]",
+    "patterns": ["hashing"]
+  },
+  {
+    "id": "defaultdict_list",
+    "tool": "defaultdict(list)",
+    "phrases": ["group items by a key", "collect the items that share a property"],
+    "example": "g = defaultdict(list); g[\"odd\"].append(3); dict(g)  # {'odd': [3]}",
+    "patterns": ["hashing"]
+  },
+  {
+    "id": "set_ops",
+    "tool": "set(), in",
+    "phrases": ["seen before", "duplicates", "unique", "appears more than once"],
+    "example": "seen = {3, 8}; 8 in seen, 5 in seen  # True, False",
+    "patterns": ["hashing", "sliding_window"]
+  },
+  {
+    "id": "sorted_key",
+    "tool": "sorted(x, key=...)",
+    "phrases": ["sort by a property", "order by start time", "arrange by length"],
+    "example": "sorted([\"pear\", \"fig\", \"apple\"], key=len)  # ['fig', 'pear', 'apple']",
+    "patterns": ["hashing", "two_pointers_opposite"]
+  },
+  {
+    "id": "enumerate",
+    "tool": "enumerate()",
+    "phrases": ["need the index and the value", "return the indices", "return the positions"],
+    "example": "list(enumerate(\"ab\"))  # [(0, 'a'), (1, 'b')]",
+    "patterns": ["hashing", "stack"]
+  },
+  {
+    "id": "zip",
+    "tool": "zip()",
+    "phrases": ["compare two sequences position by position", "pair up items at the same index"],
+    "example": "list(zip(\"ab\", \"xy\"))  # [('a', 'x'), ('b', 'y')]",
+    "patterns": ["hashing"]
+  },
+  {
+    "id": "heapq",
+    "tool": "heapq.heappush/heappop",
+    "phrases": [
+      "repeatedly take the smallest",
+      "running minimum",
+      "always pick the smallest remaining"
+    ],
+    "example": "h = []; heapq.heappush(h, 5); heapq.heappush(h, 2); heapq.heappop(h)  # 2",
+    "patterns": ["hashing"]
+  },
+  {
+    "id": "nlargest",
+    "tool": "heapq.nlargest(k, x)",
+    "phrases": ["k largest", "top k", "the k biggest values"],
+    "example": "heapq.nlargest(2, [4, 9, 1, 7])  # [9, 7]",
+    "patterns": ["hashing"]
+  },
+  {
+    "id": "bisect_left",
+    "tool": "bisect.bisect_left()",
+    "phrases": [
+      "insert position in a sorted array",
+      "first index ≥ x",
+      "where the value would go to keep the order"
+    ],
+    "example": "bisect.bisect_left([1, 3, 3, 7], 3), bisect.bisect_left([1, 3, 3, 7], 5)  # 1, 3",
+    "patterns": ["binary_search"]
+  },
+  {
+    "id": "deque",
+    "tool": "collections.deque",
+    "phrases": ["queue", "process level by level", "pop from the front", "first in, first out"],
+    "example": "q = deque([1, 2, 3]); q.popleft(), list(q)  # 1, [2, 3]",
+    "patterns": ["sliding_window"]
+  },
+  {
+    "id": "inf",
+    "tool": "float('inf')",
+    "phrases": [
+      "minimum/maximum so far (initial value)",
+      "start the best answer above any real value"
+    ],
+    "example": "best = float('inf'); min(best, 7)  # 7",
+    "patterns": ["two_pointers_opposite", "sliding_window"]
+  },
+  {
+    "id": "divmod",
+    "tool": "divmod(), %, //",
+    "phrases": [
+      "digits of a number",
+      "quotient and remainder",
+      "turn an index into a row and a column"
+    ],
+    "example": "divmod(17, 5), 17 % 5, 17 // 5  # (3, 2), 2, 3",
+    "patterns": ["binary_search"]
+  },
+  {
+    "id": "reverse_slice",
+    "tool": "s[::-1]",
+    "phrases": ["reverse", "read backward", "the same string backward"],
+    "example": "\"abc\"[::-1]  # 'cba'",
+    "patterns": ["two_pointers_opposite"]
+  },
+  {
+    "id": "join",
+    "tool": "\"\".join()",
+    "phrases": [
+      "build a string from pieces",
+      "return the result as a string",
+      "glue the characters together"
+    ],
+    "example": "\"\".join([\"c\", \"a\", \"t\"])  # 'cat'",
+    "patterns": ["hashing", "stack"]
+  },
+  {
+    "id": "split",
+    "tool": ".split()",
+    "phrases": ["words in a sentence", "tokens", "separated by spaces"],
+    "example": "\"one two  three\".split()  # ['one', 'two', 'three']",
+    "patterns": ["stack"]
+  },
+  {
+    "id": "ceil",
+    "tool": "math.ceil() / -(-a // b)",
+    "phrases": ["round up", "hours needed at speed k", "a partial hour counts as a full hour"],
+    "example": "math.ceil(7 / 2), -(-7 // 2)  # 4, 4",
+    "patterns": ["binary_search"]
+  },
+  {
+    "id": "cache",
+    "tool": "@functools.cache",
+    "phrases": ["same subproblem repeats", "memoize", "the same call happens again and again"],
+    "example": "f = functools.cache(lambda n: n if n < 2 else f(n - 1) + f(n - 2)); f(50)  # 12586269025",
+    "patterns": []
+  },
+  {
+    "id": "min_max_key",
+    "tool": "min(x, key=...), max(x, key=...)",
+    "phrases": [
+      "the item with the smallest/largest property",
+      "the longest word",
+      "the shortest word"
+    ],
+    "example": "max([\"hi\", \"hello\", \"hey\"], key=len)  # 'hello'",
+    "patterns": ["hashing", "sliding_window"]
+  },
+  {
+    "id": "any_all",
+    "tool": "any(), all()",
+    "phrases": ["at least one", "every item satisfies", "none of the items"],
+    "example": "any(x > 3 for x in [1, 5]), all(x > 3 for x in [1, 5])  # True, False",
+    "patterns": ["hashing"]
+  },
+  {
+    "id": "int_trunc",
+    "tool": "int(a / b)",
+    "phrases": ["division truncating toward zero", "round toward zero", "drop the fractional part"],
+    "example": "int(-7 / 2), -7 // 2  # -3, -4",
+    "patterns": ["stack"]
+  },
+  {
+    "id": "accumulate",
+    "tool": "itertools.accumulate()",
+    "phrases": ["running total", "prefix sums", "the total of every prefix"],
+    "example": "list(accumulate([3, 1, 4]))  # [3, 4, 8]",
+    "patterns": ["prefix_scan"]
+  }
+]

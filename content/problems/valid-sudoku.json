@@ -1,0 +1,333 @@
+{
+  "slug": "valid-sudoku",
+  "title": "Valid Sudoku",
+  "leetcodeUrl": "https://leetcode.com/problems/valid-sudoku/",
+  "difficulty": "medium",
+  "patternId": "hashing",
+  "order": 21,
+  "summary": "You get a 9×9 Sudoku grid `board`, partly filled: each cell holds a digit from \"1\" to \"9\" or \".\" for an empty cell. Decide whether the digits placed so far break a rule: no digit may appear twice in the same row, the same column, or the same 3×3 box. You don't need to check whether the puzzle can be solved; only the filled cells count.",
+  "examples": [
+    {
+      "input": "board, row by row (one character per cell): \"4..7.....\", \"..1...6..\", \".9....2..\", \"...5....8\", \".2.......\", \"8.....3..\", \"....3....\", \"......5.1\", \"..6.....7\"",
+      "output": "true",
+      "explanation": "Sixteen digits, and none repeats within a row, a column or a 3×3 box."
+    },
+    {
+      "input": "board, row by row (one character per cell): \"..3..8...\", \"23.......\", \".......4.\", \"...6.....\", \".......1.\", \"....7....\", \"......5..\", \"....1....\", \".4......2\"",
+      "output": "false",
+      "explanation": "The 3 at row 1, column 1 shares the top-left box with the 3 at row 0, column 2, though they sit in different rows and columns."
+    }
+  ],
+  "constraints": [
+    "board has 9 rows and 9 columns",
+    "board[r][c] is a digit from \"1\" to \"9\" or \".\""
+  ],
+  "targets": {"time": "O(n²)", "space": "O(n²)"},
+  "entry": "isValidSudoku",
+  "starterCode": "class Solution:\n    def isValidSudoku(self, board: list[list[str]]) -> bool:\n        pass\n",
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "hashing",
+      "structures": ["hash_set", "grid"],
+      "time": "O(n²)",
+      "space": "O(n²)",
+      "twist": "Record each filled cell's digit under its row, its column and its box (r // 3, c // 3) in sets; a repeat breaks the rule.",
+      "twistKeywords": [
+        ["set", "hash", "dict", "map", "seen", "record", "store", "remember"],
+        [
+          "box",
+          "square",
+          "block",
+          "sub-grid",
+          "subgrid",
+          "3x3",
+          "3×3",
+          "// 3",
+          "//3",
+          "divide by 3",
+          "divided by 3"
+        ]
+      ]
+    },
+    {
+      "id": "scan_each_unit",
+      "patternId": "brute_force",
+      "structures": ["grid"],
+      "time": "O(n³)",
+      "space": "O(1)",
+      "twist": "For each filled cell, scan its whole row, column and box for another cell with the same digit.",
+      "twistKeywords": [
+        [
+          "scan",
+          "check every",
+          "check all",
+          "loop over",
+          "look through",
+          "search",
+          "compare with",
+          "brute"
+        ],
+        ["row", "column", "box"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, and the board is small, but each cell scans up to 3n others: O(n³) for an n×n board. A set per row, column and box answers each check in O(1)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "appear twice",
+      "meaning": "A repeat check: remember the digits you've met and look each new one up. Here there are 27 places to remember them in: 9 rows, 9 columns and 9 boxes.",
+      "pointsTo": "hashing"
+    },
+    {
+      "phrase": "the same 3×3 box",
+      "meaning": "Cell (r, c) lies in box (r // 3, c // 3). That pair is the key for the box's set, so no box needs a loop of its own.",
+      "pointsTo": "structure:hash_set"
+    },
+    {
+      "phrase": "9×9 Sudoku grid",
+      "meaning": "A list of lists: board[r][c] is row r, column c. enumerate gives you both the index and the cell.",
+      "pointsTo": "structure:grid"
+    }
+  ],
+  "constraintReading": "The board is always 9×9, so even a slow check finishes at once; what's tested is the method. Measured by the side n = 9, one pass over the n² cells with an O(1) set lookup per cell is O(n²) time, and the sets hold at most 3 entries per cell, O(n²) space. Scanning a row, a column and a box for every cell is O(n³).",
+  "hints": {
+    "clarify": "Does an empty cell count? No: only digits do, and a board can be valid even if it can't be solved. Which cells share a box? Rows 0–2 with columns 0–2 form the first box, rows 0–2 with columns 3–5 the next, and so on. So a \"5\" at row 1, column 4 and another \"5\" at row 2, column 3 clash, though they're in different rows and columns.",
+    "approach": "Hash sets of what's been seen. Walk the board once. For each filled cell, the digit claims three places: its row r, its column c and its box (r // 3, c // 3). Give each claim a key, such as \"5 in row 1\" or \"5 in box 0-1\", and keep every key in one set. If a key is already there, an earlier cell made the same claim, so the board breaks a rule. If every key is new, the board is valid.",
+    "whyNot": "Scanning the row, column and box of every filled cell works, but it reads up to 27 cells per cell, O(n³) for an n×n board. Checking the 9 rows, then the 9 columns, then the 9 boxes, each with a fresh set, is also O(n²) but walks the board three times and needs separate loop code for boxes; one pass with three keys per cell is shorter.",
+    "slots": {
+      "setup": "One empty set `seen` for every claim made so far, written as a string such as \"5 in col 3\". Three sets per row, column and box work just as well.",
+      "loop": "Visit every cell once: rows with `enumerate(board)`, then the cells of each row. Skip a \".\".",
+      "update": "When a claim is new, add its key to `seen`, so a later cell with the same digit in the same row, column or box finds it.",
+      "record": "Build the three keys for the digit: its row, its column, and its box `r // 3`, `c // 3`. Look each one up in `seen` first; a hit means the digit appears twice in that row, column or box.",
+      "return": "Return false on the first hit. If every filled cell is visited without one, return true."
+    }
+  },
+  "solution": {
+    "code": "class Solution:\n    def isValidSudoku(self, board: list[list[str]]) -> bool:\n        seen: set[str] = set()\n        for r, row in enumerate(board):\n            for c, d in enumerate(row):\n                if d == \".\":\n                    continue\n                keys = (f\"{d} in row {r}\", f\"{d} in col {c}\", f\"{d} in box {r // 3}-{c // 3}\")  # viz:keys\n                for key in keys:\n                    if key in seen:  # viz:check\n                        return False  # viz:clash\n                    seen.add(key)\n        return True  # viz:done\n",
+    "explanation": "Each of the n² cells is visited once, and a filled cell does three set lookups and adds: O(n²) time, 81 cells for a real board. The set holds three keys per filled cell, at most 3n² keys: O(n²) space. The box key is the pair (r // 3, c // 3): integer division maps rows 0–2 to 0, rows 3–5 to 1 and rows 6–8 to 2, and columns the same way, so each of the nine boxes gets its own name.",
+    "toolkit": ["enumerate", "set_ops"]
+  },
+  "viz": {
+    "primary": "board",
+    "pointers": [
+      {"var": "r", "into": "board", "label": "r", "color": "a"},
+      {"var": "c", "into": "row", "label": "c", "color": "b"}
+    ],
+    "window": null,
+    "range": null,
+    "roles": {"stack": [], "queue": [], "hidden": ["keys"]},
+    "confirmed": null,
+    "events": [
+      {
+        "id": "keys",
+        "at": "keys",
+        "label": "claim",
+        "say": "board[{r}][{c}] is {d}. It claims {d} for row {r}, column {c} and box {r // 3}-{c // 3}"
+      },
+      {
+        "id": "clash",
+        "at": "clash",
+        "label": "repeat",
+        "say": "{key!r} is already in seen: an earlier {d} made the same claim, so the board is invalid"
+      },
+      {
+        "id": "done",
+        "at": "done",
+        "label": "return",
+        "say": "Every filled cell made only new claims, so no digit repeats: the board is valid"
+      }
+    ],
+    "predict": [
+      {
+        "atEvent": "keys",
+        "occurrence": 4,
+        "ask": "Will this digit clash with one placed earlier?",
+        "kind": "yesno",
+        "answerWhen": "f'{d} in row {r}' in seen or f'{d} in col {c}' in seen or f'{d} in box {r // 3}-{c // 3}' in seen"
+      },
+      {
+        "atEvent": "keys",
+        "occurrence": 12,
+        "ask": "Will this digit clash with one placed earlier?",
+        "kind": "yesno",
+        "answerWhen": "f'{d} in row {r}' in seen or f'{d} in col {c}' in seen or f'{d} in box {r // 3}-{c // 3}' in seen"
+      }
+    ]
+  },
+  "tests": [
+    {
+      "id": "e1",
+      "args": [
+        [
+          ["4", ".", ".", "7", ".", ".", ".", ".", "."],
+          [".", ".", "1", ".", ".", ".", "6", ".", "."],
+          [".", "9", ".", ".", ".", ".", "2", ".", "."],
+          [".", ".", ".", "5", ".", ".", ".", ".", "8"],
+          [".", "2", ".", ".", ".", ".", ".", ".", "."],
+          ["8", ".", ".", ".", ".", ".", "3", ".", "."],
+          [".", ".", ".", ".", "3", ".", ".", ".", "."],
+          [".", ".", ".", ".", ".", ".", "5", ".", "1"],
+          [".", ".", "6", ".", ".", ".", ".", ".", "7"]
+        ]
+      ],
+      "expected": true,
+      "hidden": false
+    },
+    {
+      "id": "e2",
+      "args": [
+        [
+          [".", ".", "3", ".", ".", "8", ".", ".", "."],
+          ["2", "3", ".", ".", ".", ".", ".", ".", "."],
+          [".", ".", ".", ".", ".", ".", ".", "4", "."],
+          [".", ".", ".", "6", ".", ".", ".", ".", "."],
+          [".", ".", ".", ".", ".", ".", ".", "1", "."],
+          [".", ".", ".", ".", "7", ".", ".", ".", "."],
+          [".", ".", ".", ".", ".", ".", "5", ".", "."],
+          [".", ".", ".", ".", "1", ".", ".", ".", "."],
+          [".", "4", ".", ".", ".", ".", ".", ".", "2"]
+        ]
+      ],
+      "expected": false,
+      "hidden": false
+    },
+    {
+      "id": "h1",
+      "args": [
+        [
+          ["4", "6", "3", "9", "7", "2", "5", "8", "1"],
+          ["1", "8", "5", "6", "3", "4", "7", "9", "2"],
+          ["2", "9", "7", "8", "5", "1", "3", "6", "4"],
+          ["6", "3", "1", "7", "4", "9", "2", "5", "8"],
+          ["8", "5", "2", "3", "1", "6", "4", "7", "9"],
+          ["9", "7", "4", "5", "2", "8", "1", "3", "6"],
+          ["5", "2", "9", "1", "8", "3", "6", "4", "7"],
+          ["7", "4", "6", "2", "9", "5", "8", "1", "3"],
+          ["3", "1", "8", "4", "6", "7", "9", "2", "5"]
+        ]
+      ],
+      "expected": true,
+      "hidden": true
+    },
+    {
+      "id": "h2",
+      "args": [
+        [
+          [".", ".", ".", ".", ".", ".", ".", ".", "."],
+          [".", ".", ".", ".", ".", ".", ".", ".", "."],
+          [".", ".", ".", ".", ".", ".", ".", ".", "."],
+          [".", ".", ".", ".", ".", ".", ".", ".", "."],
+          [".", ".", ".", ".", ".", ".", ".", ".", "."],
+          [".", ".", ".", ".", ".", ".", ".", ".", "."],
+          [".", ".", ".", ".", ".", ".", ".", ".", "."],
+          [".", ".", ".", ".", ".", ".", ".", ".", "."],
+          [".", ".", ".", ".", ".", ".", ".", ".", "."]
+        ]
+      ],
+      "expected": true,
+      "hidden": true
+    },
+    {
+      "id": "h3",
+      "args": [
+        [
+          ["4", "6", "3", ".", ".", ".", ".", ".", "1"],
+          [".", ".", ".", ".", ".", "4", ".", ".", "."],
+          ["2", ".", ".", "8", ".", "1", ".", ".", "4"],
+          ["6", ".", ".", "7", ".", ".", ".", ".", "."],
+          ["9", ".", ".", "3", "9", ".", ".", ".", "9"],
+          [".", ".", "4", "5", "2", "8", ".", ".", "6"],
+          ["5", ".", ".", ".", "8", ".", "6", "4", "."],
+          [".", "4", "6", "2", "9", ".", ".", ".", "."],
+          [".", ".", "8", "4", ".", ".", ".", "2", "."]
+        ]
+      ],
+      "expected": false,
+      "hidden": true
+    },
+    {
+      "id": "h4",
+      "args": [
+        [
+          [".", ".", "3", ".", "7", ".", ".", ".", "6"],
+          [".", ".", "5", ".", ".", "4", "7", ".", "."],
+          [".", "9", "7", ".", ".", ".", ".", ".", "."],
+          [".", ".", ".", "7", ".", ".", ".", ".", "."],
+          [".", ".", ".", ".", ".", ".", "4", "7", "."],
+          [".", ".", "4", ".", ".", ".", "1", "3", "."],
+          [".", "2", "9", ".", "8", ".", ".", ".", "7"],
+          ["7", ".", ".", ".", ".", ".", "8", "1", "6"],
+          ["3", "1", ".", ".", ".", "7", "9", ".", "."]
+        ]
+      ],
+      "expected": false,
+      "hidden": true
+    },
+    {
+      "id": "h5",
+      "args": [
+        [
+          ["4", "6", "3", "9", "7", "2", "5", "8", "1"],
+          ["1", "8", "5", "6", "3", "4", "7", "9", "2"],
+          ["2", "9", "7", "8", "5", "1", "3", "6", "4"],
+          ["6", "3", "1", "7", "4", "9", "2", "5", "8"],
+          ["8", "5", "2", "3", "1", "6", "4", "7", "9"],
+          ["9", "7", "4", "5", "2", "8", "1", "3", "6"],
+          ["5", "2", "9", "1", "8", "3", "6", "4", "7"],
+          ["7", "4", "6", "2", "9", "5", "8", "1", "3"],
+          ["3", "1", "8", "4", "6", "7", "9", "2", "6"]
+        ]
+      ],
+      "expected": false,
+      "hidden": true
+    },
+    {
+      "id": "h6",
+      "args": [
+        [
+          ["4", "6", "3", "9", "7", "2", "5", "8", "1"],
+          ["1", "8", "5", "6", "3", "4", "7", "9", "2"],
+          ["2", "9", "7", "8", "5", "1", "3", "6", "4"],
+          ["6", "3", "1", ".", "4", "9", "2", "5", "8"],
+          ["8", "5", "2", "3", "1", "6", "4", "7", "9"],
+          ["9", "7", "4", "5", "2", "8", "1", "3", "6"],
+          ["5", "2", "9", "1", "8", "3", "6", "4", "7"],
+          ["7", "4", "6", "2", "9", "5", "8", "1", "3"],
+          ["3", "1", "8", "4", "6", "7", "9", "2", "5"]
+        ]
+      ],
+      "expected": true,
+      "hidden": true
+    },
+    {
+      "id": "h7",
+      "args": [
+        [
+          ["4", "6", ".", ".", "7", "2", ".", ".", "."],
+          ["1", "8", ".", ".", ".", "4", "7", ".", "2"],
+          ["2", ".", "7", ".", ".", ".", "3", "6", "4"],
+          [".", ".", ".", ".", "4", ".", "2", ".", "8"],
+          ["8", "5", "2", ".", ".", ".", ".", "7", "."],
+          ["9", "7", "4", "5", "2", ".", ".", "3", "6"],
+          ["5", ".", ".", "1", ".", ".", "6", "4", "7"],
+          [".", ".", ".", ".", "9", ".", ".", ".", "3"],
+          ["3", ".", "8", ".", ".", "7", ".", "2", "5"]
+        ]
+      ],
+      "expected": true,
+      "hidden": true
+    }
+  ],
+  "related": [
+    {
+      "slug": "contains-duplicate",
+      "relation": "The same repeat check with a set, on one list instead of 27 overlapping groups of cells."
+    },
+    {
+      "slug": "group-anagrams",
+      "relation": "Also builds a key that names an item's group, a sorted word there and a row, column or box here."
+    }
+  ]
+}

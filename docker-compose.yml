@@ -1,0 +1,22 @@
+# Local Postgres 16 for development (Section 22.1): `docker compose up -d db`
+# Credentials are local-only placeholders that match .env.example.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: seecode
+      POSTGRES_PASSWORD: seecode
+      POSTGRES_DB: seecode
+    ports:
+      - "${SEECODE_DB_PORT:-5432}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./scripts/db/create-test-db.sql:/docker-entrypoint-initdb.d/01-create-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U seecode -d seecode"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  db-data:

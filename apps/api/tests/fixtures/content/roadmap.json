@@ -1,0 +1,29 @@
+{
+  "patterns": [
+    {
+      "id": "hashing",
+      "x": 0,
+      "y": 0,
+      "prereqs": []
+    },
+    {
+      "id": "two_pointers_opposite",
+      "x": 1,
+      "y": 0,
+      "prereqs": [
+        "hashing"
+      ]
+    },
+    {
+      "id": "binary_search",
+      "x": 2,
+      "y": 0,
+      "prereqs": [
+        "two_pointers_opposite"
+      ]
+    }
+  ],
+  "unlockRule": {
+    "solvedInPrereq": 2
+  }
+}

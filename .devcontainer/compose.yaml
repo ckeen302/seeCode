@@ -1,0 +1,35 @@
+# Dev container services (see devcontainer.json). The workspace container shares the
+# Postgres container's network, so the database is at localhost:5432 as in .env.example.
+# Credentials are local-only placeholders.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ../..:/workspaces:cached
+    command: sleep infinity
+    network_mode: service:db
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: seecode
+      POSTGRES_PASSWORD: seecode
+      POSTGRES_DB: seecode
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ../scripts/db/create-test-db.sql:/docker-entrypoint-initdb.d/01-create-test-db.sql:ro
+    healthcheck:
+      # Over TCP, so it passes only once the real server (not the first-run setup one) is up.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U seecode -d seecode"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  db-data:

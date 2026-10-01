@@ -1,0 +1,246 @@
+{
+  "slug": "valid-parentheses",
+  "title": "Valid Parentheses",
+  "leetcodeUrl": "https://leetcode.com/problems/valid-parentheses/",
+  "difficulty": "easy",
+  "patternId": "stack",
+  "order": 7,
+  "summary": "You get a string `s` made only of the bracket characters `(`, `)`, `[`, `]`, `{` and `}`. Decide whether the brackets are properly nested: each closing bracket must close the most recent opening bracket that is still open, and the two must be the same type. The string is valid only if every opening bracket gets closed.",
+  "examples": [
+    {
+      "input": "s = \"([]{})\"",
+      "output": "true",
+      "explanation": "The square pair and the curly pair open and close inside the round pair, and the final \")\" closes the \"(\" that opened first."
+    },
+    {
+      "input": "s = \"{(})\"",
+      "output": "false",
+      "explanation": "Each type opens once and closes once, but \"}\" arrives while \"(\" is the newest open bracket, so the pairs cross."
+    },
+    {
+      "input": "s = \"([]\"",
+      "output": "false",
+      "explanation": "The \"[\" gets closed, but the \"(\" is still open when the string ends."
+    }
+  ],
+  "constraints": ["1 ≤ len(s) ≤ 10⁴", "s contains only brackets: (, ), [, ], { and }"],
+  "targets": {"time": "O(n)", "space": "O(n)"},
+  "entry": "isValid",
+  "starterCode": "class Solution:\n    def isValid(self, s: str) -> bool:\n        pass\n",
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "stack",
+      "structures": ["stack"],
+      "time": "O(n)",
+      "space": "O(n)",
+      "twist": "Push openers onto a stack; each closer must match the opener on top, which it then pops.",
+      "twistKeywords": [
+        [
+          "top",
+          "pop",
+          "peek",
+          "recent",
+          "latest",
+          "newest",
+          "[-1]",
+          "lifo",
+          "last open",
+          "last unclosed",
+          "last unmatched",
+          "last push",
+          "last added"
+        ],
+        [
+          "match",
+          "pair",
+          "type",
+          "kind",
+          "correspond",
+          "partner",
+          "counterpart",
+          "compar",
+          "equal",
+          "==",
+          "map",
+          "dict",
+          "look up",
+          "lookup"
+        ],
+        ["open", "clos", "bracket", "paren", "brace", "(", ")", "[", "]", "{", "}"]
+      ]
+    },
+    {
+      "id": "remove_pairs",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n²)",
+      "space": "O(n)",
+      "twist": "Delete adjacent matching pairs such as \"()\" over and over; the string is valid if nothing is left.",
+      "twistKeywords": [
+        [
+          "delet",
+          "remov",
+          "replac",
+          "eras",
+          "strip",
+          "cancel",
+          "eliminat",
+          "take out",
+          "get rid",
+          "cut out"
+        ],
+        ["adjacent", "pair", "()", "[]", "{}", "next to", "neighbo", "side by side", "innermost"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but each pass rebuilds the string and a deeply nested string needs about n/2 passes, so it takes O(n²) time. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "properly nested",
+      "meaning": "Nested brackets close in the reverse order they opened. Keep the openers that are still waiting, and let each closer settle the newest one.",
+      "pointsTo": "stack"
+    },
+    {
+      "phrase": "most recent",
+      "meaning": "The top of a stack is always the most recent item still waiting, so the opener a closer needs is right on top: one look, no search.",
+      "pointsTo": "structure:stack"
+    },
+    {
+      "phrase": "same type",
+      "meaning": "Each closer has exactly one partner opener. A small dict from closer to opener turns the type check into one lookup.",
+      "pointsTo": "structure:hash_map"
+    }
+  ],
+  "constraintReading": "len(s) can reach 10⁴. Deleting matched pairs over and over rescans the string up to n/2 times, around 5·10⁷ steps: O(n²), slow in Python. Aim for O(n), one pass that looks at each character once. A string of only openers leaves every character waiting, so the extra space can reach O(n).",
+  "hints": {
+    "clarify": "Do matching counts make a string valid, or does the order matter too? Try \"())(\" by hand. It has two round openers and two round closers, but the first \")\" closes the first \"(\", and the second \")\" then has nothing open to close. So the answer is false: the order matters, not only the counts.",
+    "approach": "Stack. A closer must close the newest opener that's still open, and the newest waiting item is exactly what sits on top of a stack. Scan `s` once and push each opener. For each closer, look at the top: if it's the matching opener, pop it, because that pair is done. If the stack is empty or the top is a different opener, the string isn't valid. At the end, the string is valid only if no opener is left waiting.",
+    "whyNot": "Counting each type doesn't work: \"{(})\" has one opener and one closer of each type and still isn't valid, because counts ignore the order. Deleting \"()\", \"[]\" and \"{}\" pairs until nothing changes does work, but each pass rebuilds the string and there can be n/2 passes, so it's O(n²) time.",
+    "slots": {
+      "setup": "Openers still waiting for their closer go on `stack`, which starts empty. Keep a dict `pairs` from each closer to its opener, so \")\" maps to \"(\".",
+      "loop": "Read `s` once from left to right, one character `ch` at a time.",
+      "update": "An opener gets pushed. A closer pops the top, but only when the top is its partner from `pairs`.",
+      "record": "When a closer finds the stack empty, or a different opener on top, the brackets don't nest: return `False` right away. A successful pop means that pair is done.",
+      "return": "After the scan, return `True` only if `stack` is empty. An opener still on it never got closed."
+    }
+  },
+  "solution": {
+    "code": "class Solution:\n    def isValid(self, s: str) -> bool:\n        pairs = {\")\": \"(\", \"]\": \"[\", \"}\": \"{\"}\n        stack: list[str] = []\n        for i, ch in enumerate(s):\n            if ch not in pairs:\n                stack.append(ch)  # viz:push\n            elif stack and stack[-1] == pairs[ch]:  # viz:check\n                stack.pop()  # viz:pop\n            else:\n                return False  # viz:mismatch\n        return not stack  # viz:done\n",
+    "explanation": "Each character is pushed at most once and popped at most once, and each dict lookup is O(1), so one pass takes O(n) time. In the worst case, a string of only openers, every character waits on the stack: O(n) space. The position `i` from `enumerate` only tracks where you are in `s`; the check itself needs just `ch`.",
+    "toolkit": ["enumerate"]
+  },
+  "viz": {
+    "primary": "s",
+    "pointers": [{"var": "i", "into": "s", "label": "i", "color": "a"}],
+    "window": null,
+    "range": null,
+    "roles": {"stack": ["stack"], "queue": [], "hidden": []},
+    "confirmed": null,
+    "events": [
+      {
+        "id": "push",
+        "at": "push",
+        "label": "push",
+        "say": "s[{i}] is {ch!r}, an opener, so push it. It waits for its closer"
+      },
+      {
+        "id": "check",
+        "at": "check",
+        "label": "closer",
+        "say": "s[{i}] is {ch!r}, a closer. It needs {pairs[ch]!r} on top of the stack"
+      },
+      {
+        "id": "pop",
+        "at": "pop",
+        "label": "pop",
+        "say": "{stack[-1]!r} is on top, the partner of {ch!r}: pop it, and that pair is closed"
+      },
+      {
+        "id": "mismatch",
+        "at": "mismatch",
+        "label": "mismatch",
+        "say": "No {pairs[ch]!r} is on top for {ch!r} to close, so the brackets don't nest: s is not valid"
+      },
+      {
+        "id": "valid",
+        "at": "done",
+        "when": "len(stack) == 0",
+        "label": "return",
+        "say": "The scan is over and no opener is left waiting, so s is valid"
+      },
+      {
+        "id": "unclosed",
+        "at": "done",
+        "when": "len(stack) > 0",
+        "label": "left open",
+        "say": "The scan is over, but {stack[-1]!r} is still open on the stack, so s is not valid"
+      }
+    ],
+    "predict": [
+      {
+        "atEvent": "check",
+        "occurrence": 1,
+        "ask": "Is the opener this closer needs on top of the stack?",
+        "kind": "yesno",
+        "answerWhen": "len(stack) > 0 and stack[-1] == pairs[ch]"
+      },
+      {
+        "atEvent": "pop",
+        "occurrence": 1,
+        "ask": "After this pop, will the stack be empty?",
+        "kind": "yesno",
+        "answerWhen": "len(stack) == 1"
+      },
+      {
+        "atEvent": "pop",
+        "occurrence": 3,
+        "ask": "After this pop, will any opener still be waiting?",
+        "kind": "yesno",
+        "answerWhen": "len(stack) > 1"
+      }
+    ]
+  },
+  "tests": [
+    {"id": "e1", "args": ["([]{})"], "expected": true, "hidden": false},
+    {"id": "e2", "args": ["{(})"], "expected": false, "hidden": false},
+    {"id": "e3", "args": ["([]"], "expected": false, "hidden": false},
+    {"id": "h1", "args": ["["], "expected": false, "hidden": true},
+    {"id": "h2", "args": [")"], "expected": false, "hidden": true},
+    {"id": "h3", "args": ["{[("], "expected": false, "hidden": true},
+    {"id": "h4", "args": ["}{"], "expected": false, "hidden": true},
+    {"id": "h5", "args": ["{[()()]}"], "expected": true, "hidden": true},
+    {"id": "h6", "args": ["[{]}"], "expected": false, "hidden": true},
+    {"id": "h7", "args": ["{]"], "expected": false, "hidden": true},
+    {"id": "h8", "args": ["{}}"], "expected": false, "hidden": true},
+    {"id": "h9", "args": ["((({{{[[[]]]}}})))"], "expected": true, "hidden": true},
+    {"id": "h10", "args": ["{}[]()[]"], "expected": true, "hidden": true},
+    {
+      "id": "h11",
+      "args": [
+        "[]{(()()){}{}[{({[(())]})(({{}((){{}})()[(())]})){}}][]{}}()[]([])[([[]{}]()(()){[[{}](())({(())[{}]()})]()}({[{(){[]{}()[()[][([])[{}{{[[{}([{()}[{}([])[]]]){}[{[]{[{}][{}]}()}]]]([]()[]{}[[({}()([]))]{}]{{([])(([][]([{}[{{{(()[])}()[{[]}]}{}}(())]])(){[]}({{}()})([])({})))}{{({}[][])}()}[{}]})({}){}{}(([[[]]]{{{}([({[({[]([{}][]){[{([]{()})()}()]}{}}[{}])[](())]})({[{}()]}{({}{}({{[{(){[][][]}(([[(){({()}{[{({}){[{}]}({})}(){[[]]}][()([{}])({{}[()]()([{}])}([(){}()]))]{[(([]))]()[]}{}}[])[{}][({}[]){(()[])[]([]{[()]}{}){}}()]}{}()(())]])()[[][]{(({})([{()[()]{}()(){{}([]){(({[]}({[]})))[]}}()[([])()]}]()))({})}]{{[]}{}{}([]){}{}{}{}{[()]}})[]}]}}{[[[][((){({[()[()]]}{})}[[{[{[]}][]}()]({}({{{}[[([])]]}[]([()]){}[[[{[]}({})]][[]]]}){}[{}][{{{((){()()()()}[[[]{[()]}](([]))()()[]])()}}}][[]([]{[{()[(({})([])())]}{}]{{[[{}[[][][([{[[()(){}([(([(){}{}](((()())))))[]])]]}])(([]))]]{(({})){[[{}]]}}][]()][]}}{}{(([]()))}{}})]({[[][]]}))])][{}{}{}]{}({[]})[({}{[]}{})()[][]]]]{}}({()[][[]]})[()[[]]][]))[[]{[]}]})]{[{}{[][]{({([])({}){{}{}[({({})[{({[[]()[]]}{})([[{{{}}()}{()}(([[{}[[]]({{[]}{}[{((())({()}[]{{{}}}))[()({}[]{}{[{(([()((){({})[]{[][]}}{}{()}())]){{[{}][[()]]}})}{}()()]})][]{()[[]]}}][]}[()()({}[[]][[{}[[()([()])]][]]]())])()(()){}]])({}))()({}){}(){}[]][[]]])}{{[[]()({(){}({()}){(){[()([[]{[]{[]}({}()){}[[{}]{{[]}()}]}]()()(){(({[{()[]}]}))})]{{[][({({{{}()}{{}}})})]{}()()(({()()[](){}[]{}}))}}}[]}[[]{[{}]}[]]})]}}]})]}()}[({})({(())}(){[]})[()]][]{[]{}[]})}}]}[])([{}([])[{}]])}{}}))}({})}]]]}}][]()})())][](){}[]{{}({})[]}({[](){}}{{}}[[[]{[]}][[[[]]]{}][[[]]{()[{}{()((([{[]}{}[]])[([{[]({[()]}{}[[{[[({})(())]]}()][(){}]{({[{}[{}()][]]{{{(){}}[(([(()[{[]([{[][({})[([{[[[()[[][{}()]()(){{}[]{()}}]()[[]()]([]([{{[]()}{(((()[{}])))}[({{[{()}]{[()]}}({[[()]][]}[]{{[]{}(()[]{})([[]]){{{}{}({{{}}})(()[()][{{[[][]]}}][()[]]{({}())}())}({[](){{}}({}[{}][])}())[]{}}}({()})()}[[]]{[{}{}{}[(){}]{[[]([](){})[]]}{}]}(()[{{()}}]))})]}]))]]]}])]]}])}])]))]}}})}])}])]))}]}]])"
+      ],
+      "expected": true,
+      "hidden": true
+    },
+    {
+      "id": "h12",
+      "args": [
+        "[]{(()()){}{}[{({[(())]})(({{}((){{}})()[(())]})){}}][]{}}()[]([])[([[]{}]()(()){[[{}](())({(())[{}]()})]()}({[{(){[]{}()[()[][([])[{}{{[[{}([{()}[{}([])[]]]){}[{[]{[{}][{}]}()}]]]([]()[]{}[[({}()([]))]{}]{{([])(([][]([{}[{{{(()[])}()[{[]}]}{}}(())]])(){[]}({{}()})([])({})))}{{({}[][])}()}[{}]})({}){}{}(([[[]]]{{{}([({[({[]([{}][]){[{([]{()})()}()]}{}}[{}])[](())]})({[{}()]}{({}{}({{[{(){[][][]}(([[(){({()}{[{({}){[{}]}({})}(){[[]]}][()([{}])({{}[()]()([{}])}([(){}()]))]{[(([]))]()[]}{}}[])[{}][({}[]){(()[])[]([]{[()]}{}){}}()]}{}()(())]])()[[][]{(({})([{()[()]{}()(){{}([]){(({[]}({[]})))[]}}()[([])()]}]()))({})}]{{[]}{}{}([]){}{}{}{}{[()]}})[]}]}}{[[[][((){({[()[()]]}{})}[[{[{[]}][]}()]({}({{{}[[([])]]}[]([()]){}[[[{[]}({})]][[]]]}){}[{}][{{{((){()()()()}[[[]{[()]}](([]))()()[]])()}}}][[]([]{[{()[(({})([])())]}{}]{{[[{}[[][][([{[[()(){}([(([(){}{}](((()())))))[]])]]}])(([]))]]{(({})){[[{}]]}}][]()][]}}{}{(([]()))}{}})]({[[][]]}))])][{}{}{}]{}({[]})[({}{[]}{})()[][]]]]{}}({()[][[]]})[()[[]]][]))[[]{[]}]})]{[{}{[][]{({([])({}){{}{}[({({})[{({[[]()[]]}{})([[{{{}}()}{()}(([[{}[[]]({{[]}{}[{((())({()}[]{{{}}}))[()({}[]{}{[{(([()((){({})[]{[][]}}{}{()}())]){{[{}][[()]]}})}{}()()]})][]{()[[]]}}][]}[()()({}[[]][[{}[[()([()])]][]]]())])()(()){}]])({}))()({}){}(){}[]][[]]])}{{[[]()({(){}({()}){(){[()([[]{[]{[]}({}()){}[[{}]{{[]}()}]}]()()(){(({[{()[]}]}))})]{{[][({({{{}()}{{}}})})]{}()()(({()()[](){}[]{}}))}}}[]}[[]{[{}]}[]]})]}}]})]}()}[({})({(())}(){[]})[()]][]{[]{}[]})}}]}[])([{}([])[{}]])}{}}))}({})}]]]}}][]()})())][](){}[]{{}({})[]}({[](){}}{{}}[[[]{[]}][[[[]]]{}][[[]]{()[{}{()((([{[]}{}[]])[([{[]({[()]}{}[[{[[({})(())]]}()][(){}]{({[{}[{}()][]]{{{(){}}[(([(()[{[]([{[][({})[([{[[[()[[][{}()]()(){{}[]{()}}]()[[]()]([]([{{[]()}{(((()[{}])))}[({{[{()}]{[()]}}({[[()]][]}[]{{[]{)(()[]{})([[]]){{{}{}({{{}}})(()[()][{{[[][]]}}][()[]]{({}())}())}({[](){{}}({}[{}][])}())[]{}}}({()})()}[[]]{[{}{}{}[(){}]{[[]([](){})[]]}{}]}(()[{{()}}]))})]}]))]]]}])]]}])}])]))]}}})}])}])]))}]}]])"
+      ],
+      "expected": false,
+      "hidden": true
+    }
+  ],
+  "related": [
+    {
+      "slug": "evaluate-rpn",
+      "relation": "The stack holds numbers instead of openers, and an operator pops two of them and pushes their result back instead of checking a match."
+    },
+    {
+      "slug": "daily-temperatures",
+      "relation": "The stack holds the indexes of days still waiting, and one warmer day can pop many of them at once instead of a closer popping a single opener."
+    }
+  ]
+}

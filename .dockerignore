@@ -1,0 +1,15 @@
+# Build context is the repo root (apps/api/Dockerfile). Send only what the API image needs.
+.git
+.github
+.devcontainer
+.env
+.env.*
+docs
+apps/web
+apps/api/tests
+**/node_modules
+**/.venv
+**/__pycache__
+**/.mypy_cache
+**/.ruff_cache
+**/.pytest_cache

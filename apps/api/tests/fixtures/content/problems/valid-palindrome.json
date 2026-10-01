@@ -1,0 +1,254 @@
+{
+  "slug": "valid-palindrome",
+  "title": "Valid Palindrome",
+  "leetcodeUrl": "https://leetcode.com/problems/valid-palindrome/",
+  "difficulty": "easy",
+  "patternId": "two_pointers_opposite",
+  "order": 4,
+  "summary": "You get a string `s`. Decide whether it reads the same forward and backward once you ignore letter case and drop every character that is not a letter or digit.",
+  "examples": [
+    {
+      "input": "s = \"(Race car)\"",
+      "output": "true",
+      "explanation": "Keeping letters and digits and lowercasing gives \"racecar\"."
+    },
+    {
+      "input": "s = \"ab\"",
+      "output": "false"
+    }
+  ],
+  "constraints": [
+    "1 ≤ len(s) ≤ 2·10⁵",
+    "s holds printable ASCII characters"
+  ],
+  "targets": {
+    "time": "O(n)",
+    "space": "O(1)"
+  },
+  "entry": "isPalindrome",
+  "starterCode": "class Solution:\n    def isPalindrome(self, s: str) -> bool:\n        pass\n",
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "two_pointers_opposite",
+      "structures": [
+        "array"
+      ],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Skip characters that are not letters or digits, and compare in lowercase.",
+      "twistKeywords": [
+        [
+          "skip",
+          "ignore",
+          "filter"
+        ],
+        [
+          "alnum",
+          "alphanumeric",
+          "letter",
+          "digit",
+          "punctuation"
+        ]
+      ]
+    },
+    {
+      "id": "clean_reverse",
+      "patternId": "brute_force",
+      "structures": [
+        "array"
+      ],
+      "time": "O(n)",
+      "space": "O(n)",
+      "twist": "Build a cleaned lowercase copy and compare it with its reverse.",
+      "twistKeywords": [
+        [
+          "clean",
+          "filter",
+          "copy",
+          "new string"
+        ],
+        [
+          "reverse",
+          "[::-1]"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but uses O(n) extra space. The target is O(1)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "reads the same forward and backward",
+      "meaning": "Compare characters from both ends.",
+      "pointsTo": "two_pointers_opposite"
+    },
+    {
+      "phrase": "ignore letter case",
+      "meaning": "Compare with .lower().",
+      "pointsTo": "toolkit:lower"
+    },
+    {
+      "phrase": "not a letter or digit",
+      "meaning": "Skip these with .isalnum().",
+      "pointsTo": "toolkit:isalnum"
+    }
+  ],
+  "constraintReading": "len(s) up to 2·10⁵ means O(n) or O(n log n). The O(1) space target rules out building a cleaned copy.",
+  "hints": {
+    "clarify": "Does a space count? Does 'A' equal 'a'? Try \"No, on!\" by hand: which characters matter?",
+    "approach": "Two pointers from both ends. Compare the characters they point at and move inward, skipping characters that do not count.",
+    "whyNot": "A hash map does not help: order matters here, not counts.",
+    "slots": {
+      "setup": "l at 0, r at the last index.",
+      "loop": "Keep going while l < r.",
+      "update": "Move l right past characters that do not count; move r left the same way.",
+      "record": "Compare the two characters in lowercase; if they differ, stop with False.",
+      "return": "If the loop finishes, return True."
+    }
+  },
+  "solution": {
+    "code": "class Solution:\n    def isPalindrome(self, s: str) -> bool:\n        l, r = 0, len(s) - 1\n        while l < r:\n            while l < r and not s[l].isalnum():\n                l += 1  # viz:skip_l\n            while l < r and not s[r].isalnum():\n                r -= 1  # viz:skip_r\n            if s[l].lower() != s[r].lower():  # viz:compare\n                return False\n            l += 1\n            r -= 1\n        return True  # viz:done\n",
+    "explanation": "Each pointer moves inward at most n times, so the time is O(n). Only two integers are stored, so the space is O(1).",
+    "toolkit": [
+      "isalnum",
+      "lower"
+    ]
+  },
+  "viz": {
+    "primary": "s",
+    "pointers": [
+      {
+        "var": "l",
+        "into": "s",
+        "label": "l",
+        "color": "a"
+      },
+      {
+        "var": "r",
+        "into": "s",
+        "label": "r",
+        "color": "b"
+      }
+    ],
+    "window": null,
+    "range": null,
+    "roles": {
+      "stack": [],
+      "queue": [],
+      "hidden": []
+    },
+    "confirmed": {
+      "into": "s",
+      "outside": [
+        "l",
+        "r"
+      ]
+    },
+    "events": [
+      {
+        "id": "skip_l",
+        "at": "skip_l",
+        "label": "skip",
+        "say": "s[{l}] is {s[l]!r}, not a letter or digit, so l moves right"
+      },
+      {
+        "id": "skip_r",
+        "at": "skip_r",
+        "label": "skip",
+        "say": "s[{r}] is {s[r]!r}, not a letter or digit, so r moves left"
+      },
+      {
+        "id": "compare",
+        "at": "compare",
+        "label": "compare",
+        "say": "Compare {s[l].lower()!r} and {s[r].lower()!r}"
+      },
+      {
+        "id": "mismatch",
+        "at": "compare",
+        "when": "s[l].lower() != s[r].lower()",
+        "label": "mismatch",
+        "say": "They differ, so it is not a palindrome"
+      },
+      {
+        "id": "done",
+        "at": "done",
+        "label": "return",
+        "say": "The pointers met: every pair matched"
+      }
+    ],
+    "predict": [
+      {
+        "atEvent": "skip_l",
+        "occurrence": 1,
+        "ask": "Where will l point next?",
+        "var": "l",
+        "kind": "index"
+      },
+      {
+        "atEvent": "compare",
+        "occurrence": 3,
+        "ask": "Will these two characters match?",
+        "kind": "yesno",
+        "answerWhen": "s[l].lower() == s[r].lower()"
+      }
+    ]
+  },
+  "tests": [
+    {
+      "id": "e1",
+      "args": [
+        "(Race car)"
+      ],
+      "expected": true,
+      "hidden": false
+    },
+    {
+      "id": "e2",
+      "args": [
+        "ab"
+      ],
+      "expected": false,
+      "hidden": false
+    },
+    {
+      "id": "h1",
+      "args": [
+        " "
+      ],
+      "expected": true,
+      "hidden": true
+    },
+    {
+      "id": "h2",
+      "args": [
+        "0P"
+      ],
+      "expected": false,
+      "hidden": true
+    },
+    {
+      "id": "h3",
+      "args": [
+        ".,"
+      ],
+      "expected": true,
+      "hidden": true
+    },
+    {
+      "id": "h4",
+      "args": [
+        "Step on no pets"
+      ],
+      "expected": true,
+      "hidden": true
+    }
+  ],
+  "related": [
+    {
+      "slug": "binary-search",
+      "relation": "Also moves two indexes toward each other, but the middle decides which half to drop."
+    }
+  ]
+}

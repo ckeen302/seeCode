@@ -1,0 +1,168 @@
+{
+  "slug": "minimum-size-subarray-sum",
+  "title": "Minimum Size Subarray Sum",
+  "leetcodeUrl": "https://leetcode.com/problems/minimum-size-subarray-sum/",
+  "difficulty": "medium",
+  "patternId": "sliding_window",
+  "order": 120,
+  "summary": "You get a list `nums` of positive integers and a positive integer `target`. Return the length of the shortest contiguous subarray whose sum is at least `target`. If no subarray reaches `target`, not even the whole list, return 0.",
+  "examples": [
+    {
+      "input": "nums = [3, 1, 4, 1, 5, 9, 2], target = 12",
+      "output": "2",
+      "explanation": "[5, 9] sums to 14. No single number reaches 12, so nothing shorter works."
+    },
+    {
+      "input": "nums = [2, 2, 3], target = 10",
+      "output": "0",
+      "explanation": "Even the whole list sums to only 7."
+    }
+  ],
+  "constraints": [
+    "1 ≤ len(nums) ≤ 10⁵",
+    "1 ≤ nums[i] ≤ 10⁴, so every number is positive",
+    "1 ≤ target ≤ 10⁹"
+  ],
+  "targets": {"time": "O(n)", "space": "O(1)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "sliding_window",
+      "structures": ["array"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Grow the window until its sum reaches target, then shrink it from the left while it still does, keeping the shortest length.",
+      "twistKeywords": [
+        [
+          "shrink",
+          "from the left",
+          "left pointer",
+          "left side",
+          "left end",
+          "leftmost",
+          "move left",
+          "the left",
+          "advance left",
+          "increment left",
+          "left +=",
+          "left+=",
+          "move l",
+          "advance l",
+          "increment l",
+          "nums[l]",
+          "contract",
+          "tighten",
+          "front",
+          "from the start",
+          "the start",
+          "beginning",
+          "trim",
+          "pop",
+          "remov",
+          "drop"
+        ],
+        [
+          "≥",
+          ">=",
+          "=>",
+          "at least",
+          "reach",
+          "enough",
+          "meet",
+          "exceed",
+          "surpass",
+          "above",
+          "target",
+          "goal",
+          "satisf"
+        ]
+      ]
+    },
+    {
+      "id": "every_start",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n²)",
+      "space": "O(1)",
+      "twist": "Try every start, extend the subarray to the right until its sum reaches target, and keep the shortest length.",
+      "twistKeywords": [
+        [
+          "every",
+          "for each",
+          "each start",
+          "each index",
+          "each position",
+          "each element",
+          "each number",
+          "each possible",
+          "each subarray",
+          "all start",
+          "all possible",
+          "nested",
+          "inner loop",
+          "two loops",
+          "double loop",
+          "brute",
+          "restart",
+          "all subarray",
+          "all pairs",
+          "all window"
+        ],
+        [
+          "extend",
+          "expand",
+          "grow",
+          "≥",
+          ">=",
+          "at least",
+          "reach",
+          "enough",
+          "meet",
+          "exceed",
+          "target"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but trying every start takes O(n²) time. The target is O(n)."
+    },
+    {
+      "id": "prefix_binary_search",
+      "patternId": "binary_search",
+      "structures": ["array"],
+      "time": "O(n log n)",
+      "space": "O(n)",
+      "twist": "Build prefix sums, which only rise since every number is positive, and binary search each start for the first end that reaches target.",
+      "twistKeywords": [
+        ["prefix", "cumulative", "running total", "running sum", "accumulat", "presum"],
+        ["binary", "bisect", "log n", "halv"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, because prefix sums of positive numbers only rise, but it takes O(n log n) time and O(n) space for the prefix sums. The target is O(n) time and O(1) space."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "positive integers",
+      "meaning": "Widening the window always raises its sum, and narrowing it always lowers it. That's what lets you move l forward once the goal is met, and never back.",
+      "pointsTo": "sliding_window"
+    },
+    {
+      "phrase": "shortest contiguous subarray",
+      "meaning": "The answer is one unbroken stretch, and you want the shortest one that meets the goal: shrink while the window still reaches target, and keep the smallest length.",
+      "pointsTo": "sliding_window"
+    },
+    {
+      "phrase": "return 0",
+      "meaning": "Start the best length at float('inf'), above any real length, so the first window that qualifies replaces it. If it's still inf at the end, nothing qualified.",
+      "pointsTo": "toolkit:inf"
+    }
+  ],
+  "constraintReading": "len(nums) can reach 10⁵, so trying every start and end, O(n²), means up to 5·10⁹ subarrays: too slow. Aim for O(n) time and O(1) space. The positive numbers make one pass enough: a window's sum only rises as it grows and only falls as it shrinks, so neither pointer ever moves back.",
+  "related": [
+    {
+      "slug": "longest-substring-no-repeat",
+      "relation": "Shrinks while its window breaks the rule and keeps the longest; here you shrink while the window still reaches target and keep the shortest."
+    }
+  ],
+  "drillOnly": true
+}

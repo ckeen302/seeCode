@@ -1,0 +1,146 @@
+{
+  "slug": "max-consecutive-ones-iii",
+  "title": "Max Consecutive Ones III",
+  "leetcodeUrl": "https://leetcode.com/problems/max-consecutive-ones-iii/",
+  "difficulty": "medium",
+  "patternId": "sliding_window",
+  "order": 123,
+  "summary": "You get a list `nums` of 0s and 1s and an integer `k`. You may turn at most k of the 0s into 1s. Return the length of the longest contiguous subarray that holds only 1s after those changes.",
+  "examples": [
+    {
+      "input": "nums = [1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1], k = 2",
+      "output": "7",
+      "explanation": "Turn the 0s at indices 4 and 5 into 1s: indices 2 to 8 then hold seven 1s in a row."
+    },
+    {
+      "input": "nums = [0, 0, 1, 0], k = 0",
+      "output": "1",
+      "explanation": "No changes are allowed, so the best is the single 1."
+    }
+  ],
+  "constraints": ["1 ≤ len(nums) ≤ 10⁵", "Each nums[i] is 0 or 1", "0 ≤ k ≤ len(nums)"],
+  "targets": {"time": "O(n)", "space": "O(1)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "sliding_window",
+      "structures": ["array"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Count the 0s inside the window, and shrink it from the left while it holds more than k of them.",
+      "twistKeywords": [
+        ["zero", "0s", "0's", "flip", "the 0", "of 0", "0 count", "count 0", "0 in"],
+        [
+          "more than k",
+          "> k",
+          ">k",
+          "exceed",
+          "at most",
+          "<= k",
+          "≤ k",
+          "<=k",
+          "≤k",
+          "over k",
+          "above k",
+          "beyond k",
+          "past k",
+          "k or fewer",
+          "k or less",
+          "up to k",
+          "within k",
+          "no more than",
+          "fewer than",
+          "less than",
+          "budget",
+          "limit",
+          "too many",
+          "allowed",
+          "or fewer",
+          "or less",
+          "== k",
+          "reach k",
+          "max k",
+          "maximum k",
+          "max of k",
+          "maximum of k"
+        ],
+        [
+          "window",
+          "subarray",
+          "sub-array",
+          "shrink",
+          "left",
+          "start",
+          "front",
+          "range",
+          "stretch",
+          "segment",
+          "span",
+          "run",
+          "move l",
+          "advance l",
+          "pointer",
+          "slid"
+        ]
+      ]
+    },
+    {
+      "id": "every_start",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n²)",
+      "space": "O(1)",
+      "twist": "Start from every index and extend to the right until the run would need more than k flips, keeping the longest run.",
+      "twistKeywords": [
+        [
+          "every",
+          "for each",
+          "each start",
+          "each index",
+          "each position",
+          "each element",
+          "each number",
+          "each possible",
+          "each subarray",
+          "all start",
+          "all possible",
+          "nested",
+          "inner loop",
+          "two loops",
+          "double loop",
+          "brute",
+          "restart",
+          "all index"
+        ],
+        ["zero", "0s", "0's", "flip", "more than k", "> k", "exceed", "at most", "extend", "expand"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but starting over from every index takes O(n²) time. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "at most k",
+      "meaning": "The rule is a limit: count the 0s in the window, and shrink it from the left while there are more than k.",
+      "pointsTo": "sliding_window"
+    },
+    {
+      "phrase": "contiguous subarray",
+      "meaning": "The answer is one unbroken stretch. Grow the window to the right and keep the longest length that follows the rule.",
+      "pointsTo": "sliding_window"
+    },
+    {
+      "phrase": "0s and 1s",
+      "meaning": "Only a 0 can break a run of 1s, so the window's whole state is one number: how many 0s it holds. You never have to choose which 0s to turn.",
+      "pointsTo": "sliding_window"
+    }
+  ],
+  "constraintReading": "len(nums) can reach 10⁵, so starting over from every index, O(n²), can take up to 5·10⁹ steps: too slow. Aim for O(n) time and O(1) space: one pass in which each pointer only moves right, keeping a single count of the 0s in the window.",
+  "related": [
+    {
+      "slug": "longest-repeating-replacement",
+      "relation": "Also allows k changes, but the window may end up as any one letter, so it tracks its most common letter instead of its 0s."
+    }
+  ],
+  "drillOnly": true
+}

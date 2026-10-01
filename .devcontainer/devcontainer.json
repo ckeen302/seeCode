@@ -1,0 +1,32 @@
+// GitHub Codespaces (and VS Code Dev Containers): run SeeCode in the cloud with nothing
+// installed locally. Creating a codespace installs the dependencies and starts Postgres;
+// attaching runs the API and a production build of the web app, then opens the site
+// (port 3000) in a new browser tab. Sign in with a dev user; Supabase is not needed.
+{
+  "name": "SeeCode",
+  "dockerComposeFile": "compose.yaml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "features": {
+    "ghcr.io/devcontainers/features/node:2": {
+      "version": "24",
+      "pnpmVersion": "10.34.6",
+      "nodeGypDependencies": false
+    }
+  },
+  "containerEnv": {
+    // The workspace and the uv cache sit on different filesystems.
+    "UV_LINK_MODE": "copy",
+    "NEXT_TELEMETRY_DISABLED": "1",
+    "npm_config_update_notifier": "false"
+  },
+  "updateContentCommand": "bash .devcontainer/setup.sh",
+  "postAttachCommand": { "seecode": "bash .devcontainer/start.sh" },
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": { "label": "SeeCode", "onAutoForward": "openBrowser" },
+    // Reached through the web server (/api/v1), never directly from the browser.
+    "8000": { "label": "API", "onAutoForward": "ignore" },
+    "5432": { "label": "Postgres", "onAutoForward": "ignore" }
+  }
+}

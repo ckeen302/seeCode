@@ -1,0 +1,124 @@
+{
+  "slug": "find-all-anagrams-in-a-string",
+  "title": "Find All Anagrams in a String",
+  "leetcodeUrl": "https://leetcode.com/problems/find-all-anagrams-in-a-string/",
+  "difficulty": "medium",
+  "patternId": "sliding_window",
+  "order": 122,
+  "summary": "You get two strings, `s` and `p`. Return the start index of every substring of `s` that is an anagram of `p`: it holds exactly the letters of `p`, with the same count of each, in any order. Matches may overlap, and any order of indices is fine.",
+  "examples": [
+    {
+      "input": "s = \"antnatant\", p = \"tan\"",
+      "output": "[0, 2, 3, 5, 6]",
+      "explanation": "\"ant\", \"tna\", \"nat\", \"tan\" and \"ant\" start at 0, 2, 3, 5 and 6. The matches at 2 and 3 share two letters."
+    },
+    {
+      "input": "s = \"hello\", p = \"ole\"",
+      "output": "[]",
+      "explanation": "Every letter of \"ole\" is in \"hello\", but no three letters in a row are exactly one o, one l and one e."
+    }
+  ],
+  "constraints": ["1 ≤ len(s), len(p) ≤ 3·10⁴", "s and p contain lowercase English letters only"],
+  "targets": {"time": "O(n)", "space": "O(1)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "sliding_window",
+      "structures": ["counter"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Slide a fixed window of len(p) across s, updating its letter counts as letters enter and leave, and record each start where they match p's.",
+      "twistKeywords": [
+        ["count", "freq", "tally", "histogram", "26", "occurrence", "how many"],
+        [
+          "len(p)",
+          "len p",
+          "length of p",
+          "size of p",
+          "p's length",
+          "p's size",
+          "p-length",
+          "p-size",
+          "p-sized",
+          "p.length",
+          "length p",
+          "size p",
+          "equal to len",
+          "same length",
+          "same size",
+          "equal length",
+          "equal size",
+          "fixed",
+          "length m",
+          "size m",
+          "m letters",
+          "m characters",
+          "m chars"
+        ]
+      ]
+    },
+    {
+      "id": "recount_each_window",
+      "patternId": "brute_force",
+      "structures": ["counter"],
+      "time": "O(n²)",
+      "space": "O(1)",
+      "twist": "Recount the letters of every substring of s that is as long as p, and record the starts whose counts match p's.",
+      "twistKeywords": [
+        [
+          "every",
+          "for each",
+          "each window",
+          "each substring",
+          "each possible",
+          "all substring",
+          "all window",
+          "all possible",
+          "from scratch",
+          "over again",
+          "each time",
+          "anew",
+          "fresh",
+          "rebuild",
+          "recomput",
+          "separately",
+          "nested",
+          "brute"
+        ],
+        ["count", "freq", "tally", "sort", "anagram", "compare", "match", "equal", "=="]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but recounting every window takes O(n·m) time, which is O(n²) when p is about half as long as s. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "substring",
+      "meaning": "Each match is one unbroken run of s exactly as long as p: a window of fixed size that moves one letter at a time.",
+      "pointsTo": "sliding_window"
+    },
+    {
+      "phrase": "anagram",
+      "meaning": "Two strings are anagrams exactly when their letter counts are equal. Keep counts for p and for the window, and compare them.",
+      "pointsTo": "structure:counter"
+    },
+    {
+      "phrase": "may overlap",
+      "meaning": "A match doesn't let you jump ahead: after one, the window still moves a single letter, so every start gets checked.",
+      "pointsTo": "sliding_window"
+    },
+    {
+      "phrase": "lowercase English letters only",
+      "meaning": "Only 26 letters can appear, so the counts fit in a list of 26 indexed by ord(c) - ord('a'), and comparing two such lists takes a fixed 26 steps.",
+      "pointsTo": "toolkit:ord_chr"
+    }
+  ],
+  "constraintReading": "len(s) can reach 3·10⁴. Recounting every window costs O(n·m): about 2.25·10⁸ steps when p is half as long as s, which is O(n²) and far too slow. Aim for O(n) by updating the counts as the window moves one letter. With only 26 possible letters, the counts take O(1) space, not counting the list of indices you return.",
+  "related": [
+    {
+      "slug": "valid-anagram",
+      "relation": "Compares the letter counts of two whole strings once; here the check runs on every window of s, and each match's start is kept."
+    }
+  ],
+  "drillOnly": true
+}

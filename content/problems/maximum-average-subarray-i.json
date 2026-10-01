@@ -1,0 +1,153 @@
+{
+  "slug": "maximum-average-subarray-i",
+  "title": "Maximum Average Subarray I",
+  "leetcodeUrl": "https://leetcode.com/problems/maximum-average-subarray-i/",
+  "difficulty": "easy",
+  "patternId": "sliding_window",
+  "order": 119,
+  "summary": "You get a list of integers `nums` and an integer `k`. Among all subarrays made of k consecutive numbers in `nums`, find the one with the highest average and return that average. An answer within 10⁻⁵ of the exact value is accepted.",
+  "examples": [
+    {
+      "input": "nums = [2, -1, 3, 8, -4, 5], k = 3",
+      "output": "3.33333",
+      "explanation": "The best subarray is [-1, 3, 8]. Its sum is 10, and 10 / 3 is about 3.33333."
+    },
+    {
+      "input": "nums = [-6, -3, -9, -2], k = 2",
+      "output": "-4.5",
+      "explanation": "Every pair has a negative sum. The best is [-6, -3], whose sum is -9, and -9 / 2 = -4.5."
+    }
+  ],
+  "constraints": ["1 ≤ k ≤ len(nums) ≤ 10⁵", "−10⁴ ≤ nums[i] ≤ 10⁴, so numbers can be negative"],
+  "targets": {"time": "O(n)", "space": "O(1)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "sliding_window",
+      "structures": ["array"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Slide a fixed window of k numbers, adding the one that enters and subtracting the one that leaves, and divide the best sum by k.",
+      "twistKeywords": [
+        ["sum", "total", "add"],
+        [
+          "fixed",
+          "size k",
+          "length k",
+          "k-size",
+          "k size",
+          "k-length",
+          "k length",
+          "k-long",
+          "k long",
+          "k wide",
+          "width k",
+          "last k",
+          "k numbers",
+          "k elements",
+          "k items",
+          "k values",
+          "k integers",
+          "k consecutive",
+          "k-element",
+          "exactly k",
+          "window of k",
+          "block of k",
+          "subarray of k",
+          "group of k",
+          "size of k",
+          "length of k",
+          "rolling",
+          "subtract",
+          "minus",
+          "remov",
+          "drop",
+          "leav",
+          "exit",
+          "outgoing",
+          "fall",
+          "oldest",
+          "old one",
+          "old number",
+          "old element",
+          "old value",
+          "first one",
+          "pop",
+          "i - k",
+          "i-k",
+          "r - k",
+          "r-k",
+          "- k]",
+          "-k]"
+        ]
+      ]
+    },
+    {
+      "id": "sum_each_window",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n²)",
+      "space": "O(1)",
+      "twist": "Add up every subarray of k consecutive numbers from scratch and keep the largest average.",
+      "twistKeywords": [
+        [
+          "every",
+          "for each",
+          "each window",
+          "each subarray",
+          "each block",
+          "each start",
+          "each group",
+          "each possible",
+          "all subarray",
+          "all window",
+          "all block",
+          "all possible",
+          "all start",
+          "from scratch",
+          "recomput",
+          "recalculat",
+          "over again",
+          "each time",
+          "anew",
+          "fresh",
+          "separately",
+          "slice",
+          "nested",
+          "inner loop",
+          "two loops",
+          "double loop",
+          "brute"
+        ],
+        ["sum", "total", "add", "average"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but summing each subarray from scratch takes O(n·k) time, which is O(n²) when k is about half of n. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "k consecutive",
+      "meaning": "The window has a fixed size, k: each step, one number enters on the right and one leaves on the left.",
+      "pointsTo": "sliding_window"
+    },
+    {
+      "phrase": "highest average",
+      "meaning": "All candidates have the same length, so the highest average belongs to the highest sum. Track the sum, and divide by k once at the end.",
+      "pointsTo": "sliding_window"
+    },
+    {
+      "phrase": "can be negative",
+      "meaning": "The best sum can be below zero, so don't start it at 0. Start it at the first window's sum, or at float('-inf').",
+      "pointsTo": "toolkit:inf"
+    }
+  ],
+  "constraintReading": "len(nums) can reach 10⁵, and k can be anything up to it. Summing each subarray from scratch costs O(n·k): about 2.5·10⁹ additions when k is half of n, which is O(n²) and far too slow. Aim for O(n) time and O(1) space by updating one sum as the window moves. Negative numbers are fine here, because the window's size never changes.",
+  "related": [
+    {
+      "slug": "longest-substring-no-repeat",
+      "relation": "Its window changes size, growing on the right and shrinking on the left while a letter repeats, instead of always holding k items."
+    }
+  ],
+  "drillOnly": true
+}

@@ -1,0 +1,134 @@
+{
+  "slug": "boats-to-save-people",
+  "title": "Boats to Save People",
+  "leetcodeUrl": "https://leetcode.com/problems/boats-to-save-people/",
+  "difficulty": "medium",
+  "patternId": "two_pointers_opposite",
+  "order": 112,
+  "drillOnly": true,
+  "summary": "You get a list `people` of body weights and an integer `limit`, and you have as many boats as you need. A boat carries one person, or a pair of people whose weights add up to at most `limit`. No one weighs more than `limit`. Return the fewest boats that carry everyone.",
+  "examples": [
+    {
+      "input": "people = [4, 1, 5, 3, 2], limit = 5",
+      "output": "3",
+      "explanation": "The 5 can't share with anyone (even 1 + 5 = 6 is over 5), so it goes alone; then 1 + 4 and 2 + 3 share boats."
+    },
+    {
+      "input": "people = [3, 5, 1, 2], limit = 6",
+      "output": "2",
+      "explanation": "Pair 1 with 5 and 2 with 3. Putting the two lightest together (1 + 2) would leave 3 and 5, who can't share (8 > 6), so that takes 3 boats."
+    }
+  ],
+  "constraints": [
+    "1 ≤ len(people) ≤ 5·10⁴",
+    "1 ≤ people[i] ≤ limit ≤ 3·10⁴",
+    "people is in no particular order"
+  ],
+  "targets": {"time": "O(n log n)", "space": "O(1)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "two_pointers_opposite",
+      "structures": ["sorted"],
+      "time": "O(n log n)",
+      "space": "O(1)",
+      "twist": "Sort, then put the heaviest person in each boat and add the lightest one whenever the two fit.",
+      "twistKeywords": [
+        ["sort"],
+        [
+          "heav",
+          "light",
+          "largest",
+          "smallest",
+          "biggest",
+          "big",
+          "small",
+          "ends",
+          "extreme",
+          "max weight",
+          "min weight",
+          "max and",
+          "min and",
+          "and max",
+          "and min",
+          "with max",
+          "with min"
+        ],
+        [
+          "fit",
+          "limit",
+          "≤",
+          "<=",
+          "at most",
+          "within",
+          "under",
+          "capacity",
+          "room",
+          "enough",
+          "together",
+          "share",
+          "pair",
+          "match",
+          "alone",
+          "if possible",
+          "when possible",
+          "if they can"
+        ]
+      ]
+    },
+    {
+      "id": "scan_for_partner",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n²)",
+      "space": "O(n)",
+      "twist": "Scan the rest for each person's heaviest partner who still fits, and pair them.",
+      "twistKeywords": [
+        [
+          "scan",
+          "search",
+          "look through",
+          "look for",
+          "every other",
+          "all other",
+          "everyone",
+          "each other",
+          "all remaining",
+          "the rest",
+          "nested",
+          "two loops",
+          "double loop",
+          "inner loop",
+          "brute"
+        ],
+        ["partner", "pair", "match", "mate", "companion", "fit", "best", "heaviest"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but scanning everyone for each person takes O(n²) time, about 2.5·10⁹ checks for 5·10⁴ people, plus O(n) space to mark who has a seat. The target is O(n log n) time and O(1) space."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "a pair of people",
+      "meaning": "A boat holds at most two, so the answer is a pairing. After sorting, the heaviest person's best partner is the lightest one: if even the lightest doesn't fit, no one does, and the heaviest rides alone.",
+      "pointsTo": "two_pointers_opposite"
+    },
+    {
+      "phrase": "fewest boats",
+      "meaning": "Fill the boats greedily: each one takes the heaviest person left, plus the lightest when the two fit. Pairing the two extremes never costs an extra boat.",
+      "pointsTo": "two_pointers_opposite"
+    },
+    {
+      "phrase": "no particular order",
+      "meaning": "Sort first so the lightest and heaviest people sit at the two ends. O(n log n) for 5·10⁴ people is fast.",
+      "pointsTo": "structure:sorted"
+    }
+  ],
+  "constraintReading": "len(people) can reach 5·10⁴, so scanning for a partner for every person (O(n²), about 2.5·10⁹ checks) is too slow. Sorting costs O(n log n), and then one inward pass seats everyone in O(n). Sorting in place keeps the extra space O(1).",
+  "related": [
+    {
+      "slug": "two-sum-ii",
+      "relation": "Same inward pointers on sorted numbers, but they hunt for an exact sum instead of checking whether two weights fit under a limit."
+    }
+  ]
+}

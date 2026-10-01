@@ -1,0 +1,155 @@
+{
+  "slug": "first-bad-version",
+  "title": "First Bad Version",
+  "leetcodeUrl": "https://leetcode.com/problems/first-bad-version/",
+  "difficulty": "easy",
+  "patternId": "binary_search",
+  "order": 128,
+  "summary": "An app has versions numbered 1 to n, each built on top of the one before. At some point a bug slipped in: the version that introduced it and every version after it are bad, while all earlier versions are good. A helper `isBadVersion(v)` tells you whether version v is bad, but each call is slow. Return the first bad version, calling the helper as few times as possible.",
+  "examples": [
+    {
+      "input": "n = 9, versions 6 to 9 are bad",
+      "output": "6",
+      "explanation": "Version 5 is still good and version 6 is bad, so the bug came in with version 6."
+    },
+    {
+      "input": "n = 4, every version is bad",
+      "output": "1",
+      "explanation": "The bug was there from the very first version."
+    }
+  ],
+  "constraints": ["1 ≤ n ≤ 2³¹ − 1", "The last version, n, is always bad"],
+  "targets": {"time": "O(log n)", "space": "O(1)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "binary_search",
+      "structures": ["array"],
+      "time": "O(log n)",
+      "space": "O(1)",
+      "twist": "Search for the first bad version: if the middle version is bad, keep it and look left; if it's good, look right of it.",
+      "twistKeywords": [
+        [
+          "first",
+          "earliest",
+          "leftmost",
+          "lowest",
+          "smallest",
+          "oldest",
+          "boundary",
+          "transition",
+          "switch",
+          "flip",
+          "lower bound",
+          "lower-bound",
+          "lower_bound",
+          "bisect_left",
+          "keep mid",
+          "keep it",
+          "keeping it",
+          "keep the mid",
+          "keeping mid",
+          "include mid",
+          "including mid",
+          "hi = mid",
+          "hi=mid",
+          "high = mid",
+          "high=mid",
+          "r = mid",
+          "r=mid",
+          "right = mid",
+          "right=mid",
+          "end = mid",
+          "end=mid",
+          "could be the answer",
+          "might be the answer",
+          "may be the answer",
+          "candidate",
+          "record",
+          "remember",
+          "save",
+          "ans =",
+          "answer =",
+          "lo ends",
+          "return lo",
+          "return low",
+          "return left"
+        ],
+        [
+          "bad",
+          "good",
+          "broken",
+          "fail",
+          "isbadversion",
+          "true",
+          "false",
+          "check",
+          "api",
+          "helper",
+          "test"
+        ]
+      ]
+    },
+    {
+      "id": "check_in_order",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Check versions 1, 2, 3 and so on in order, and return the first one the helper calls bad.",
+      "twistKeywords": [
+        [
+          "every",
+          "each",
+          "one by one",
+          "one at a time",
+          "in order",
+          "linear",
+          "scan",
+          "iterate",
+          "loop",
+          "sequential",
+          "from 1",
+          "from version 1",
+          "from the start",
+          "starting at 1",
+          "starting from 1",
+          "upward",
+          "brute",
+          "1, 2, 3",
+          "1,2,3",
+          "1 to n",
+          "1..n"
+        ],
+        ["bad", "fail", "broken", "true", "isbadversion"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but it may call the helper once per version, and n can be about 2·10⁹. The target is O(log n) calls."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "every version after it",
+      "meaning": "The versions run good, good, …, bad, bad: the answer flips only once, so checking a middle version tells you which side of it the first bad one is on.",
+      "pointsTo": "binary_search"
+    },
+    {
+      "phrase": "the first bad version",
+      "meaning": "You aren't matching a value; you're looking for the boundary where good turns bad. A bad middle version could be that boundary, so it stays in the range.",
+      "pointsTo": "binary_search"
+    },
+    {
+      "phrase": "as few times as possible",
+      "meaning": "Checking versions one by one could take n calls, and n can be about 2·10⁹. Halving the range needs at most 31.",
+      "pointsTo": "binary_search"
+    }
+  ],
+  "constraintReading": "n can be 2³¹ − 1, about 2.1·10⁹, so checking versions in order could mean billions of slow calls: O(n) is ruled out. Halving the range needs at most 31 calls, O(log n), with O(1) space for lo and hi.",
+  "related": [
+    {
+      "slug": "search-insert-position",
+      "relation": "Also looks for the first position where a test passes, and lo ends right on it."
+    }
+  ],
+  "drillOnly": true
+}

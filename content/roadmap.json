@@ -1,0 +1,11 @@
+{
+  "patterns": [
+    {"id": "hashing", "x": 0, "y": 1, "prereqs": []},
+    {"id": "two_pointers_opposite", "x": 1, "y": 0, "prereqs": ["hashing"]},
+    {"id": "stack", "x": 1, "y": 2, "prereqs": ["hashing"]},
+    {"id": "sliding_window", "x": 2, "y": 0, "prereqs": ["two_pointers_opposite"]},
+    {"id": "binary_search", "x": 2, "y": 2, "prereqs": ["two_pointers_opposite"]},
+    {"id": "prefix_scan", "x": 1, "y": 3, "prereqs": ["hashing"]}
+  ],
+  "unlockRule": {"solvedInPrereq": 2}
+}

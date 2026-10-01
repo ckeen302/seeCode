@@ -1,0 +1,139 @@
+{
+  "slug": "capacity-to-ship-packages-within-d-days",
+  "title": "Capacity To Ship Packages Within D Days",
+  "leetcodeUrl": "https://leetcode.com/problems/capacity-to-ship-packages-within-d-days/",
+  "difficulty": "medium",
+  "patternId": "binary_search",
+  "order": 130,
+  "summary": "Packages wait in a line on a dock, and `weights[i]` is the weight of the i-th one. A ship moves them across with one trip per day: each trip takes the next few packages in line, and a trip's total weight can't go over the ship's capacity. Packages stay in their fixed order and can't be split. Return the smallest capacity such that every package gets across within `days` days.",
+  "examples": [
+    {
+      "input": "weights = [4, 7, 2, 6, 5, 3, 8], days = 3",
+      "output": "13",
+      "explanation": "With capacity 13 the trips carry [4, 7, 2], [6, 5] and [3, 8]. With 12, it takes four trips."
+    },
+    {
+      "input": "weights = [2, 9, 3, 1], days = 3",
+      "output": "9",
+      "explanation": "The ship must hold the 9 on its own, and capacity 9 gives the trips [2], [9] and [3, 1]."
+    }
+  ],
+  "constraints": ["1 ≤ days ≤ len(weights) ≤ 5·10⁴", "1 ≤ weights[i] ≤ 500"],
+  "targets": {"time": "O(n log n)", "space": "O(1)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "binary_search",
+      "structures": ["array"],
+      "time": "O(n log n)",
+      "space": "O(1)",
+      "twist": "Binary search on the capacity between the heaviest package and the total weight; test a guess by loading in order and counting days.",
+      "twistKeywords": [
+        [
+          "capacit",
+          "answer",
+          "weight limit",
+          "ship size",
+          "heaviest",
+          "max(weights)",
+          "max weight",
+          "total weight"
+        ],
+        [
+          "count",
+          "simulat",
+          "greedy",
+          "greedily",
+          "load",
+          "fill",
+          "one pass",
+          "single pass",
+          "a pass",
+          "linear pass",
+          "scan",
+          "walk through",
+          "go through",
+          "iterate",
+          "summing",
+          "running sum",
+          "running total",
+          "add up",
+          "adding",
+          "new day",
+          "next day",
+          "start a new",
+          "won't fit",
+          "doesn't fit",
+          "does not fit",
+          "don't fit",
+          "no longer fit",
+          "overflow",
+          "exceed",
+          "goes over",
+          "go over",
+          "days needed",
+          "days it takes",
+          "days used",
+          "days required",
+          "how many days"
+        ]
+      ]
+    },
+    {
+      "id": "try_each_capacity",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n²)",
+      "space": "O(1)",
+      "twist": "Try each capacity from the heaviest package upward and return the first one that ships everything in time.",
+      "twistKeywords": [
+        [
+          "each",
+          "every",
+          "one by one",
+          "one at a time",
+          "increment",
+          "upward",
+          "count up",
+          "counting up",
+          "linear",
+          "+= 1",
+          "+1",
+          "from the heaviest",
+          "from max",
+          "brute",
+          "try all",
+          "all possible"
+        ],
+        ["capacit", "weight limit", "ship size"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but there can be millions of capacities to try, each with a pass over the packages: O(n²) here, since the total weight is at most 500·n. The target is O(n log n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "smallest capacity such that",
+      "meaning": "Search on the answer: if a capacity works, every bigger one works too. Test a middle capacity and keep the half where the smallest working one must be.",
+      "pointsTo": "binary_search"
+    },
+    {
+      "phrase": "in their fixed order",
+      "meaning": "Each trip takes a run of consecutive packages, so one pass tests a capacity: add packages until the next won't fit, then start a new day.",
+      "pointsTo": "binary_search"
+    },
+    {
+      "phrase": "1 ≤ weights[i] ≤ 500",
+      "meaning": "The answer lies between the heaviest package and the total weight, at most 500·5·10⁴ = 2.5·10⁷. That's too many capacities to try one by one, but only about 25 halvings.",
+      "pointsTo": "binary_search"
+    }
+  ],
+  "constraintReading": "len(weights) can reach 5·10⁴ and each package weighs at most 500, so the answer lies between the heaviest package and the total weight, at most 2.5·10⁷. Trying capacities one by one, each with a pass over the packages, is O(n²) here and far too slow. Halving the range takes about 25 steps, each a pass over the n packages: O(n log(total)), which is O(n log n) because the total is at most 500·n.",
+  "related": [
+    {
+      "slug": "koko-eating-bananas",
+      "relation": "The same search on the answer: guess a rate, test it with one pass over the input, and keep the smallest that works."
+    }
+  ],
+  "drillOnly": true
+}

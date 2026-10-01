@@ -1,0 +1,288 @@
+[
+  {
+    "id": "hashing",
+    "family": "hashing",
+    "name": "Hash map and counting",
+    "idea": "Remember what you have already seen in a dict or set, so every lookup takes O(1).",
+    "explanation": "Comparing every item with every other item costs O(n²). A hash map answers \"have I seen this?\" in constant time, so one pass is enough.\n\nDecide what to remember for later lookups: an index, a count, or a group key.",
+    "signals": [
+      {
+        "phrase": "find a pair",
+        "meaning": "Look up the partner you need instead of scanning for it."
+      },
+      {
+        "phrase": "how many times",
+        "meaning": "Keep a count for each value."
+      }
+    ],
+    "template": "def solve(items):\n    seen = {}  # SETUP\n    for i, x in enumerate(items):  # LOOP\n        # UPDATE: look up what x needs\n        ...\n        seen[x] = i  # RECORD\n    return ...  # RETURN\n",
+    "slots": [
+      {
+        "id": "setup",
+        "label": "Setup",
+        "prompt": "What do you need to remember?"
+      },
+      {
+        "id": "loop",
+        "label": "Loop",
+        "prompt": "What do you walk over?"
+      },
+      {
+        "id": "update",
+        "label": "Update",
+        "prompt": "What do you look up for each item?"
+      },
+      {
+        "id": "record",
+        "label": "Record",
+        "prompt": "What do you store after the lookup?"
+      },
+      {
+        "id": "return",
+        "label": "Return",
+        "prompt": "What do you return?"
+      }
+    ],
+    "variations": [
+      {
+        "name": "Partner lookup",
+        "line": "Before storing x, check whether its partner is already stored."
+      },
+      {
+        "name": "Counting",
+        "line": "Count every value, then compare or scan the counts."
+      }
+    ],
+    "mistakes": [
+      "Storing x before looking up its partner, so x can pair with itself."
+    ],
+    "demo": {
+      "code": "class Solution:\n    def demo(self, nums):\n        seen = set()\n        for x in nums:\n            if x in seen:  # viz:check\n                return True\n            seen.add(x)  # viz:add\n        return False\n",
+      "entry": "demo",
+      "args": [
+        [
+          4,
+          1,
+          7,
+          1
+        ]
+      ],
+      "viz": {
+        "primary": "nums",
+        "events": [
+          {
+            "id": "check",
+            "at": "check",
+            "label": "check",
+            "say": "Is {x} already in the set?"
+          },
+          {
+            "id": "add",
+            "at": "add",
+            "label": "add",
+            "say": "Remember {x}"
+          }
+        ]
+      }
+    },
+    "toolkit": [
+      "enumerate",
+      "set_ops",
+      "counter"
+    ]
+  },
+  {
+    "id": "two_pointers_opposite",
+    "family": "two_pointers",
+    "name": "Two pointers (opposite ends)",
+    "idea": "Start a pointer at each end and move them toward each other, so each step rules out work.",
+    "explanation": "When the input is sorted or symmetric, the two ends tell you something. Compare them, then move the pointer that cannot be part of the answer.\n\nEach step drops one position, so the whole scan is O(n) with O(1) extra space.",
+    "signals": [
+      {
+        "phrase": "sorted array",
+        "meaning": "Moving a pointer changes the sum in a known direction."
+      },
+      {
+        "phrase": "same forward and backward",
+        "meaning": "Compare the two ends and move inward."
+      }
+    ],
+    "template": "def solve(arr):\n    l, r = 0, len(arr) - 1  # SETUP\n    while l < r:  # LOOP\n        # UPDATE: move l or r after a comparison\n        ...\n        # RECORD: save or check the answer\n    return ...  # RETURN\n",
+    "slots": [
+      {
+        "id": "setup",
+        "label": "Setup",
+        "prompt": "Where do the pointers start?"
+      },
+      {
+        "id": "loop",
+        "label": "Loop",
+        "prompt": "When do you stop?"
+      },
+      {
+        "id": "update",
+        "label": "Update",
+        "prompt": "What decides which pointer moves?"
+      },
+      {
+        "id": "record",
+        "label": "Record",
+        "prompt": "When do you save or check the answer?"
+      },
+      {
+        "id": "return",
+        "label": "Return",
+        "prompt": "What do you return?"
+      }
+    ],
+    "variations": [
+      {
+        "name": "Pair sum on sorted input",
+        "line": "Move l up when the sum is too small, r down when it is too big."
+      },
+      {
+        "name": "Symmetry check",
+        "line": "Compare both ends and skip what does not count."
+      }
+    ],
+    "mistakes": [
+      "Forgetting to move a pointer after a match, which loops forever."
+    ],
+    "demo": {
+      "code": "class Solution:\n    def demo(self, nums, target):\n        l, r = 0, len(nums) - 1\n        while l < r:\n            s = nums[l] + nums[r]  # viz:sum\n            if s == target:\n                return [l, r]\n            if s < target:\n                l += 1\n            else:\n                r -= 1\n        return []\n",
+      "entry": "demo",
+      "args": [
+        [
+          2,
+          3,
+          5,
+          8,
+          13
+        ],
+        16
+      ],
+      "viz": {
+        "primary": "nums",
+        "pointers": [
+          {
+            "var": "l",
+            "into": "nums",
+            "label": "l",
+            "color": "a"
+          },
+          {
+            "var": "r",
+            "into": "nums",
+            "label": "r",
+            "color": "b"
+          }
+        ],
+        "events": [
+          {
+            "id": "sum",
+            "at": "sum",
+            "label": "sum",
+            "say": "{nums[l]} + {nums[r]} = {nums[l] + nums[r]}"
+          }
+        ]
+      }
+    },
+    "toolkit": [
+      "lower",
+      "isalnum"
+    ]
+  },
+  {
+    "id": "binary_search",
+    "family": "binary_search",
+    "name": "Binary search",
+    "idea": "Halve the search space at every step by checking the middle.",
+    "explanation": "If one comparison with the middle tells you which half cannot hold the answer, drop that half. The range shrinks by half each time, so the search takes O(log n) steps.",
+    "signals": [
+      {
+        "phrase": "sorted",
+        "meaning": "The middle tells you which half to drop."
+      },
+      {
+        "phrase": "O(log n)",
+        "meaning": "Halve the range every step."
+      }
+    ],
+    "template": "def solve(nums, target):\n    lo, hi = 0, len(nums) - 1  # SETUP\n    while lo <= hi:  # LOOP\n        mid = (lo + hi) // 2\n        # UPDATE: drop the half that cannot hold the answer\n        ...\n        # RECORD: stop when mid is the answer\n    return -1  # RETURN\n",
+    "slots": [
+      {
+        "id": "setup",
+        "label": "Setup",
+        "prompt": "What range can still hold the answer?"
+      },
+      {
+        "id": "loop",
+        "label": "Loop",
+        "prompt": "When is the range empty?"
+      },
+      {
+        "id": "update",
+        "label": "Update",
+        "prompt": "Which half do you drop?"
+      },
+      {
+        "id": "record",
+        "label": "Record",
+        "prompt": "When have you found it?"
+      },
+      {
+        "id": "return",
+        "label": "Return",
+        "prompt": "What do you return when it is missing?"
+      }
+    ],
+    "variations": [
+      {
+        "name": "Exact match",
+        "line": "Stop when the middle equals the target."
+      },
+      {
+        "name": "Insert position",
+        "line": "When the target is missing, lo ends where it belongs."
+      }
+    ],
+    "mistakes": [
+      "Writing lo = mid instead of lo = mid + 1, which can loop forever."
+    ],
+    "demo": {
+      "code": "class Solution:\n    def demo(self, nums, target):\n        lo, hi = 0, len(nums) - 1\n        while lo <= hi:\n            mid = (lo + hi) // 2\n            if nums[mid] == target:  # viz:mid\n                return mid\n            if nums[mid] < target:\n                lo = mid + 1\n            else:\n                hi = mid - 1\n        return -1\n",
+      "entry": "demo",
+      "args": [
+        [
+          2,
+          4,
+          7,
+          10,
+          13,
+          18
+        ],
+        13
+      ],
+      "viz": {
+        "primary": "nums",
+        "range": {
+          "into": "nums",
+          "lo": "lo",
+          "hi": "hi",
+          "mid": "mid"
+        },
+        "events": [
+          {
+            "id": "mid",
+            "at": "mid",
+            "label": "mid",
+            "say": "Check the middle: nums[{mid}] is {nums[mid]}"
+          }
+        ]
+      }
+    },
+    "toolkit": [
+      "bisect_left"
+    ]
+  }
+]

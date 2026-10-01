@@ -1,0 +1,90 @@
+{
+  "slug": "remove-all-adjacent-duplicates-in-string",
+  "title": "Remove All Adjacent Duplicates in String",
+  "leetcodeUrl": "https://leetcode.com/problems/remove-all-adjacent-duplicates-in-string/",
+  "difficulty": "easy",
+  "patternId": "stack",
+  "order": 115,
+  "drillOnly": true,
+  "summary": "You get a string `s` of lowercase letters. Delete adjacent duplicates: whenever two equal letters sit side by side, remove both. A deletion can bring two equal letters together, and then they are removed too. Keep going until no two neighbors are equal, and return the string that is left, which may be empty. The result is the same whichever pair you remove first.",
+  "examples": [
+    {
+      "input": "s = \"cabbad\"",
+      "output": "\"cd\"",
+      "explanation": "Removing \"bb\" brings the two a's together, so they go too."
+    },
+    {
+      "input": "s = \"deed\"",
+      "output": "\"\"",
+      "explanation": "The e's go first; then the d's meet and go as well, leaving nothing."
+    }
+  ],
+  "constraints": ["1 ≤ len(s) ≤ 10⁵", "s has only lowercase English letters"],
+  "targets": {"time": "O(n)", "space": "O(n)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "stack",
+      "structures": ["stack"],
+      "time": "O(n)",
+      "space": "O(n)",
+      "twist": "Push each letter, but pop instead when it equals the letter on top, so pairs that become neighbors cancel too.",
+      "twistKeywords": [
+        ["top", "last", "previous", "[-1]", "most recent", "latest", "newest", "peek"],
+        ["pop", "cancel", "remove", "delete", "discard", "drop", "erase", "annihilat", "eliminat"],
+        ["equal", "same", "match", "duplicate", "==", "pair", "identical"]
+      ]
+    },
+    {
+      "id": "delete_and_rescan",
+      "patternId": "brute_force",
+      "structures": ["array"],
+      "time": "O(n²)",
+      "space": "O(n)",
+      "twist": "Scan for two equal neighbors, delete them, and rescan from the start until no such pair is left.",
+      "twistKeywords": [
+        [
+          "rescan",
+          "re-scan",
+          "repeat",
+          "again",
+          "until",
+          "restart",
+          "start over",
+          "over and over",
+          "each pass",
+          "every pass",
+          "no more",
+          "no longer"
+        ],
+        ["neighbo", "adjacent", "next to", "side by side", "consecutive", "replace", "pair"]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but a pass may remove only one pair before the rescan, so it takes O(n²) time. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "adjacent duplicates",
+      "meaning": "Compare each letter with the last letter you kept, the top of the stack, and pop it when the two are equal.",
+      "pointsTo": "stack"
+    },
+    {
+      "phrase": "bring two equal letters together",
+      "meaning": "After a pair vanishes, the letter before it meets the next one. That letter is the most recent survivor, the top of the stack, so nothing needs a rescan.",
+      "pointsTo": "stack"
+    },
+    {
+      "phrase": "the string that is left",
+      "meaning": "The stack ends up holding the surviving letters in order, and \"\".join(stack) turns them into the answer.",
+      "pointsTo": "toolkit:join"
+    }
+  ],
+  "constraintReading": "len(s) can reach 10⁵. Removing one pair per pass and rescanning can take n/2 passes over up to n letters: O(n²), about 5·10⁹ steps. Aim for O(n): push each letter once and pop it at most once. The stack can end up holding every letter, so the space is O(n).",
+  "related": [
+    {
+      "slug": "valid-parentheses",
+      "relation": "Also settles each new character against the top of the stack, but a closer must match its own opener, and anything left over makes the input invalid."
+    }
+  ]
+}

@@ -1,0 +1,200 @@
+{
+  "slug": "fruit-into-baskets",
+  "title": "Fruit Into Baskets",
+  "leetcodeUrl": "https://leetcode.com/problems/fruit-into-baskets/",
+  "difficulty": "medium",
+  "patternId": "sliding_window",
+  "order": 124,
+  "summary": "Trees stand in a row, and `fruits[i]` is the kind of fruit that tree i grows. You carry two baskets that each hold any amount of one kind only, so you can take at most two kinds. Choose a starting tree and walk right, picking one fruit from every tree, until you reach a fruit that fits in neither basket. Return the most fruit you can pick: the length of the longest contiguous stretch of trees you can harvest.",
+  "examples": [
+    {
+      "input": "fruits = [3, 3, 1, 2, 1, 1, 2, 3]",
+      "output": "5",
+      "explanation": "Start at index 2 and pick 1, 2, 1, 1 and 2. The next tree's 3 fits in neither basket."
+    },
+    {
+      "input": "fruits = [2, 0, 2, 0]",
+      "output": "4",
+      "explanation": "Only two kinds grow here, so you can pick from every tree."
+    }
+  ],
+  "constraints": ["1 ≤ len(fruits) ≤ 10⁵", "0 ≤ fruits[i] < len(fruits)"],
+  "targets": {"time": "O(n)", "space": "O(1)"},
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "sliding_window",
+      "structures": ["counter"],
+      "time": "O(n)",
+      "space": "O(1)",
+      "twist": "Count each kind of fruit in the window, and shrink it from the left while it holds more than two kinds.",
+      "twistKeywords": [
+        [
+          "more than two",
+          "more than 2",
+          "at most two",
+          "at most 2",
+          "up to two",
+          "up to 2",
+          "only two",
+          "only 2",
+          "two kind",
+          "2 kind",
+          "two type",
+          "2 type",
+          "two distinct",
+          "2 distinct",
+          "two different",
+          "2 different",
+          "two unique",
+          "2 unique",
+          "two value",
+          "2 value",
+          "two fruit",
+          "2 fruit",
+          "two number",
+          "2 number",
+          "two key",
+          "2 key",
+          "two element",
+          "2 element",
+          "two categor",
+          "2 categor",
+          "two variet",
+          "2 variet",
+          "three",
+          "3 kind",
+          "3 type",
+          "3 distinct",
+          "3 different",
+          "3 unique",
+          "3 value",
+          "3 fruit",
+          "3 key",
+          "third",
+          "> 2",
+          ">2",
+          "<= 2",
+          "<=2",
+          "≤ 2",
+          "≤2",
+          "== 2",
+          "==2",
+          "exceed",
+          "too many"
+        ],
+        [
+          "kind",
+          "type",
+          "distinct",
+          "different",
+          "unique",
+          "variet",
+          "categor",
+          "value",
+          "number",
+          "fruit",
+          "count",
+          "dict",
+          "map",
+          "key",
+          "len("
+        ],
+        [
+          "window",
+          "subarray",
+          "sub-array",
+          "shrink",
+          "left",
+          "start",
+          "front",
+          "range",
+          "stretch",
+          "segment",
+          "span",
+          "run",
+          "move l",
+          "advance l",
+          "pointer",
+          "slid"
+        ]
+      ]
+    },
+    {
+      "id": "every_start",
+      "patternId": "brute_force",
+      "structures": ["hash_set"],
+      "time": "O(n²)",
+      "space": "O(1)",
+      "twist": "Start a walk at every tree and go right until a third kind appears, keeping the longest walk.",
+      "twistKeywords": [
+        [
+          "every",
+          "for each",
+          "each start",
+          "each index",
+          "each position",
+          "each element",
+          "each number",
+          "each possible",
+          "each subarray",
+          "all start",
+          "all possible",
+          "nested",
+          "inner loop",
+          "two loops",
+          "double loop",
+          "brute",
+          "restart",
+          "each tree",
+          "all tree",
+          "all index"
+        ],
+        [
+          "third",
+          "three",
+          "3",
+          "more than two",
+          "more than 2",
+          "> 2",
+          ">2",
+          "exceed",
+          "until",
+          "stop",
+          "break",
+          "neither",
+          "fit",
+          "new kind",
+          "new type"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but starting a walk at every tree takes O(n²) time. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "at most two kinds",
+      "meaning": "The rule is a limit on the window: grow it to the right, and shrink it from the left while it holds three kinds.",
+      "pointsTo": "sliding_window"
+    },
+    {
+      "phrase": "longest contiguous stretch",
+      "meaning": "What you pick is one unbroken run of trees, and you want the longest run that follows the rule: a window.",
+      "pointsTo": "sliding_window"
+    },
+    {
+      "phrase": "one kind only",
+      "meaning": "The rule limits different kinds, not fruit. Keep a Counter of the kinds in the window and delete a kind when its count drops to 0, so its length is the number of kinds.",
+      "pointsTo": "toolkit:counter"
+    }
+  ],
+  "constraintReading": "len(fruits) can reach 10⁵, so starting a walk at every tree, O(n²), can take up to 5·10⁹ steps: too slow. Aim for O(n) with one pass in which each pointer only moves right. The window never holds more than three kinds at once, so counting them takes O(1) space.",
+  "related": [
+    {
+      "slug": "longest-substring-no-repeat",
+      "relation": "Also keeps the longest window that follows a rule, but there the rule is that no letter repeats."
+    }
+  ],
+  "drillOnly": true
+}

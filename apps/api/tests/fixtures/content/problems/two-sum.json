@@ -1,0 +1,258 @@
+{
+  "slug": "two-sum",
+  "title": "Two Sum",
+  "leetcodeUrl": "https://leetcode.com/problems/two-sum/",
+  "difficulty": "easy",
+  "patternId": "hashing",
+  "order": 1,
+  "summary": "You get a list of integers `nums` and an integer `target`. Exactly one pair of different positions holds values that add up to `target`. Return those two positions, in any order.",
+  "examples": [
+    {
+      "input": "nums = [5, 9, 2, 8], target = 10",
+      "output": "[2, 3]",
+      "explanation": "nums[2] + nums[3] is 2 + 8 = 10."
+    },
+    {
+      "input": "nums = [6, 6], target = 12",
+      "output": "[0, 1]"
+    }
+  ],
+  "constraints": [
+    "2 ≤ len(nums) ≤ 10⁴",
+    "exactly one pair adds up to target",
+    "a position cannot be used twice"
+  ],
+  "targets": {
+    "time": "O(n)",
+    "space": "O(n)"
+  },
+  "entry": "twoSum",
+  "starterCode": "class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        pass\n",
+  "approaches": [
+    {
+      "id": "optimal",
+      "patternId": "hashing",
+      "structures": [
+        "hash_map"
+      ],
+      "time": "O(n)",
+      "space": "O(n)",
+      "twist": "Store each value's index; before storing x, look up target minus x.",
+      "twistKeywords": [
+        [
+          "index",
+          "position"
+        ],
+        [
+          "target - x",
+          "target minus",
+          "complement",
+          "partner"
+        ]
+      ]
+    },
+    {
+      "id": "every_pair",
+      "patternId": "brute_force",
+      "structures": [
+        "array"
+      ],
+      "time": "O(n²)",
+      "space": "O(1)",
+      "twist": "Try every pair of positions.",
+      "twistKeywords": [
+        [
+          "every pair",
+          "all pairs",
+          "nested"
+        ]
+      ],
+      "acceptedAs": "suboptimal",
+      "note": "Works, but checking every pair takes O(n²) time. The target is O(n)."
+    }
+  ],
+  "signals": [
+    {
+      "phrase": "add up to `target`",
+      "meaning": "For each value, the partner you need is target minus that value.",
+      "pointsTo": "hashing"
+    },
+    {
+      "phrase": "return those two positions",
+      "meaning": "You need indexes, so remember where each value was.",
+      "pointsTo": "toolkit:enumerate"
+    },
+    {
+      "phrase": "a position cannot be used twice",
+      "meaning": "Look up the partner before storing the current value.",
+      "pointsTo": "structure:hash_map"
+    }
+  ],
+  "constraintReading": "len(nums) up to 10⁴ makes O(n²) about 10⁸ steps, too slow to be comfortable, so aim for O(n) with extra memory.",
+  "hints": {
+    "clarify": "Can the same position be used twice? Try [6, 6] with target 12 by hand: which two positions answer it?",
+    "approach": "Walk the list once. For each value, the partner it needs is target minus the value; a dict from value to index answers \"have I seen it?\" in O(1).",
+    "whyNot": "Sorting and two pointers finds the values but loses their original positions.",
+    "slots": {
+      "setup": "An empty dict from value to index.",
+      "loop": "Go over every index and value.",
+      "update": "Work out the partner: target minus the value.",
+      "record": "If the partner is stored, return both indexes; otherwise store the value's index.",
+      "return": "The problem promises a pair, so the loop always returns."
+    }
+  },
+  "solution": {
+    "code": "class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        seen = {}\n        for i, x in enumerate(nums):\n            need = target - x  # viz:need\n            if need in seen:\n                return [seen[need], i]  # viz:found\n            seen[x] = i  # viz:store\n        return []\n",
+    "explanation": "Each value is looked up and stored once, so the time is O(n). The dict holds up to n entries, so the space is O(n).",
+    "toolkit": [
+      "enumerate"
+    ]
+  },
+  "viz": {
+    "primary": "nums",
+    "pointers": [
+      {
+        "var": "i",
+        "into": "nums",
+        "label": "i",
+        "color": "a"
+      }
+    ],
+    "window": null,
+    "range": null,
+    "roles": {
+      "stack": [],
+      "queue": [],
+      "hidden": [
+        "x"
+      ]
+    },
+    "confirmed": null,
+    "events": [
+      {
+        "id": "need",
+        "at": "need",
+        "label": "need",
+        "say": "Looking for {target} - {x} = {target - x}"
+      },
+      {
+        "id": "found",
+        "at": "found",
+        "label": "found",
+        "say": "{need} was stored at index {seen[need]}"
+      },
+      {
+        "id": "store",
+        "at": "store",
+        "label": "store",
+        "say": "Remember {x} at index {i}"
+      }
+    ],
+    "predict": [
+      {
+        "atEvent": "need",
+        "occurrence": 2,
+        "ask": "Is the partner already stored?",
+        "kind": "yesno",
+        "answerWhen": "target - x in seen"
+      }
+    ]
+  },
+  "tests": [
+    {
+      "id": "e1",
+      "args": [
+        [
+          5,
+          9,
+          2,
+          8
+        ],
+        10
+      ],
+      "expected": [
+        2,
+        3
+      ],
+      "hidden": false,
+      "compare": "unordered"
+    },
+    {
+      "id": "e2",
+      "args": [
+        [
+          6,
+          6
+        ],
+        12
+      ],
+      "expected": [
+        0,
+        1
+      ],
+      "hidden": false,
+      "compare": "unordered"
+    },
+    {
+      "id": "h1",
+      "args": [
+        [
+          -4,
+          7,
+          11,
+          3
+        ],
+        -1
+      ],
+      "expected": [
+        0,
+        3
+      ],
+      "hidden": true,
+      "compare": "unordered"
+    },
+    {
+      "id": "h2",
+      "args": [
+        [
+          0,
+          5,
+          0
+        ],
+        0
+      ],
+      "expected": [
+        0,
+        2
+      ],
+      "hidden": true,
+      "compare": "unordered"
+    },
+    {
+      "id": "h3",
+      "args": [
+        [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        11
+      ],
+      "expected": [
+        4,
+        5
+      ],
+      "hidden": true,
+      "compare": "unordered"
+    }
+  ],
+  "related": [
+    {
+      "slug": "valid-anagram",
+      "relation": "Also a hash map, but it counts letters instead of remembering positions."
+    }
+  ]
+}
