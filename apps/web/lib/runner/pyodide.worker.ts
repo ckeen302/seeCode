@@ -1,5 +1,5 @@
 // The Pyodide worker (Section 9.1). It loads the pinned Pyodide release from jsDelivr and
-// public/py/harness.py, then answers typed requests: { id, type, payload } ->
+// public/py/harness.py and tracer.py, then answers typed requests: { id, type, payload } ->
 // { id, ok, data | error }. The main thread (runner.ts) owns every timeout: an endless
 // loop here is stopped by terminating the worker, never from inside it.
 //
@@ -8,7 +8,13 @@
 // (a Blob URL). The function must therefore be self-contained: it may use globals, but no
 // imports or module-level variables at runtime (type imports are fine; they are erased).
 // tests/unit/pyodide-worker.test.ts runs it in a clean scope to check exactly that.
-import type { RunTestsRequest, WorkerRequest, WorkerResponse } from "@/lib/runner/types"
+import type {
+  InitPayload,
+  RunTestsRequest,
+  TraceRequest,
+  WorkerRequest,
+  WorkerResponse,
+} from "@/lib/runner/types"
 
 /** What the worker needs from its global scope. */
 export interface WorkerScope {
@@ -27,10 +33,19 @@ export function pyodideWorkerMain(scope: WorkerScope): void {
       specJson: string | null
     ): unknown
   }
+  interface TracerModule {
+    run_traced(
+      code: string,
+      entry: string,
+      inputJson: string,
+      vizJson: string | null,
+      specJson: string | null
+    ): unknown
+  }
   interface PyodideApi {
     version: string
     runPython(code: string): unknown
-    pyimport(name: string): HarnessModule
+    pyimport(name: string): HarnessModule & TracerModule
     FS: { mkdirTree(path: string): void; writeFile(path: string, data: string): void }
   }
   interface PyodideModule {
@@ -44,7 +59,26 @@ export function pyodideWorkerMain(scope: WorkerScope): void {
 
   const harnessDir = "/seecode"
   const harnessModule = "seecode_harness"
+  // tracer.py imports the harness by this name.
+  const tracerModule = "seecode_tracer"
   let harness: HarnessModule | null = null
+  let tracer: TracerModule | null = null
+  // Why the tracer did not load; tests still run without it.
+  let tracerProblem: string | null = null
+
+  function trace({ code, entry, args, ops, viz, spec }: TraceRequest): unknown {
+    if (!tracer) throw new Error(tracerProblem ?? "Python is not ready yet.")
+    const input = ops ? { ops } : { args: args ?? [] }
+    const json = tracer.run_traced(
+      code,
+      entry,
+      JSON.stringify(input),
+      // Pyodide hands JS null to Python as jsnull, not None: send "" for "none".
+      viz ? JSON.stringify(viz) : "",
+      spec ? JSON.stringify(spec) : ""
+    )
+    return JSON.parse(String(json))
+  }
 
   function runTests({ code, entry, tests, compare, spec }: RunTestsRequest): unknown {
     if (!harness) throw new Error("Python is not ready yet.")
@@ -58,7 +92,24 @@ export function pyodideWorkerMain(scope: WorkerScope): void {
     return JSON.parse(String(json))
   }
 
-  async function init(indexURL: string, harnessUrl: string): Promise<{ version: string }> {
+  async function init({
+    indexURL,
+    harnessUrl,
+    tracerUrl,
+  }: InitPayload): Promise<{ version: string }> {
+    const tracerSource: Promise<string | null> = tracerUrl
+      ? fetch(tracerUrl).then(
+          (response) => {
+            if (response.ok) return response.text()
+            tracerProblem = `Could not load the tracer (${response.status}).`
+            return null
+          },
+          () => {
+            tracerProblem = "Could not load the tracer."
+            return null
+          }
+        )
+      : Promise.resolve(null)
     const [pyodideModule, harnessSource] = await Promise.all([
       // Loaded at runtime from the CDN, never bundled.
       import(/* webpackIgnore: true */ `${indexURL}pyodide.mjs`) as Promise<PyodideModule>,
@@ -78,6 +129,13 @@ export function pyodideWorkerMain(scope: WorkerScope): void {
     pyodide.FS.writeFile(`${harnessDir}/${harnessModule}.py`, harnessSource)
     pyodide.runPython(`import sys\nsys.path.insert(0, ${JSON.stringify(harnessDir)})`)
     harness = pyodide.pyimport(harnessModule)
+    const tracerText = await tracerSource
+    if (tracerText !== null) {
+      pyodide.FS.writeFile(`${harnessDir}/${tracerModule}.py`, tracerText)
+      tracer = pyodide.pyimport(tracerModule)
+    } else {
+      tracerProblem ??= "Tracing is not available."
+    }
     // Warm-up run: imports and compiles what a real run touches, so the first Run is fast.
     runTests({
       code: "class Solution:\n    def f(self):\n        return 1\n",
@@ -90,11 +148,11 @@ export function pyodideWorkerMain(scope: WorkerScope): void {
   async function handle(request: WorkerRequest): Promise<unknown> {
     switch (request.type) {
       case "init":
-        return init(request.payload.indexURL, request.payload.harnessUrl)
+        return init(request.payload)
       case "runTests":
         return runTests(request.payload)
       case "trace":
-        throw new Error("Tracing is not implemented until M4.")
+        return trace(request.payload)
       default:
         throw new Error("Unknown request.")
     }

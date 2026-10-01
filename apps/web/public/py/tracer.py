@@ -18,12 +18,21 @@ before the code is loaded, and for a design problem the constructor and every ca
 in order. With an older harness that has no io helpers, the arguments stay plain JSON.
 
 A step is recorded for every "line" event (it fires before its line runs: the locals are the
-state just before it) and every "return" event of a "<solution>" frame, up to MAX_STEPS. At
-each step every viz event whose marker (`# viz:<name>`, the first on its line) is on the
-step's line and whose `when` holds is tagged; the step's narration is the `say` of its
-first tagged event that has one. `when` and `answerWhen` see only `len`, `say` (an
-f-string) only `repr` and `len`, and all of them see the frame's locals without `self`. An
-expression that raises is skipped: no tag, no narration, no answer.
+state just before it) and every "return" event of a "<solution>" frame, up to MAX_STEPS.
+Generator expressions and lambdas (`<genexpr>`, `<lambda>`, and the comprehension frames of
+older Pythons) are not traced: they run inside their line. On a line with a comprehension,
+the repeated line events of the inlined loop (Python 3.12+) are one step. Locals whose name
+is not an identifier (a comprehension's `.0`) are left out.
+
+At each line step every viz event whose marker (`# viz:<name>`, the first on its line) is
+on the step's line and whose `when` holds is tagged (return steps are never tagged, so a
+marker on a `return` line tags one step); the step's narration is the `say` of its first
+tagged event that has one. `when` and `answerWhen` see only `len`, `say` (an f-string)
+only `repr` and `len`, and all of them see the frame's locals without `self`. An
+expression that raises is skipped: no tag, no narration, no answer. `trace(...,
+on_error=report)` also evaluates every tagged event's `say` and calls
+`report(path, error, line)` for each expression that raises (path like "events[2].say",
+"predict[0].answerWhen"): scripts/viz_trace.py validates content with it.
 
 Trace:  {"steps": [Frame], "result": Snap, "error": str | null, "errorLine": int | null,
          "truncated": bool, "stdout": str}
@@ -87,6 +96,7 @@ MAX_STDOUT = 4000
 # JavaScript reads larger integers inexactly, so they are shown as text.
 MAX_SAFE_INT = 2**53 - 1
 MARKER_RE = re.compile(r"#\s*viz:([a-zA-Z0-9_]+)")
+ADDRESS_RE = re.compile(r" at 0x[0-9a-fA-F]+")
 # The only builtins narration and conditions get (answerWhen is a condition).
 SAY_BUILTINS: dict[str, Any] = {"repr": repr, "len": len}
 CONDITION_BUILTINS: dict[str, Any] = {"len": len}
@@ -100,6 +110,10 @@ FALLBACK_PRELUDE = (
 )
 
 Snap = dict[str, Any]
+# on_error(path, error, line): a viz expression raised (see the module docstring).
+Reporter = Callable[[str, BaseException, int], None]
+# Frames that run inside one line: never traced.
+SKIPPED_FRAMES = frozenset({"<genexpr>", "<lambda>", "<listcomp>", "<setcomp>", "<dictcomp>"})
 
 
 class StepLimit(BaseException):
@@ -118,7 +132,8 @@ def _safe_repr(value: Any) -> str:
 
 
 def _short_repr(value: Any) -> str:
-    text = _safe_repr(value)
+    # Memory addresses ("<function go at 0x7f…>") change on every run and mean nothing.
+    text = ADDRESS_RE.sub("", _safe_repr(value))
     return text if len(text) <= MAX_REPR else text[: MAX_REPR - 1] + "…"
 
 
@@ -314,6 +329,20 @@ def assignments(code: str) -> dict[int, tuple[int, int, frozenset[str]]]:
     return out
 
 
+def comprehension_lines(code: str) -> frozenset[int]:
+    """Lines with a list, set or dict comprehension (inlined since Python 3.12: its loop
+    fires line events on its own line again and again)."""
+    try:
+        tree = ast.parse(code)
+    except (SyntaxError, ValueError):
+        return frozenset()
+    lines: set[int] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ListComp | ast.SetComp | ast.DictComp):
+            lines.update(range(node.lineno, (node.end_lineno or node.lineno) + 1))
+    return frozenset(lines)
+
+
 def _compile(source: Any, *, fstring: bool = False) -> CodeType | None:
     """A viz expression compiled once; None when it does not compile (it never fires)."""
     if not isinstance(source, str) or not source:
@@ -347,78 +376,128 @@ class _Wait:
         self.before = before
 
 
+class _Event:
+    """A viz event, compiled. `index` is its place in viz.events (for error paths)."""
+
+    __slots__ = ("has_when", "id", "index", "lines", "say", "when")
+
+    def __init__(
+        self, index: int, data: Mapping[str, Any], markers: Mapping[str, list[int]]
+    ) -> None:
+        self.index = index
+        self.id: str = data["id"]
+        at = data.get("at")
+        # No marker: every line (the content model requires one; "Trace my code" has none).
+        self.lines = frozenset(markers.get(at, ())) if at else None
+        when = data.get("when")
+        self.has_when = bool(when)
+        self.when = _compile(when)
+        self.say = _compile(data.get("say"), fstring=True)
+
+
+class _Predict:
+    """A predict point (8.4), compiled. `n` is its place in viz.predict."""
+
+    __slots__ = ("answer_when", "at_event", "n", "occurrence", "var")
+
+    def __init__(self, n: int, data: Mapping[str, Any]) -> None:
+        self.n = n
+        self.at_event = data.get("atEvent")
+        occurrence = data.get("occurrence")
+        self.occurrence = occurrence if isinstance(occurrence, int) and occurrence > 0 else 1
+        kind = data.get("kind")
+        var = data.get("var") if kind in ("index", "value") else None
+        self.var: str | None = var if isinstance(var, str) else None
+        self.answer_when = _compile(data.get("answerWhen")) if kind == "yesno" else None
+
+
 class _Run:
     """One traced run: the trace function and what it records."""
 
-    def __init__(self, code: str, viz: Mapping[str, Any], module_name: str) -> None:
+    def __init__(
+        self,
+        code: str,
+        viz: Mapping[str, Any],
+        module_name: str,
+        on_error: Reporter | None = None,
+    ) -> None:
         markers = marker_lines(code)
-        self.events: list[tuple[str, Any, CodeType | None, bool, CodeType | None]] = []
-        for event in viz.get("events") or []:
-            if not isinstance(event, Mapping) or not isinstance(event.get("id"), str):
-                continue
-            at = event.get("at")
-            lines = frozenset(markers.get(at, ())) if at else None  # no marker: every line
-            when = event.get("when")
-            say = _compile(event.get("say"), fstring=True)
-            self.events.append((event["id"], lines, _compile(when), bool(when), say))
-        self.predicts: list[tuple[int, Any, int, str | None, CodeType | None]] = []
-        for n, point in enumerate(viz.get("predict") or []):
-            if not isinstance(point, Mapping):
-                continue
-            occurrence = point.get("occurrence") or 1
-            kind = point.get("kind")
-            var = point.get("var") if kind in ("index", "value") else None
-            answer_when = _compile(point.get("answerWhen")) if kind == "yesno" else None
-            self.predicts.append((n, point.get("atEvent"), occurrence, var, answer_when))
-        self.assigned = assignments(code) if any(p[3] for p in self.predicts) else {}
+        self.events = [
+            _Event(i, event, markers)
+            for i, event in enumerate(viz.get("events") or [])
+            if isinstance(event, Mapping) and isinstance(event.get("id"), str)
+        ]
+        self.predicts = [
+            _Predict(n, point)
+            for n, point in enumerate(viz.get("predict") or [])
+            if isinstance(point, Mapping)
+        ]
+        self.assigned = assignments(code) if any(p.var for p in self.predicts) else {}
+        self.comprehensions = comprehension_lines(code)
         self.module_name = module_name
+        self.on_error = on_error
         self.counts: Counter[str] = Counter()
         self.steps: list[dict[str, Any]] = []
         self.snapper = _Snapper()
         self.waits: list[_Wait] = []
         self.raising: set[FrameType] = set()
+        # The last event recorded in each frame: (event, line).
+        self.previous: dict[FrameType, tuple[str, int]] = {}
+        self._line = 0  # the line of the step being recorded (for on_error)
+
+    def _evaluate(
+        self, code: CodeType | None, builtins: dict[str, Any], env: dict[str, Any], path: str
+    ) -> tuple[bool, Any]:
+        """(True, value), or (False, None) when the expression is missing or raises."""
+        if code is None:
+            return False, None
+        try:
+            return True, eval(code, {"__builtins__": builtins}, env)
+        except Exception as exc:
+            if self.on_error is not None:
+                self.on_error(path, exc, self._line)
+            return False, None
 
     def trace(self, frame: FrameType, event: str, arg: Any) -> Any:
-        if frame.f_code.co_filename != SOLUTION_FILE:
+        code = frame.f_code
+        if code.co_filename != SOLUTION_FILE or code.co_name in SKIPPED_FRAMES:
             return None
         if event == "exception":
             self.raising.add(frame)
             return self.trace
         if event != "line" and event != "return":
             return self.trace
+        line = frame.f_lineno
+        previous = self.previous.get(frame)
+        if event == "return":
+            self.previous.pop(frame, None)
+        else:
+            self.previous[frame] = (event, line)
+            if previous == ("line", line) and line in self.comprehensions:
+                return self.trace  # the inlined comprehension's loop: still the same step
         if len(self.steps) >= MAX_STEPS:
             raise StepLimit
+        self._line = line
         f_locals = frame.f_locals
-        env = {name: value for name, value in f_locals.items() if name != "self"}
-        line = frame.f_lineno
+        env = {
+            name: value
+            for name, value in f_locals.items()
+            if name != "self" and name.isidentifier()
+        }
         if self.waits:
             self._answer_waits(frame, event, line, env)
 
         tags: list[str] = []
         say: str | None = None
-        for event_id, lines, when, has_when, say_code in self.events:
-            if lines is not None and line not in lines:
-                continue
-            if has_when:
-                try:
-                    if when is None or not eval(when, {"__builtins__": CONDITION_BUILTINS}, env):
-                        continue
-                except Exception:
-                    continue
-            tags.append(event_id)
-            self.counts[event_id] += 1
-            if say is None and say_code is not None:
-                try:
-                    say = eval(say_code, {"__builtins__": SAY_BUILTINS}, env)
-                except Exception:
-                    say = None
+        if event == "line":
+            say = self._tag(line, env, tags)
 
         found: list[Any] = []
         snap = self.snapper.snap
         step: dict[str, Any] = {
             "line": line,
             "event": event,
-            "func": frame.f_code.co_name,
+            "func": code.co_name,
             "depth": _depth(frame),
             "locals": {name: snap(value, 0, found) for name, value in env.items()},
             "tags": tags,
@@ -446,22 +525,52 @@ class _Run:
             step["nodes"] = nodes
             if cut:
                 step["nodesTruncated"] = True
-
-        for n, at_event, occurrence, var, answer_when in self.predicts:
-            if at_event not in tags or self.counts[at_event] != occurrence:
-                continue
-            tags.append(f"{PREDICT_TAG}{n}")
-            if answer_when is not None:
-                try:
-                    answer = bool(eval(answer_when, {"__builtins__": CONDITION_BUILTINS}, env))
-                except Exception:
-                    continue
-                step.setdefault("predictAnswers", {})[str(n)] = {"t": "prim", "v": answer}
-            elif var is not None:
-                before = snap(env[var]) if var in env else None
-                self.waits.append(_Wait(n, var, frame, len(self.steps), before))
+        if event == "line":
+            self._predict(frame, env, tags, step)
         self.steps.append(step)
         return self.trace
+
+    def _tag(self, line: int, env: dict[str, Any], tags: list[str]) -> str | None:
+        """Tags the events that fire at this line step; returns the narration."""
+        say: str | None = None
+        for event in self.events:
+            if event.lines is not None and line not in event.lines:
+                continue
+            if event.has_when:
+                ok, value = self._evaluate(
+                    event.when, CONDITION_BUILTINS, env, f"events[{event.index}].when"
+                )
+                if not ok or not value:
+                    continue
+            tags.append(event.id)
+            self.counts[event.id] += 1
+            if event.say is not None and (say is None or self.on_error is not None):
+                ok, text = self._evaluate(
+                    event.say, SAY_BUILTINS, env, f"events[{event.index}].say"
+                )
+                if ok and say is None:
+                    say = str(text)
+        return say
+
+    def _predict(
+        self, frame: FrameType, env: dict[str, Any], tags: list[str], step: dict[str, Any]
+    ) -> None:
+        """Tags the predict points asked at this step and works out their answers."""
+        fired = list(tags)
+        for point in self.predicts:
+            if point.at_event not in fired or self.counts[point.at_event] != point.occurrence:
+                continue
+            tags.append(f"{PREDICT_TAG}{point.n}")
+            if point.answer_when is not None:
+                ok, value = self._evaluate(
+                    point.answer_when, CONDITION_BUILTINS, env, f"predict[{point.n}].answerWhen"
+                )
+                if ok:
+                    answer = {"t": "prim", "v": bool(value)}
+                    step.setdefault("predictAnswers", {})[str(point.n)] = answer
+            elif point.var is not None:
+                before = self.snapper.snap(env[point.var]) if point.var in env else None
+                self.waits.append(_Wait(point.n, point.var, frame, len(self.steps), before))
 
     def _answer_waits(self, frame: FrameType, event: str, line: int, env: dict[str, Any]) -> None:
         """Answers the predict points waiting in this frame whose variable just changed or
@@ -582,9 +691,11 @@ def _describe(exc: BaseException) -> tuple[str, int | None]:
 
 
 def _loads(value: Any) -> Any:
+    """A JSON argument: text, an already parsed object, or nothing (None, "", or Pyodide's
+    jsnull for a JavaScript null)."""
     if isinstance(value, str):
         return json.loads(value) if value.strip() else None
-    return value
+    return value if isinstance(value, Mapping | list) else None
 
 
 def trace(
@@ -593,8 +704,12 @@ def trace(
     given: Mapping[str, Any] | Sequence[Any],
     viz: Mapping[str, Any] | None = None,
     spec: Any = None,
+    *,
+    on_error: Reporter | None = None,
 ) -> dict[str, Any]:
-    """The trace of one input, as a dict (run_traced returns it as JSON)."""
+    """The trace of one input, as a dict (run_traced returns it as JSON). `given` is
+    {"args": [...]} or {"ops": [...]} (a bare list is the arguments); `spec` the harness
+    spec (a dict, a JSON string or None); `on_error` see the module docstring."""
     if not isinstance(given, Mapping):
         given = {"args": list(given)}
     snapper = _Snapper()
@@ -612,8 +727,9 @@ def trace(
         except BaseException as exc:  # code or arguments that do not load
             error, error_line = _describe(exc)
         else:
-            run = _Run(code, viz or {}, module_name)
+            run = _Run(code, viz or {}, module_name, on_error)
             snapper = run.snapper
+            outer = sys.gettrace()  # a debugger's or coverage's, restored afterwards
             sys.settrace(run.trace)
             try:
                 result = start()
@@ -624,7 +740,7 @@ def trace(
             except BaseException as exc:  # SystemExit and custom exceptions included
                 error, error_line = _describe(exc)
             finally:
-                sys.settrace(None)
+                sys.settrace(outer)
     return {
         "steps": run.steps if run is not None else [],
         "result": snapper.snap(result),
