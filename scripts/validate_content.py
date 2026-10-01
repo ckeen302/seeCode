@@ -7,10 +7,12 @@ problem's kind, io and checker as the browser gives them. Solutions run in a fre
 subprocess per problem with a timeout, so an infinite loop cannot hang CI. Pattern demos
 are run once on their own arguments and must not raise.
 
-Each walkthrough is also traced (scripts/viz_trace.py) on its problem's visible tests
-(arguments built from their io types, or a design test's calls), or its demo's arguments:
-an event `when`, `say` or predict `answerWhen` that raises is an error, and an event that
-never fires or a predict point never reached is a warning.
+Each walkthrough is also traced (scripts/viz_trace.py, with the browser's own tracer) on
+its problem's visible tests (arguments built from their io types, or a design test's
+calls), or its demo's arguments: an event `when`, `say` or predict `answerWhen` that raises,
+an index/value predict point with no answer, or a viz variable of the wrong type (a
+pointer that is not an integer, a stack that is not a list) is an error; an event that
+never fires, a predict point never reached or a trace cut at the step limit is a warning.
 
 Usage (from the repo root):
     uv run --project apps/api python scripts/validate_content.py [content_dir] [--timeout S]
@@ -30,6 +32,7 @@ from app.content.validation import PATTERNS_FILE, Issue, validate_content_dir
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 HARNESS = REPO_ROOT / "apps" / "web" / "public" / "py" / "harness.py"
+TRACER = HARNESS.with_name("tracer.py")
 VIZ_TRACE = Path(__file__).resolve().parent / "viz_trace.py"
 DEFAULT_TIMEOUT = 10.0
 MAX_SHOWN = 300
@@ -172,12 +175,19 @@ def check_walkthrough(
         "spec": spec,
     }
     try:
-        report = _run_child("tracer", [str(VIZ_TRACE), str(HARNESS)], job, timeout)
+        report = _run_child("tracer", [str(VIZ_TRACE), str(HARNESS), str(TRACER)], job, timeout)
     except RunFailed as exc:
         return [Issue("error", file, path, f"tracing the walkthrough: {exc}")]
+
+    def where(sub: str) -> str:
+        return f"{path}.{sub}" if sub else path
+
     issues = [
-        Issue("error", file, f"{path}.{error['path']}", error["message"])
-        for error in report["errors"]
+        Issue("error", file, where(error["path"]), error["message"]) for error in report["errors"]
+    ]
+    issues += [
+        Issue("warning", file, where(warning["path"]), warning["message"])
+        for warning in report.get("warnings", ())
     ]
     for event_id in report["unfired"]:
         index = next(i for i, event in enumerate(viz.events) if event.id == event_id)
@@ -212,9 +222,10 @@ def validate(content_dir: Path, timeout: float = DEFAULT_TIMEOUT) -> tuple[list[
     result = validate_content_dir(content_dir)
     issues = list(result.issues)
     checked = len(list(content_dir.rglob("*.json"))) if content_dir.is_dir() else 0
-    if not HARNESS.is_file():
-        issues.append(Issue("error", str(HARNESS), "", "test harness not found"))
-        return issues, checked, 0
+    for needed, what in ((HARNESS, "test harness"), (TRACER, "tracer")):
+        if not needed.is_file():
+            issues.append(Issue("error", str(needed), "", f"{what} not found"))
+            return issues, checked, 0
     walkthroughs: list[list[Issue]] = []
     for index, pattern in enumerate(result.content.patterns or ()):
         issues.extend(check_demo(index, pattern, timeout))

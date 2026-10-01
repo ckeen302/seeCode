@@ -142,7 +142,7 @@
     "predict": [
       {
         "atEvent": "mid",
-        "occurrence": 2,
+        "occurrence": 1,
         "ask": "Which index will mid point to next?",
         "var": "mid",
         "kind": "index"

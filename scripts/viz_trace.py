@@ -1,189 +1,215 @@
-"""Run a walkthrough's viz expressions where the Section 8.2 tracer will evaluate them.
+"""Check a walkthrough's viz config against real traces of its inputs.
 
-A child process of scripts/validate_content.py. The tracer (M4) swallows errors in an
-event's `when` and `say` and in a predict point's `answerWhen`, so a broken one silently
-drops narration, skips an event or grades a predict point wrong. This traces the code on
-each input with sys.settrace, evaluates every expression at the same steps and with the
-same builtins, and reports the first error of each. (The tracer shows only the first
-narration of a step; this checks every event's.) It also reports events that never fire
-and predict points never reached. Standard library only; the code runs in the harness
-namespace (prelude included), as it will in the browser, and the harness builds the
-arguments from their io types (lists become ListNodes, and so on). A design problem's
-input is its calls: the constructor and every method call are traced, in order.
+A child process of scripts/validate_content.py. It traces the code on each input with the
+browser's own tracer (apps/web/public/py/tracer.py, next to harness.py, in the harness
+namespace with the arguments built from their io types, or a design input's calls), so
+what it checks is exactly what the walkthrough player will get. The tracer swallows
+errors in an event's `when` and `say` and in a predict point's `answerWhen` (a broken one
+silently drops narration, skips an event or grades a predict point wrong); here its
+`on_error` hook reports the first error of each, evaluating every event's `say`, not only
+the one a step shows. It also reports:
 
-    python -I -B scripts/viz_trace.py <harness.py> < job.json > result.json
+- errors: an `index`/`value` predict point reached with no answer (its variable never
+  changes after it); a pointer, window, range or confirmed variable that holds something
+  other than an integer, or points into a variable that is not a list, tuple or string; a
+  `roles.stack`/`roles.queue` variable that is not a list or deque;
+- warnings: an event that never fires, a predict point never reached, a `primary` that is
+  never a variable, an input whose trace stops at the step limit.
 
-job: {"code", "entry", "inputs": [{"id", "args"} | {"id", "ops"}], "viz": {"events",
-      "predict"}, "spec": harness spec_json object | null}
-result: {"errors": [{"path", "message"}], "unfired": [event id], "unreached": [predict index]}
+Standard library only.
+
+    python -I -B scripts/viz_trace.py <harness.py> [tracer.py] < job.json > result.json
+
+job: {"code", "entry", "inputs": [{"id", "args"} | {"id", "ops"}], "viz": viz config,
+      "spec": harness spec_json object | null}
+result: {"errors": [{"path", "message"}], "warnings": [{"path", "message"}],
+         "unfired": [event id], "unreached": [predict index]}
 """
 
-import copy
 import json
-import re
 import sys
 from collections import Counter
-from collections.abc import Callable
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field
-from types import FrameType, ModuleType
+from pathlib import Path
+from types import ModuleType
 from typing import Any
 
-SOLUTION_FILE = "<solution>"
-MAX_STEPS = 3000  # the tracer's limit
-MARKER_RE = re.compile(r"#\s*viz:([a-zA-Z0-9_]+)")
-# The only builtins the tracer gives narration and conditions (it evaluates `answerWhen`
-# as an extra event condition).
-SAY_BUILTINS = {"repr": repr, "len": len}
-CONDITION_BUILTINS = {"len": len}
-
-
-class StepLimit(Exception):
-    pass
+PREDICT_TAG = "predict:"
+SEQUENCES = ("list", "str", "deque")
 
 
 @dataclass
 class Report:
     errors: dict[str, str] = field(default_factory=dict)  # path -> first error
+    warnings: dict[str, str] = field(default_factory=dict)
     fired: Counter[str] = field(default_factory=Counter)
     reached: set[int] = field(default_factory=set)
+    seen: set[str] = field(default_factory=set)  # variable names visible at some step
 
 
-def marker_lines(code: str) -> dict[str, list[int]]:
-    """`# viz:<name>` markers by line, as the tracer finds them (the first on each line)."""
-    out: dict[str, list[int]] = {}
-    for lineno, line in enumerate(code.splitlines(), start=1):
-        if match := MARKER_RE.search(line):
-            out.setdefault(match.group(1), []).append(lineno)
-    return out
+def _variables(step: Mapping[str, Any]) -> dict[str, Any]:
+    """What the player shows at a step: the instance's attributes, then the locals."""
+    return {**(step.get("self") or {}), **step["locals"]}
 
 
-def _evaluate(source: str, builtins: dict[str, Any], env: dict[str, Any]) -> Any:
-    return eval(source, {"__builtins__": builtins}, env)
+def _is_int(snap: Any) -> bool:
+    return (
+        isinstance(snap, dict)
+        and snap.get("t") == "prim"
+        and isinstance(snap.get("v"), int)
+        and not isinstance(snap.get("v"), bool)
+        and not snap.get("f")
+    )
+
+
+def _index_vars(viz: Mapping[str, Any]) -> Iterator[tuple[str, str, str | None]]:
+    """(path, variable, the array it indexes or None) for every integer the config names."""
+    for i, pointer in enumerate(viz.get("pointers") or []):
+        yield f"pointers[{i}].var", pointer["var"], pointer["into"]
+    window = viz.get("window")
+    if window:
+        yield "window.start", window["start"], window["into"]
+        yield "window.end", window["end"], window["into"]
+    span = viz.get("range")
+    if span:
+        yield "range.lo", span["lo"], span["into"]
+        yield "range.hi", span["hi"], span["into"]
+        if span.get("mid"):
+            yield "range.mid", span["mid"], span["into"]
+    confirmed = viz.get("confirmed")
+    if confirmed:
+        for i, name in enumerate(confirmed.get("outside") or []):
+            yield f"confirmed.outside[{i}]", name, confirmed["into"]
+
+
+def _type_name(snap: Any) -> str:
+    if isinstance(snap, dict):
+        if snap.get("t") == "prim":
+            value = snap.get("v")
+            return "float" if snap.get("f") else type(value).__name__
+        return str(snap.get("cls") or snap.get("t"))
+    return "value"
+
+
+def check_steps(
+    viz: Mapping[str, Any], steps: list[dict[str, Any]], input_id: Any, report: Report
+) -> None:
+    """The variable checks (see the module docstring) on one input's trace."""
+    indexes = list(_index_vars(viz))
+    roles = viz.get("roles") or {}
+    containers = [("stack", n) for n in roles.get("stack") or []] + [
+        ("queue", n) for n in roles.get("queue") or []
+    ]
+    where = f"(input {input_id!r}"
+    for step in steps:
+        variables = _variables(step)
+        report.seen.update(variables)
+        if step["event"] != "line":
+            continue
+        for path, name, into in indexes:
+            value = variables.get(name)
+            if value is not None and not _is_int(value) and value.get("v") is not None:
+                message = (
+                    f"{name!r} is a {_type_name(value)}, not an index {where}, line {step['line']})"
+                )
+                report.errors.setdefault(path, message)
+            target = variables.get(into) if into else None
+            if target is not None and target.get("t") not in SEQUENCES:
+                message = (
+                    f"{into!r} is a {_type_name(target)}, not a list or string "
+                    f"{where}, line {step['line']})"
+                )
+                report.errors.setdefault(path.rsplit(".", 1)[0] + ".into", message)
+        for role, name in containers:
+            value = variables.get(name)
+            if value is not None and value.get("t") not in ("list", "deque"):
+                message = (
+                    f"{name!r} is a {_type_name(value)}, not a list {where}, line {step['line']})"
+                )
+                report.errors.setdefault(f"roles.{role}", message)
 
 
 def trace_input(
-    harness: ModuleType, job: dict[str, Any], run: dict[str, Any], report: Report
+    tracer: ModuleType, job: dict[str, Any], run: dict[str, Any], report: Report
 ) -> None:
-    events: list[dict[str, Any]] = job["viz"].get("events", [])
-    predicts: list[dict[str, Any]] = job["viz"].get("predict", [])
-    markers = marker_lines(job["code"])
-    counts: Counter[str] = Counter()
-    steps = 0
+    viz: dict[str, Any] = job["viz"]
     input_id = run["id"]
 
-    def fail(path: str, exc: Exception, frame: FrameType) -> None:
-        message = f"raises {type(exc).__name__}: {exc} (input {input_id!r}, line {frame.f_lineno})"
+    def on_error(path: str, exc: BaseException, line: int) -> None:
+        message = f"raises {type(exc).__name__}: {exc} (input {input_id!r}, line {line})"
         report.errors.setdefault(path, message)
 
-    def tracer(frame: FrameType, event: str, arg: Any) -> Any:
-        nonlocal steps
-        if frame.f_code.co_filename != SOLUTION_FILE:
-            return None
-        if event not in ("line", "return"):
-            return tracer
-        steps += 1
-        if steps > MAX_STEPS:
-            raise StepLimit
-        env = {name: value for name, value in frame.f_locals.items() if name != "self"}
-        tags = []
-        for i, ev in enumerate(events):
-            if frame.f_lineno not in markers.get(ev["at"], ()):
+    given = {"ops": run["ops"]} if "ops" in run else {"args": run.get("args") or []}
+    trace: dict[str, Any] = tracer.trace(
+        job["code"], job["entry"], given, viz, job.get("spec"), on_error=on_error
+    )
+    steps: list[dict[str, Any]] = trace["steps"]
+    for step in steps:
+        for tag in step["tags"]:
+            if not tag.startswith(PREDICT_TAG):
+                report.fired[tag] += 1
                 continue
-            if ev.get("when"):
-                try:
-                    if not _evaluate(ev["when"], CONDITION_BUILTINS, env):
-                        continue
-                except Exception as exc:
-                    fail(f"events[{i}].when", exc, frame)
-                    continue
-            tags.append(ev["id"])
-            counts[ev["id"]] += 1
-            if ev.get("say"):
-                try:
-                    _evaluate("f" + repr(ev["say"]), SAY_BUILTINS, env)
-                except Exception as exc:
-                    fail(f"events[{i}].say", exc, frame)
-        for i, predict in enumerate(predicts):
-            at_event = predict["atEvent"]
-            if at_event not in tags or counts[at_event] != predict.get("occurrence", 1):
-                continue
-            report.reached.add(i)
-            if predict.get("answerWhen"):
-                try:
-                    _evaluate(predict["answerWhen"], CONDITION_BUILTINS, env)
-                except Exception as exc:
-                    fail(f"predict[{i}].answerWhen", exc, frame)
-        return tracer
-
-    try:
-        start = prepare(harness, job, run)
-    except Exception:
-        return  # the static checks and rule 7 report code or arguments that do not load
-    sys.settrace(tracer)
-    try:
-        start()
-    except Exception:
-        pass  # rule 7 reports a solution that raises; StepLimit ends a long trace
-    finally:
-        sys.settrace(None)
-    report.fired.update(counts)
+            n = int(tag[len(PREDICT_TAG) :])
+            report.reached.add(n)
+            point = viz["predict"][n]
+            if str(n) not in (step.get("predictAnswers") or {}) and point.get("kind") != "yesno":
+                message = (
+                    f"no answer on input {input_id!r}: {point.get('var')!r} never changes "
+                    f"after line {step['line']}"
+                )
+                report.errors.setdefault(f"predict[{n}]", message)
+    check_steps(viz, steps, input_id, report)
+    if trace["truncated"]:
+        message = f"the trace stops at {tracer.MAX_STEPS} steps on input {input_id!r}"
+        report.warnings.setdefault("", message)
 
 
-def prepare(harness: ModuleType, job: dict[str, Any], run: dict[str, Any]) -> Callable[[], Any]:
-    """Load the code and return what runs the input: the entry method on its arguments, or
-    a design test's calls."""
-    spec = harness.parse_spec(job.get("spec"))
-    namespace = harness.new_namespace(spec)
-    if spec.kind == "design":
-        calls = copy.deepcopy(run["ops"])
-        exec(compile(job["code"], SOLUTION_FILE, "exec"), namespace)
-        design_class = namespace[job["entry"]]
-        return lambda: replay(harness, design_class, calls)
-    # Built before the code runs, which may define its own ListNode (as run_tests does).
-    args = harness.convert_args(copy.deepcopy(run["args"]), spec, namespace)
-    exec(compile(job["code"], SOLUTION_FILE, "exec"), namespace)
-    method = getattr(namespace["Solution"](), job["entry"])
-    return lambda: method(*args)
-
-
-def replay(harness: ModuleType, design_class: Any, calls: list[list[Any]]) -> None:
-    """A design test's calls in order, as the harness makes them: construct, then call."""
-    outputs: list[Any] = []
-    instance = design_class(*harness.resolve_refs(calls[0][1:], outputs))
-    outputs.append(None)
-    for name, *args in calls[1:]:
-        outputs.append(getattr(instance, name)(*harness.resolve_refs(args, outputs)))
-
-
-def check(harness: ModuleType, job: dict[str, Any]) -> dict[str, Any]:
+def check(tracer: ModuleType, job: dict[str, Any]) -> dict[str, Any]:
     report = Report()
     for run in job["inputs"]:
-        trace_input(harness, job, run, report)
-    events = job["viz"].get("events", [])
-    predicts = job["viz"].get("predict", [])
+        trace_input(tracer, job, run, report)
+    viz = job["viz"]
+    events = viz.get("events") or []
+    predicts = viz.get("predict") or []
+    primary = viz.get("primary")
+    if primary and job["inputs"] and primary not in report.seen:
+        report.warnings.setdefault("primary", f"{primary!r} is never a variable of the trace")
     return {
         "errors": [{"path": path, "message": message} for path, message in report.errors.items()],
+        "warnings": [
+            {"path": path, "message": message} for path, message in report.warnings.items()
+        ],
         "unfired": [ev["id"] for ev in events if not report.fired[ev["id"]]],
         "unreached": [i for i in range(len(predicts)) if i not in report.reached],
     }
 
 
-def load_harness(path: str) -> ModuleType:
-    """harness.py as a module. Its source runs in a new module, so no bytecode is written
-    next to it (apps/web/public/ is served as is)."""
-    module = ModuleType("seecode_harness")
+def load_module(name: str, path: str) -> ModuleType:
+    """A file of apps/web/public/py as a module, registered under `name` (the tracer
+    imports the harness by its name). Its source runs in a new module, so no bytecode is
+    written next to it (apps/web/public/ is served as is)."""
+    module = ModuleType(name)
     module.__file__ = path
+    sys.modules[name] = module
     with open(path, encoding="utf-8") as source:
         exec(compile(source.read(), path, "exec"), module.__dict__)
     return module
 
 
+def load_tracer(harness_path: str, tracer_path: str | None = None) -> ModuleType:
+    load_module("seecode_harness", harness_path)
+    path = tracer_path or str(Path(harness_path).with_name("tracer.py"))
+    return load_module("seecode_tracer", path)
+
+
 def main() -> None:
-    harness = load_harness(sys.argv[1])
+    tracer = load_tracer(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else None)
     job = json.load(sys.stdin)
-    # Anything the code prints goes to stderr, so it cannot corrupt the JSON.
+    # The tracer captures what the code prints; anything else goes to stderr, so it
+    # cannot corrupt the JSON.
     out, sys.stdout = sys.stdout, sys.stderr
-    out.write(json.dumps(check(harness, job)))
+    out.write(json.dumps(check(tracer, job)))
 
 
 if __name__ == "__main__":

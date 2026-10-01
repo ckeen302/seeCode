@@ -68,7 +68,7 @@ jobs:
       # Also the content scripts and the test harness the browser runner shares.
       - run: uv run ruff check . ../../scripts ../web/public/py
       - run: uv run ruff format --check . ../../scripts ../web/public/py
-      - run: uv run mypy app ../../scripts ../web/public/py/harness.py
+      - run: uv run mypy app ../../scripts ../web/public/py/harness.py ../web/public/py/tracer.py
       - run: uv run pytest
       - name: Build the API image (deployability)
         working-directory: .
